@@ -1,0 +1,59 @@
+---
+// One subtopic on its parent topic's page. The topic page is the index of the area, so
+// the card points into the subtopic instead of repeating its guides: title, description,
+// guide count and, when the subtopic declares them, links to each of its sections.
+// The card is clickable through the title link's stretched ::after; the section links
+// sit above it.
+import Icon from '../../../src/components/Icon.astro';
+import { format, plural, ui, type Lang } from '../i18n';
+import { getContent } from '../lib/content';
+import type { SubtopicData } from '../lib/content-model';
+import { groupBySection } from '../lib/hub';
+import { topicVisual } from '../lib/topic-visuals';
+
+interface Props {
+  lang: Lang;
+  subtopic: SubtopicData;
+}
+
+const { lang, subtopic } = Astro.props;
+const copy = ui[lang];
+const { index } = await getContent();
+const visual = topicVisual(subtopic.topic);
+const path = index.pathOf(lang, 'subtopic', subtopic.id)!;
+const guides = index.guidesOf(lang, subtopic.topic, subtopic.id);
+const sections = groupBySection(subtopic, guides).flatMap((group) => (group.section ? [group.section] : []));
+---
+
+<article
+  class="card-surface relative flex flex-col p-5 has-[h3_a:focus-visible]:outline-2 has-[h3_a:focus-visible]:outline-offset-2 has-[h3_a:focus-visible]:outline-accent-400 light:has-[h3_a:focus-visible]:outline-accent-700 sm:p-6"
+>
+  <span class={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${visual.badge}`}>
+    <Icon name={subtopic.icon} class="h-5 w-5" />
+  </span>
+  <h3 class="mt-5 font-display text-xl font-semibold text-neutral-50 light:text-neutral-900">
+    <a href={path} class="after:absolute after:inset-0 after:rounded-2xl after:content-[''] stretched-link">
+      {subtopic.title}
+    </a>
+  </h3>
+  <p class="mt-2 text-sm leading-relaxed text-neutral-400 light:text-neutral-600">{subtopic.description}</p>
+  <p class={`mt-3 font-mono text-xs ${visual.text}`}>{plural(copy.hub.guidesCount, guides.length)}</p>
+  {
+    sections.length > 0 && (
+      <nav aria-label={format(copy.hub.sectionsLabel, { title: subtopic.title })} class="relative z-10 mt-5">
+        <ul class="flex flex-wrap gap-2">
+          {sections.map((section) => (
+            <li>
+              <a
+                href={`${path}#${section.id}`}
+                class="inline-flex min-h-9 items-center rounded-md border border-white/10 px-2.5 font-mono text-xs text-neutral-300 transition-colors hover:border-accent-400/40 hover:text-accent-300 light:border-black/10 light:text-neutral-700 light:hover:border-accent-600/40 light:hover:text-accent-700"
+              >
+                {section.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
+</article>

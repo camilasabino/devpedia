@@ -17,10 +17,10 @@ const { lang, alternates } = Astro.props;
 const copy = ui[lang];
 
 const navItemClass =
-  'flex h-11 items-center gap-1.5 rounded-md px-2 font-mono text-xs text-neutral-400 light:text-neutral-600 transition-colors hover:text-accent-400 light:hover:text-accent-700 sm:h-9 sm:px-2.5';
+  'flex h-11 items-center gap-1.5 rounded-md px-1.5 font-mono text-xs text-neutral-400 light:text-neutral-600 transition-colors hover:text-accent-400 light:hover:text-accent-700 sm:h-9 sm:px-2.5';
 
 const langSwitcherClass = (code: Lang) =>
-  `flex h-11 items-center gap-1.5 rounded-md px-1.5 font-mono text-xs transition-colors sm:h-auto sm:px-2 sm:py-1 ${
+  `flex h-11 items-center gap-1.5 rounded-md px-1 font-mono text-xs transition-colors sm:h-auto sm:px-2 sm:py-1 ${
     lang === code
       ? 'bg-accent-500/15 light:bg-accent-600/15 text-accent-300 light:text-accent-700 ring-1 ring-accent-400/40 light:ring-accent-600/40'
       : 'text-neutral-500 light:text-neutral-600 hover:text-neutral-300 light:hover:text-neutral-600'
@@ -37,7 +37,7 @@ const langSwitcherClass = (code: Lang) =>
     >
       <Wordmark />
     </a>
-    <div class="flex items-center gap-1 sm:gap-3">
+    <div class="flex items-center gap-0.5 sm:gap-3">
       <nav aria-label={copy.nav.label}>
         <ul class="flex items-center">
           <li>

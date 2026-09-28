@@ -1,0 +1,51 @@
+---
+// One topic on the home: a link into a knowledge area, with its description, how many
+// guides it holds and, when it has them, the names of its subtopics. The whole card is
+// clickable through the title link's stretched ::after, so the link's accessible name
+// stays the topic title instead of the card's full text.
+import Icon from '../../../src/components/Icon.astro';
+import { plural, ui, type Lang } from '../i18n';
+import { getContent } from '../lib/content';
+import type { TopicData } from '../lib/content-model';
+import { topicVisual } from '../lib/topic-visuals';
+
+interface Props {
+  lang: Lang;
+  topic: TopicData;
+}
+
+const { lang, topic } = Astro.props;
+const copy = ui[lang];
+const { index } = await getContent();
+const visual = topicVisual(topic.id);
+const subtopics = index.subtopicsOf(lang, topic.id);
+---
+
+<article
+  class="card-surface group relative flex h-full flex-col p-5 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent-400 light:has-[a:focus-visible]:outline-accent-700 sm:p-6"
+>
+  <span class={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${visual.badge}`}>
+    <Icon name={topic.icon} class="h-5 w-5" />
+  </span>
+  <h3 class="mt-5 font-display text-xl font-semibold text-neutral-50 light:text-neutral-900">
+    <a
+      href={index.pathOf(lang, 'topic', topic.id)}
+      class="after:absolute after:inset-0 after:rounded-2xl after:content-[''] stretched-link"
+    >
+      {topic.title}
+    </a>
+  </h3>
+  <p class="mt-2 text-sm leading-relaxed text-neutral-400 light:text-neutral-600">{topic.description}</p>
+  {
+    subtopics.length > 0 && (
+      <p class="mt-4 font-mono text-xs text-neutral-400 light:text-neutral-600">
+        <span class="sr-only">{copy.hub.subtopicsHeading}: </span>
+        {subtopics.map((subtopic) => subtopic.title).join(' · ')}
+      </p>
+    )
+  }
+  <p class="mt-auto flex items-center justify-between gap-4 pt-5 font-mono text-xs">
+    <span class={visual.text}>{plural(copy.hub.guidesCount, index.guideCount(lang, topic.id))}</span>
+    <span aria-hidden="true" class="text-neutral-500 transition-transform group-hover:translate-x-0.5">→</span>
+  </p>
+</article>

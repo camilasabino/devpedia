@@ -43,6 +43,13 @@ body {
   color: var(--selection-fg);
 }
 
+/* A link stretched over its card or row through ::after. The container draws the
+   focus ring (with `has-[…:focus-visible]`), so the link drops its own; this has to be
+   unlayered to beat the global `:focus-visible` rule in surfaces.css. */
+.stretched-link:focus-visible {
+  outline: none;
+}
+
 .card-surface {
   position: relative;
   border-radius: 1rem;

@@ -11,9 +11,11 @@ interface Props {
   lang: Lang;
   /** Ancestors of the current page, outermost first. The home crumb is added here. */
   crumbs: Crumb[];
+  /** The current page, shown last as plain text (hubs show it; guides do not, yet). */
+  current?: string;
 }
 
-const { lang, crumbs } = Astro.props;
+const { lang, crumbs, current } = Astro.props;
 const copy = ui[lang];
 const items = [{ label: SITE_NAME, href: copy.homePath }, ...crumbs];
 ---
@@ -23,12 +25,22 @@ const items = [{ label: SITE_NAME, href: copy.homePath }, ...crumbs];
     {
       items.map((crumb, i) => (
         <li class="flex items-center gap-1.5">
-          {i > 0 && <span aria-hidden="true">/</span>}
-          <a href={crumb.href} class="hover:text-accent-400 light:hover:text-accent-700">
+          {i > 0 && <span aria-hidden="true">›</span>}
+          <a href={crumb.href} class="inline-flex min-h-6 items-center hover:text-accent-400 light:hover:text-accent-700">
             {crumb.label}
           </a>
         </li>
       ))
+    }
+    {
+      current && (
+        <li class="flex items-center gap-1.5">
+          <span aria-hidden="true">›</span>
+          <span aria-current="page" class="text-neutral-300 light:text-neutral-800">
+            {current}
+          </span>
+        </li>
+      )
     }
   </ol>
 </nav>
