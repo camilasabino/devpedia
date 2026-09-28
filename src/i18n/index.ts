@@ -43,7 +43,29 @@ export const ui = {
       guidesCount: { one: '{count} guía', other: '{count} guías' },
     },
     guide: {
-      lastUpdated: 'Última actualización',
+      updated: 'Actualizado',
+      readingTime: '{minutes} min de lectura',
+      position: 'Guía {position} de {total}',
+      toc: {
+        label: 'En esta guía',
+        eyebrow: '// en esta guía',
+      },
+      headingAnchor: 'Enlace a «{heading}»',
+      pager: {
+        label: 'Guías de {parent}',
+        previous: 'Anterior',
+        next: 'Siguiente',
+      },
+      share: {
+        label: 'Compartir esta guía',
+        eyebrow: '// compartir',
+        copy: 'Copiar enlace',
+        copied: 'Enlace copiado',
+        copyError: 'No se pudo copiar',
+        linkedin: 'Compartir en LinkedIn',
+        x: 'Compartir en X',
+        newTab: '(se abre en una pestaña nueva)',
+      },
       callout: {
         note: 'Nota',
         warning: 'Atención',
@@ -115,7 +137,29 @@ export const ui = {
       guidesCount: { one: '{count} guide', other: '{count} guides' },
     },
     guide: {
-      lastUpdated: 'Last updated',
+      updated: 'Updated',
+      readingTime: '{minutes} min read',
+      position: 'Guide {position} of {total}',
+      toc: {
+        label: 'On this page',
+        eyebrow: '// on this page',
+      },
+      headingAnchor: 'Link to “{heading}”',
+      pager: {
+        label: '{parent} guides',
+        previous: 'Previous',
+        next: 'Next',
+      },
+      share: {
+        label: 'Share this guide',
+        eyebrow: '// share',
+        copy: 'Copy link',
+        copied: 'Link copied',
+        copyError: 'Could not copy',
+        linkedin: 'Share on LinkedIn',
+        x: 'Share on X',
+        newTab: '(opens in a new tab)',
+      },
       callout: {
         note: 'Note',
         warning: 'Heads-up',

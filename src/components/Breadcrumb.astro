@@ -11,7 +11,7 @@ interface Props {
   lang: Lang;
   /** Ancestors of the current page, outermost first. The home crumb is added here. */
   crumbs: Crumb[];
-  /** The current page, shown last as plain text (hubs show it; guides do not, yet). */
+  /** The current page, shown last as plain text. */
   current?: string;
 }
 
@@ -34,9 +34,10 @@ const items = [{ label: SITE_NAME, href: copy.homePath }, ...crumbs];
     }
     {
       current && (
-        <li class="flex items-center gap-1.5">
+        <li class="flex min-w-0 items-center gap-1.5">
           <span aria-hidden="true">›</span>
-          <span aria-current="page" class="text-neutral-300 light:text-neutral-800">
+          {/* A long guide title stays on one line; the page's h1 shows it in full. */}
+          <span aria-current="page" class="truncate text-neutral-300 light:text-neutral-800">
             {current}
           </span>
         </li>
