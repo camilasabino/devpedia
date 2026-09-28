@@ -6,14 +6,17 @@ import Icon from '../../../src/components/Icon.astro';
 import ThemeToggle from '../../../src/components/ThemeToggle.astro';
 import Wordmark from './Wordmark.astro';
 import { languages, ui, type Lang } from '../i18n';
+import { trackAttributes, type PageKind } from '../lib/analytics';
 
 interface Props {
   lang: Lang;
   /** Root-relative path of the equivalent page in each language. */
   alternates: Record<Lang, string>;
+  /** The page's conceptual node, reported by language_change. Absent on the home. */
+  page?: { id: string; kind: PageKind };
 }
 
-const { lang, alternates } = Astro.props;
+const { lang, alternates, page } = Astro.props;
 const copy = ui[lang];
 
 const navItemClass =
@@ -66,6 +69,7 @@ const langSwitcherClass = (code: Lang) =>
               lang={code}
               aria-current={lang === code ? 'page' : undefined}
               class={langSwitcherClass(code)}
+              {...(lang === code ? {} : trackAttributes('language_change', { from: lang, to: code, ...page }))}
             >
               <Flag code={code} class="hidden h-3 w-4 shrink-0 sm:block" />
               {code.toUpperCase()}

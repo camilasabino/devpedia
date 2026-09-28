@@ -7,6 +7,7 @@ import Search from '../components/Search.astro';
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '../config';
 import { languages, ui, type Lang } from '../i18n';
 import { absoluteUrl } from '../lib/seo';
+import { pageOf, viewAttributes, type ViewEvent } from '../lib/analytics';
 
 interface Props {
   lang: Lang;
@@ -21,9 +22,11 @@ interface Props {
   article?: { created: Date; lastUpdated: Date; section: string };
   /** Structured data objects, one `<script type="application/ld+json">` each. */
   jsonLd?: Record<string, unknown>[];
+  /** Product view event of topic, subtopic and guide pages (see lib/analytics). The home has none. */
+  view?: ViewEvent;
 }
 
-const { lang, title, description, alternates, image = DEFAULT_OG_IMAGE, article, jsonLd = [] } = Astro.props;
+const { lang, title, description, alternates, image = DEFAULT_OG_IMAGE, article, jsonLd = [], view } = Astro.props;
 const copy = ui[lang];
 const canonicalUrl = absoluteUrl(Astro.url.pathname, SITE_URL);
 const alternateUrl = (code: Lang) => absoluteUrl(alternates[code], SITE_URL);
@@ -118,18 +121,23 @@ const analyticsHost = new URL(SITE_URL).hostname;
       )
     }
   </head>
-  <body class="font-sans text-neutral-300 light:text-neutral-700 antialiased">
+  <body class="font-sans text-neutral-300 light:text-neutral-700 antialiased" {...viewAttributes(view)}>
     <a
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-accent-500 focus:px-3 focus:py-2 focus:text-neutral-950"
     >
       {copy.skipToContent}
     </a>
-    <SiteHeader lang={lang} alternates={alternates} />
+    <SiteHeader lang={lang} alternates={alternates} page={view && pageOf(view)} />
     <main id="main" class="mx-auto w-full max-w-5xl flex-1 px-4 py-16 sm:px-6">
       <slot />
     </main>
     <SiteFooter lang={lang} />
     <Search lang={lang} />
+    <script>
+      import { initAnalytics } from '../lib/analytics';
+
+      initAnalytics();
+    </script>
   </body>
 </html>

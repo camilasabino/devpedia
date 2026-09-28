@@ -13,6 +13,8 @@ import { getContent } from '../lib/content';
 import type { TopicData } from '../lib/content-model';
 import { groupBySection } from '../lib/hub';
 import { breadcrumbJsonLd, imageType } from '../lib/seo';
+import { topicView } from '../lib/analytics';
+import { searchContext } from '../lib/search';
 import { coverOf, topicVisual } from '../lib/topic-visuals';
 
 interface Props {
@@ -53,15 +55,22 @@ const image = { path: imagePath, width: 1200, height: 630, type: imageType(image
   alternates={index.alternatesOf(kind, id)}
   image={image}
   jsonLd={[breadcrumbJsonLd(trail, SITE_URL)]}
+  view={topicView(node, lang)}
 >
   <Breadcrumb lang={lang} crumbs={crumbs} current={node.title} />
-  <header class="mt-8">
+  {/* Search result metadata. Kept outside the indexed element, whose text is searchable. */}
+  <span hidden data-pagefind-meta="context">{searchContext(index, lang, kind, id, copy.search.topicLabel)}</span>
+  <span hidden data-pagefind-meta={`id:${id}`}></span>
+  <span hidden data-pagefind-meta={`kind:${kind}`}></span>
+  {/* Search indexes the hub's own title and description only: its guide list would
+      repeat what each guide's page already contributes. */}
+  <header class="mt-8" data-pagefind-body>
     <span class={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${visual.badge}`}>
       <Icon name={node.icon} class="h-6 w-6" />
     </span>
     <h1 class="mt-5 font-display text-4xl font-bold text-neutral-50 light:text-neutral-900 sm:text-5xl">{node.title}</h1>
     <p class="mt-4 max-w-2xl text-lg leading-relaxed text-neutral-300 light:text-neutral-700">{node.description}</p>
-    <p class={`mt-4 font-mono text-sm ${visual.text}`}>{plural(copy.hub.guidesCount, guideCount)}</p>
+    <p data-pagefind-ignore class={`mt-4 font-mono text-sm ${visual.text}`}>{plural(copy.hub.guidesCount, guideCount)}</p>
   </header>
 
   {

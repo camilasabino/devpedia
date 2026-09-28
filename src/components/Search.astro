@@ -1,6 +1,11 @@
 ---
-// Search overlay over the Pagefind index that `npm run build:devpedia` generates.
-// Opened by the header's search button (#search-trigger).
+// Search dialog over the Pagefind index that `npm run build:devpedia` generates, opened
+// by the header's search button (#search-trigger). Pagefind keeps one index per language
+// and loads the one matching `<html lang>`, so each edition only searches itself.
+//
+// Each indexed page carries its conceptual `id`, its `kind` and a context line as
+// Pagefind metadata (see GuidePage and HubPage); results are rendered from those, and a
+// result click reports `id` and position, never the URL.
 import Icon from '../../../src/components/Icon.astro';
 import { ui, type Lang } from '../i18n';
 
@@ -13,279 +18,367 @@ const labels = ui[lang].search;
 
 const PREVIEW_LIMIT = 5;
 
-// The overlay's script is `is:inline` (it has to run before Pagefind is imported
-// dynamically), so it cannot import the copy files. Every string it renders at
-// runtime travels with the markup instead.
-const scriptLabels = {
+// Every string the script renders at runtime travels with the markup.
+const scriptConfig = {
+  lang,
+  previewLimit: PREVIEW_LIMIT,
   resultCountOne: labels.resultCount.one,
   resultCountOther: labels.resultCount.other,
   showing: labels.showing,
+  loading: labels.loading,
   empty: labels.empty,
   emptyHint: labels.emptyHint,
   unavailable: labels.unavailable,
 };
 ---
 
-<div
-  id="search-overlay"
-  class="fixed inset-0 z-[100] hidden items-start justify-center bg-neutral-950/80 light:bg-white/90 backdrop-blur-sm sm:p-6 sm:pt-16"
-  role="dialog"
-  aria-modal="true"
+<dialog
+  id="search-dialog"
   aria-label={labels.dialogLabel}
+  data-config={JSON.stringify(scriptConfig)}
+  class="m-0 h-dvh max-h-none w-full overflow-hidden max-w-none bg-transparent p-0 text-inherit open:flex open:items-start open:justify-center backdrop:bg-neutral-950/80 backdrop:backdrop-blur-sm light:backdrop:bg-white/90 sm:p-6 sm:pt-16"
 >
-  <div class="card-surface flex h-full w-full flex-col sm:h-auto sm:max-h-[85vh] sm:max-w-3xl sm:rounded-2xl lg:max-w-4xl">
-    <div class="flex items-center gap-3 border-b border-white/10 light:border-black/10 p-4">
-      <Icon name="search" class="h-4 w-4 shrink-0 text-neutral-500 light:text-neutral-600" />
+  <div
+    class="card-surface flex h-full w-full min-w-0 flex-col sm:h-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-3xl sm:rounded-2xl lg:max-w-4xl"
+  >
+    <div role="search" class="flex items-center gap-3 border-b border-white/10 light:border-black/10 p-3 sm:p-4">
+      <Icon name="search" class="ml-1 h-4 w-4 shrink-0 text-neutral-500 light:text-neutral-600" decorative />
       <input
         id="search-input"
         type="text"
+        inputmode="search"
+        enterkeyhint="search"
+        aria-label={labels.inputLabel}
+        aria-controls="search-results"
         placeholder={labels.placeholder}
         autocomplete="off"
-        data-preview-limit={PREVIEW_LIMIT}
-        data-labels={JSON.stringify(scriptLabels)}
-        class="flex-1 bg-transparent pl-2 font-mono text-sm text-neutral-100 light:text-neutral-800 placeholder:text-neutral-500 light:placeholder:text-neutral-600 focus:outline-none"
+        autocapitalize="off"
+        spellcheck="false"
+        class="min-w-0 flex-1 bg-transparent py-2 font-mono text-base text-neutral-100 light:text-neutral-800 placeholder:text-neutral-500 light:placeholder:text-neutral-600 focus:outline-none sm:text-sm"
       />
       <button
         id="search-close"
         type="button"
         aria-label={labels.closeLabel}
-        class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center text-neutral-500 light:text-neutral-600 transition-colors hover:text-neutral-300 light:hover:text-neutral-600 sm:h-9 sm:w-9"
+        class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-neutral-500 light:text-neutral-600 transition-colors hover:text-neutral-300 light:hover:text-neutral-900 sm:h-9 sm:w-9"
       >
-        <Icon name="close" class="h-5 w-5" />
+        <Icon name="close" class="h-5 w-5" decorative />
       </button>
     </div>
 
-    <div id="search-results" class="hidden flex-1 overflow-y-auto p-2"></div>
+    <div id="search-results" aria-label={labels.resultsLabel} class="flex-1 overflow-y-auto overscroll-contain p-2">
+      <p data-search-idle class="p-4 font-mono text-xs text-neutral-500 light:text-neutral-600">{labels.idle}</p>
+    </div>
 
-    <div id="search-footer" class="hidden items-center justify-between border-t border-white/10 light:border-black/10 p-3">
+    <div id="search-footer" class="hidden items-center justify-between gap-3 border-t border-white/10 light:border-black/10 p-3">
       <span id="search-count" class="font-mono text-xs text-neutral-500 light:text-neutral-600"></span>
       <button
         id="search-full"
         type="button"
-        class="hidden cursor-pointer items-center gap-1.5 rounded-md border border-accent-400/30 light:border-accent-600/30 px-3 py-1.5 font-mono text-xs text-accent-400 light:text-accent-700 transition-colors hover:border-accent-400/60 light:hover:border-accent-600/60 hover:bg-accent-400/5 light:hover:bg-accent-600/5"
+        class="hidden min-h-9 cursor-pointer items-center gap-1.5 rounded-md border border-accent-400/30 light:border-accent-600/30 px-3 py-1.5 font-mono text-xs text-accent-400 light:text-accent-700 transition-colors hover:border-accent-400/60 light:hover:border-accent-600/60 hover:bg-accent-400/5 light:hover:bg-accent-600/5"
       >
         {labels.showAll}
-        <Icon name="arrowRight" class="h-3.5 w-3.5" />
+        <Icon name="arrowRight" class="h-3.5 w-3.5" decorative />
       </button>
     </div>
+
+    <p id="search-status" role="status" class="sr-only"></p>
   </div>
-</div>
+</dialog>
 
 <script>
   import { pagefindResultMatchesQuery } from '../../../src/lib/search-relevance';
+  import { track, trackAttributes, type PageKind } from '../lib/analytics';
+  import type { Lang } from '../i18n';
 
-  declare global {
-    interface Window {
-      pagefindResultMatchesQuery?: typeof pagefindResultMatchesQuery;
-    }
+  interface Config {
+    lang: Lang;
+    previewLimit: number;
+    resultCountOne: string;
+    resultCountOther: string;
+    showing: string;
+    loading: string;
+    empty: string;
+    emptyHint: string;
+    unavailable: string;
   }
 
-  window.pagefindResultMatchesQuery = pagefindResultMatchesQuery;
-</script>
+  interface ResultData {
+    url: string;
+    excerpt: string;
+    content?: string;
+    meta?: { title?: string; context?: string; id?: string; kind?: string };
+  }
 
-<script is:inline>
-  const searchInputEl = document.getElementById('search-input');
-  const PREVIEW_LIMIT = Number(searchInputEl?.dataset.previewLimit ?? '5');
-  const LABELS = JSON.parse(searchInputEl?.dataset.labels ?? '{}');
+  interface Pagefind {
+    init(): Promise<void>;
+    search(query: string): Promise<{ results: { data(): Promise<ResultData> }[] } | null>;
+    debouncedSearch(query: string): Promise<{ results: { data(): Promise<ResultData> }[] } | null>;
+  }
 
-  const fill = (template, values) =>
-    String(template ?? '').replace(/\{(\w+)\}/g, (match, key) => (key in values ? values[key] : match));
+  // Built by `pagefind --site devpedia/dist`; `astro dev` has none.
+  const PAGEFIND_URL = '/pagefind/pagefind.js';
+  // A query counts as searched once the visitor stops typing for this long, or acts on it.
+  const SEARCH_SETTLE_MS = 1000;
+  const MAX_CANDIDATES = 50;
 
+  const dialog = document.getElementById('search-dialog') as HTMLDialogElement | null;
   const trigger = document.getElementById('search-trigger');
-  const overlay = document.getElementById('search-overlay');
-  const input = document.getElementById('search-input');
+  const input = document.getElementById('search-input') as HTMLInputElement | null;
   const closeBtn = document.getElementById('search-close');
   const resultsEl = document.getElementById('search-results');
   const footerEl = document.getElementById('search-footer');
   const countEl = document.getElementById('search-count');
   const fullBtn = document.getElementById('search-full');
+  const statusEl = document.getElementById('search-status');
 
-  let pagefind = null;
-  let pagefindFailed = false;
-  let lastQuery = '';
-  let requestToken = 0;
+  if (dialog && trigger && input && closeBtn && resultsEl && footerEl && countEl && fullBtn && statusEl) {
+    const config = JSON.parse(dialog.dataset.config ?? '{}') as Config;
+    const idleNode = resultsEl.querySelector('[data-search-idle]')!;
+    const fill = (template: string, values: Record<string, string | number>) =>
+      template.replace(/\{(\w+)\}/g, (match, key: string) => (key in values ? String(values[key]) : match));
+    const countLabel = (count: number) => (count === 1 ? config.resultCountOne : fill(config.resultCountOther, { count }));
 
-  async function ensurePagefind() {
-    if (pagefind || pagefindFailed) return pagefind;
-    try {
-      pagefind = await import('/pagefind/pagefind.js');
-      await pagefind.init();
-    } catch {
-      pagefindFailed = true;
-      pagefind = null;
-      // Visitors only see the plain "unavailable" copy; the actionable cause —
-      // the index is generated by the build, so `astro dev` never has one —
-      // stays here, where whoever is running the site locally will look.
-      console.warn('[search] Pagefind index not found. Run `npm run build:devpedia` to generate it.');
-    }
-    return pagefind;
-  }
+    let pagefind: Pagefind | null = null;
+    let pagefindFailed = false;
+    let requestToken = 0;
+    let lastQuery = '';
 
-  function escapeHtml(value) {
-    const div = document.createElement('div');
-    div.textContent = value;
-    return div.innerHTML;
-  }
+    // --- search analytics: one `search` event per settled query, never the query text ---
+    let pending: { query: string; resultCount: number } | null = null;
+    let lastTracked = '';
+    let settleTimer: number | undefined;
 
-  function renderMessage(text) {
-    if (!resultsEl) return;
-    resultsEl.classList.remove('hidden');
-    resultsEl.innerHTML = `<p class="p-4 font-mono text-xs text-neutral-500 light:text-neutral-600">${text}</p>`;
-  }
-
-  function renderResults(items, { full, total }) {
-    if (!resultsEl || !footerEl || !countEl) return;
-
-    resultsEl.classList.remove('hidden');
-    resultsEl.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'flex flex-col gap-1';
-
-    for (const data of items) {
-      const topic = data.meta?.topic ?? '';
-      const title = data.meta?.title ?? '';
-      const a = document.createElement('a');
-      a.href = data.url;
-      a.className = 'block rounded-lg p-3 transition-colors hover:bg-white/5 light:hover:bg-black/5';
-      a.innerHTML = `
-        <p class="font-mono text-[11px] uppercase tracking-wide text-accent-400 light:text-accent-700">${escapeHtml(topic)}</p>
-        <p class="mt-1 font-display text-sm font-semibold text-neutral-100 light:text-neutral-800">${escapeHtml(title)}</p>
-        <p class="mt-1 text-xs leading-relaxed text-neutral-400 light:text-neutral-600">${data.excerpt}</p>
-      `;
-      list.appendChild(a);
-    }
-    resultsEl.appendChild(list);
-
-    if (full) {
-      hideFooter();
-      countEl.textContent =
-        total === 1 ? LABELS.resultCountOne : fill(LABELS.resultCountOther, { count: total });
-      resultsEl.insertAdjacentHTML(
-        'afterbegin',
-        `<p class="px-3 pb-2 pt-1 font-mono text-xs text-neutral-500 light:text-neutral-600">${countEl.textContent}</p>`
-      );
-    } else if (items.length < total) {
-      footerEl.classList.remove('hidden');
-      footerEl.classList.add('flex');
-      countEl.textContent = fill(LABELS.showing, { shown: items.length, total });
-      setFullButtonVisible(true);
-    } else {
-      hideFooter();
-    }
-  }
-
-  function setFullButtonVisible(visible) {
-    if (!fullBtn) return;
-    fullBtn.classList.toggle('hidden', !visible);
-    fullBtn.classList.toggle('flex', visible);
-  }
-
-  function hideFooter() {
-    footerEl?.classList.add('hidden');
-    footerEl?.classList.remove('flex');
-    setFullButtonVisible(false);
-  }
-
-  function renderEmpty(query) {
-    if (!resultsEl) return;
-    resultsEl.classList.remove('hidden');
-    resultsEl.innerHTML = `
-      <div class="flex flex-col items-center gap-1 p-8 text-center">
-        <p class="font-mono text-xs text-neutral-500 light:text-neutral-600">${fill(LABELS.empty, { query: escapeHtml(query) })}</p>
-        <p class="text-xs text-neutral-500 light:text-neutral-600">${escapeHtml(LABELS.emptyHint ?? '')}</p>
-      </div>
-    `;
-    hideFooter();
-  }
-
-  function resetSearch() {
-    lastQuery = '';
-    if (input) input.value = '';
-    clearIdleResults();
-  }
-
-  function clearIdleResults() {
-    if (resultsEl) {
-      resultsEl.innerHTML = '';
-      resultsEl.classList.add('hidden');
-    }
-    hideFooter();
-  }
-
-  async function search(query, { full = false } = {}) {
-    const token = ++requestToken;
-    if (!query.trim()) {
-      clearIdleResults();
-      return;
+    function noteOutcome(query: string, resultCount: number) {
+      pending = { query: query.trim().toLowerCase(), resultCount };
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(flushSearch, SEARCH_SETTLE_MS);
     }
 
-    const pf = await ensurePagefind();
-    if (token !== requestToken) return;
-    if (!pf) {
-      renderMessage(LABELS.unavailable ?? '');
-      return;
+    function flushSearch() {
+      window.clearTimeout(settleTimer);
+      if (pending && pending.query !== lastTracked) {
+        track('search', { lang: config.lang, result_count: pending.resultCount });
+        lastTracked = pending.query;
+      }
+      pending = null;
     }
 
-    const outcome = full ? await pf.search(query) : await pf.debouncedSearch(query);
-    if (token !== requestToken || outcome === null) return;
-
-    const { results } = outcome;
-    if (results.length === 0) {
-      renderEmpty(query);
-      return;
+    async function ensurePagefind(): Promise<Pagefind | null> {
+      if (pagefind || pagefindFailed) return pagefind;
+      try {
+        const loaded = (await import(/* @vite-ignore */ PAGEFIND_URL)) as Pagefind;
+        await loaded.init();
+        pagefind = loaded;
+      } catch {
+        pagefindFailed = true;
+        // Visitors only see the "unavailable" copy; the cause stays here for whoever runs
+        // the site locally: the index is generated by the build.
+        console.warn('[search] Pagefind index not found. Run `npm run build:devpedia` to generate it.');
+      }
+      return pagefind;
     }
 
-    const sample = await Promise.all(results.slice(0, 50).map((result) => result.data()));
-    if (token !== requestToken) return;
-    const isRelevant = window.pagefindResultMatchesQuery ?? (() => true);
-    const matched = sample.filter((data) => isRelevant(query, data));
-    if (matched.length === 0) {
-      renderEmpty(query);
-      return;
+    function setFooter(text: string | null, showFullButton = false) {
+      footerEl!.classList.toggle('hidden', text === null);
+      footerEl!.classList.toggle('flex', text !== null);
+      countEl!.textContent = text ?? '';
+      fullBtn!.classList.toggle('hidden', !showFullButton);
+      fullBtn!.classList.toggle('inline-flex', showFullButton);
     }
 
-    const items = full ? matched : matched.slice(0, PREVIEW_LIMIT);
-    renderResults(items, { full, total: matched.length });
-  }
+    function showNode(node: Node) {
+      resultsEl!.replaceChildren(node);
+    }
 
-  function openOverlay() {
-    overlay?.classList.remove('hidden');
-    overlay?.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-    input?.focus();
-    void ensurePagefind();
-  }
+    function message(text: string, hint?: string) {
+      const box = document.createElement('div');
+      box.className = 'flex flex-col gap-1 p-4 font-mono text-xs text-neutral-500 light:text-neutral-600';
+      const first = document.createElement('p');
+      first.textContent = text;
+      box.append(first);
+      if (hint) {
+        const second = document.createElement('p');
+        second.className = 'font-sans';
+        second.textContent = hint;
+        box.append(second);
+      }
+      return box;
+    }
 
-  function closeOverlay() {
-    overlay?.classList.add('hidden');
-    overlay?.classList.remove('flex');
-    document.body.style.overflow = '';
-    requestToken += 1;
-    resetSearch();
-  }
+    function showIdle() {
+      showNode(idleNode);
+      setFooter(null);
+      statusEl!.textContent = '';
+    }
 
-  trigger?.addEventListener('click', openOverlay);
-  closeBtn?.addEventListener('click', closeOverlay);
-  overlay?.addEventListener('click', (event) => {
-    if (event.target === overlay) closeOverlay();
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !overlay?.classList.contains('hidden')) closeOverlay();
-  });
+    function renderResults(items: ResultData[], total: number, full: boolean) {
+      const list = document.createElement('ul');
+      list.className = 'flex flex-col gap-1';
+      list.setAttribute('role', 'list');
 
-  input?.addEventListener('input', () => {
-    lastQuery = input.value;
-    void search(lastQuery, { full: false });
-  });
+      items.forEach((data, i) => {
+        const id = data.meta?.id;
+        const kind = data.meta?.kind as PageKind | undefined;
+        const link = document.createElement('a');
+        link.href = data.url;
+        link.dataset.searchResult = '';
+        link.className =
+          'block rounded-lg p-3 outline-offset-[-2px] transition-colors hover:bg-white/5 focus-visible:bg-white/5 light:hover:bg-black/5 light:focus-visible:bg-black/5';
+        link.setAttribute('aria-labelledby', `search-result-${i}-title`);
+        link.setAttribute('aria-describedby', `search-result-${i}-context search-result-${i}-excerpt`);
+        if (id && kind) {
+          const attrs = trackAttributes('search_result_click', { id, kind, lang: config.lang, position: i + 1 });
+          for (const [name, value] of Object.entries(attrs)) link.setAttribute(name, value);
+        }
 
-  input?.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
+        const title = document.createElement('span');
+        title.id = `search-result-${i}-title`;
+        title.className =
+          'block break-words font-display text-sm font-semibold text-neutral-100 light:text-neutral-800 sm:text-base';
+        title.textContent = data.meta?.title ?? '';
+
+        const context = document.createElement('span');
+        context.id = `search-result-${i}-context`;
+        context.className = 'mt-1 block break-words font-mono text-[11px] tracking-wide text-accent-400 light:text-accent-700';
+        context.textContent = data.meta?.context ?? '';
+
+        const excerpt = document.createElement('span');
+        excerpt.id = `search-result-${i}-excerpt`;
+        excerpt.className = 'mt-1.5 block break-words text-xs leading-relaxed text-neutral-400 light:text-neutral-600';
+        // Pagefind escapes the page text and only adds <mark> around the matches.
+        excerpt.innerHTML = data.excerpt;
+
+        link.append(title, context, excerpt);
+        const item = document.createElement('li');
+        item.append(link);
+        list.append(item);
+      });
+
+      showNode(list);
+      if (full || items.length === total) setFooter(countLabel(total));
+      else setFooter(fill(config.showing, { shown: items.length, total }), true);
+      statusEl!.textContent = countLabel(total);
+    }
+
+    async function search(query: string, { full = false } = {}) {
+      const token = ++requestToken;
+      if (!query.trim()) {
+        pending = null;
+        window.clearTimeout(settleTimer);
+        showIdle();
+        return;
+      }
+
+      // Only shown if Pagefind is still loading or the search takes a moment.
+      const loadingTimer = window.setTimeout(() => {
+        if (token === requestToken) showNode(message(config.loading));
+      }, 150);
+
+      try {
+        const pf = await ensurePagefind();
+        if (token !== requestToken) return;
+        if (!pf) {
+          showNode(message(config.unavailable));
+          setFooter(null);
+          statusEl!.textContent = config.unavailable;
+          return;
+        }
+
+        const outcome = full ? await pf.search(query) : await pf.debouncedSearch(query);
+        if (token !== requestToken || outcome === null) return;
+
+        const sample = await Promise.all(outcome.results.slice(0, MAX_CANDIDATES).map((result) => result.data()));
+        if (token !== requestToken) return;
+        const matched = sample.filter((data) => pagefindResultMatchesQuery(query, data));
+
+        noteOutcome(query, matched.length);
+        if (matched.length === 0) {
+          const text = fill(config.empty, { query: query.trim() });
+          showNode(message(text, config.emptyHint));
+          setFooter(null);
+          statusEl!.textContent = text.replace(/^\/\/\s*/, '');
+          return;
+        }
+        renderResults(full ? matched : matched.slice(0, config.previewLimit), matched.length, full);
+      } finally {
+        window.clearTimeout(loadingTimer);
+      }
+    }
+
+    function open() {
+      if (dialog!.open) return;
+      document.documentElement.style.overflow = 'hidden';
+      dialog!.showModal();
+      input!.focus();
+      void ensurePagefind();
+    }
+
+    // Runs on every way out: close button, Escape (the dialog's own `cancel`), backdrop.
+    function onClose() {
+      flushSearch();
+      requestToken += 1;
+      lastQuery = '';
+      input!.value = '';
+      showIdle();
+      document.documentElement.style.overflow = '';
+      trigger!.focus();
+    }
+
+    const results = () => [...resultsEl.querySelectorAll<HTMLAnchorElement>('a[data-search-result]')];
+
+    trigger.addEventListener('click', open);
+    closeBtn.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', onClose);
+    // A click on the dialog itself (not its panel) is a click on the backdrop area.
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    // Coming back from a result through the back/forward cache must not find it open.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted && dialog.open) dialog.close();
+    });
+
+    input.addEventListener('input', () => {
+      lastQuery = input.value;
+      void search(lastQuery);
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        void search(input.value, { full: true }).then(flushSearch);
+      } else if (event.key === 'ArrowDown') {
+        const first = results()[0];
+        if (first) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    resultsEl.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      const links = results();
+      const current = links.indexOf(document.activeElement as HTMLAnchorElement);
+      if (current === -1) return;
       event.preventDefault();
-      void search(input.value, { full: true });
-    }
-  });
+      const next = current + (event.key === 'ArrowDown' ? 1 : -1);
+      if (next < 0) input.focus();
+      else links[Math.min(next, links.length - 1)].focus();
+    });
 
-  fullBtn?.addEventListener('click', () => {
-    void search(lastQuery, { full: true });
-  });
+    // Runs before the document-level analytics listener, so `search` precedes the click.
+    resultsEl.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('a[data-search-result]')) flushSearch();
+    });
+
+    // The button hides itself once every result is shown; focus moves to the first one.
+    fullBtn.addEventListener('click', () => {
+      void search(lastQuery, { full: true }).then(() => {
+        flushSearch();
+        results()[0]?.focus();
+      });
+    });
+  }
 </script>

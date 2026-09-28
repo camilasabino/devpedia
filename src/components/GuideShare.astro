@@ -4,15 +4,19 @@
 // "Copy link" needs the Clipboard API and stays hidden until the script enables it.
 import Icon from '../../../src/components/Icon.astro';
 import { ui, type Lang } from '../i18n';
+import { trackAttributes } from '../lib/analytics';
 
 interface Props {
   lang: Lang;
+  /** Conceptual id of the guide, reported by the share event. */
+  id: string;
   title: string;
   /** Canonical absolute URL of the guide. */
   url: string;
 }
 
-const { lang, title, url } = Astro.props;
+const { lang, id, title, url } = Astro.props;
+const shareTracking = (method: 'copy' | 'linkedin' | 'x') => trackAttributes('share', { method, id, lang });
 const copy = ui[lang].guide.share;
 const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
 const xHref = `https://x.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
@@ -35,13 +39,14 @@ const control =
       title={copy.copy}
       aria-label={copy.copy}
       hidden
+      {...shareTracking('copy')}
     >
       <Icon name="link" class="h-4 w-4" decorative />
     </button>
-    <a href={linkedinHref} target="_blank" rel="noopener noreferrer" class={control} title="LinkedIn" aria-label={`${copy.linkedin} ${copy.newTab}`}>
+    <a href={linkedinHref} target="_blank" rel="noopener noreferrer" class={control} title="LinkedIn" aria-label={`${copy.linkedin} ${copy.newTab}`} {...shareTracking('linkedin')}>
       <Icon name="linkedin" class="h-4 w-4" decorative />
     </a>
-    <a href={xHref} target="_blank" rel="noopener noreferrer" class={control} title="X" aria-label={`${copy.x} ${copy.newTab}`}>
+    <a href={xHref} target="_blank" rel="noopener noreferrer" class={control} title="X" aria-label={`${copy.x} ${copy.newTab}`} {...shareTracking('x')}>
       <Icon name="x" class="h-4 w-4" decorative />
     </a>
   </div>

@@ -14,6 +14,8 @@ import { format, ui, type Lang } from '../i18n';
 import { getContent } from '../lib/content';
 import { formatMonthYear, guideSequence, readingMinutes, tocEntries } from '../lib/guide';
 import { absoluteUrl, breadcrumbJsonLd, imageType, techArticleJsonLd } from '../lib/seo';
+import { guideView } from '../lib/analytics';
+import { searchContext } from '../lib/search';
 import { coverOf, topicVisual } from '../lib/topic-visuals';
 
 interface Props {
@@ -40,8 +42,6 @@ const crumbs = [
 
 const path = index.pathOf(lang, 'guide', id)!;
 const section = parent.sections?.find((candidate) => candidate.id === guide.section);
-// Search results show where a guide sits: topic › subtopic › section.
-const searchContext = [topic.title, subtopic?.title, section?.title].filter(Boolean).join(' › ');
 const imagePath = guide.cover ?? coverOf(topic.id, subtopic?.id);
 const image = { path: imagePath, width: 1200, height: 630, type: imageType(imagePath) };
 const articleSection = parent.title;
@@ -75,7 +75,7 @@ const minutes = readingMinutes(entry.body ?? '');
 
 const sequence = guideSequence(index, lang, id);
 const pagerLink = (target?: { id: string; title: string }) =>
-  target && { title: target.title, href: index.pathOf(lang, 'guide', target.id)! };
+  target && { id: target.id, title: target.title, href: index.pathOf(lang, 'guide', target.id)! };
 
 const visual = topicVisual(topic.id);
 // A section's overview guide is titled like the section; repeating it above the h1 adds nothing.
@@ -90,6 +90,7 @@ const sectionLabel = section && section.title !== guide.title ? section : undefi
   image={image}
   article={{ created: guide.created, lastUpdated: guide.lastUpdated, section: articleSection }}
   jsonLd={jsonLd}
+  view={guideView(guide, lang)}
 >
   {/* The side column is kept even without a table of contents, so the body sits at the
       same position and width on every guide. */}
@@ -107,10 +108,15 @@ const sectionLabel = section && section.title !== guide.title ? section : undefi
     <div class="min-w-0 lg:col-start-1 lg:row-start-1">
       <Breadcrumb lang={lang} crumbs={crumbs} current={guide.title} />
 
-      <article class="mt-8">
-        <span hidden data-pagefind-meta="topic">{searchContext}</span>
+      {/* Search result metadata. Kept outside the indexed element, whose text is searchable. */}
+      <span hidden data-pagefind-meta="context">{searchContext(index, lang, 'guide', id, copy.search.topicLabel)}</span>
+      <span hidden data-pagefind-meta={`id:${id}`}></span>
+      <span hidden data-pagefind-meta="kind:guide"></span>
+      {/* Search indexes the title, the description and the body; the rest of the article
+          (context line, dates, table of contents, sharing) is chrome. */}
+      <article class="mt-8" data-pagefind-body>
         <header>
-          <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+          <p data-pagefind-ignore class="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
             <Icon name={topic.icon} class={`h-4 w-4 ${visual.text}`} decorative />
             {
               sectionLabel && (
@@ -139,7 +145,7 @@ const sectionLabel = section && section.title !== guide.title ? section : undefi
           <p class="mt-4 max-w-[var(--guide-measure)] text-lg leading-relaxed text-neutral-300 light:text-neutral-700">
             {guide.description}
           </p>
-          <p class="mt-5 flex flex-wrap items-center gap-x-2 font-mono text-xs text-neutral-500 light:text-neutral-600">
+          <p data-pagefind-ignore class="mt-5 flex flex-wrap items-center gap-x-2 font-mono text-xs text-neutral-500 light:text-neutral-600">
             <span>
               {copy.guide.updated}{' '}
               <time datetime={guide.lastUpdated.toISOString().slice(0, 10)}>{formatMonthYear(guide.lastUpdated, lang)}</time>
@@ -151,24 +157,25 @@ const sectionLabel = section && section.title !== guide.title ? section : undefi
 
         {
           toc.length > 0 && (
-            <div class="mt-8 lg:hidden">
+            <div class="mt-8 lg:hidden" data-pagefind-ignore>
               <GuideToc lang={lang} headings={toc} variant="inline" />
             </div>
           )
         }
 
-        <div class="prose-guide mt-10" data-pagefind-body data-heading-anchor-label={copy.guide.headingAnchor}>
+        <div class="prose-guide mt-10" data-heading-anchor-label={copy.guide.headingAnchor}>
           <Content />
         </div>
 
-        <footer class="mt-14 border-t border-white/10 pt-6 light:border-black/10">
-          <GuideShare lang={lang} title={guide.title} url={absoluteUrl(path, SITE_URL)} />
+        <footer data-pagefind-ignore class="mt-14 border-t border-white/10 pt-6 light:border-black/10">
+          <GuideShare lang={lang} id={id} title={guide.title} url={absoluteUrl(path, SITE_URL)} />
         </footer>
       </article>
 
       <div class="mt-10">
         <GuidePager
           lang={lang}
+          guideId={id}
           parentTitle={parent.title}
           previous={pagerLink(sequence.previous)}
           next={pagerLink(sequence.next)}
