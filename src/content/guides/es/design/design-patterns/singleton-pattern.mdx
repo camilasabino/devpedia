@@ -1,0 +1,128 @@
+---
+id: singleton-pattern
+slug: singleton
+order: 9
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Singleton"
+description: "Cómo garantizar una única instancia y qué consecuencias tiene ofrecer acceso global a ella para las dependencias y los tests."
+created: 2026-06-17
+lastUpdated: 2026-06-17
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**Singleton** es un patrón creacional que garantiza que una clase tenga una única instancia, y da un punto de acceso global a ella.
+
+## El problema
+
+AndesShop necesita un `InventoryLedger`: el registro que lleva el conteo actual de stock de cada producto. Si distintas partes del sistema (el checkout, el panel de administración, el job que sincroniza con el depósito) crean cada una su propia instancia de este registro, cada instancia termina con su propia copia del conteo en memoria — y esas copias se desincronizan entre sí. Dos instancias distintas podrían decidir, cada una por su cuenta, que todavía queda una unidad disponible del mismo producto, y venderla las dos.
+
+El problema no es solo evitar instancias duplicadas: es que además todo el sistema necesita encontrar _la misma_ instancia sin que cada parte del código tenga que recibirla explícitamente como parámetro desde el punto de entrada de la aplicación.
+
+## La solución
+
+Singleton hace privado el constructor de la clase, para que nadie pueda instanciarla directamente con `new`, y expone un método estático que crea la única instancia la primera vez que se la pide, y devuelve esa misma instancia en cualquier llamada posterior.
+
+<ClassDiagram
+  caption="Estructura de Singleton: constructor privado, instancia estática única y un punto de acceso global que cualquier parte del sistema resuelve por sí sola."
+  diagram={`    class InventoryLedger {
+        -instance InventoryLedger$
+        -stock Map~String, Integer~
+        -InventoryLedger()
+        +getInstance() InventoryLedger$
+        +reserve(String, int) boolean
+    }
+    class Checkout {
+        +confirm(Order) void
+    }
+    class WarehouseSyncJob {
+        +run() void
+    }
+    Checkout ..> InventoryLedger : getInstance()
+    WarehouseSyncJob ..> InventoryLedger : getInstance()
+    note for InventoryLedger "El subrayado ($) marca los miembros estáticos.\nEl constructor privado impide instanciarla con new."`}
+/>
+
+## Ejemplo en Java
+
+```java
+class InventoryLedger {
+    private static volatile InventoryLedger instance;
+    private final Map<String, Integer> stock = new ConcurrentHashMap<>();
+
+    // Constructor privado: nadie puede hacer "new InventoryLedger()" desde afuera
+    private InventoryLedger() {}
+
+    public static InventoryLedger getInstance() {
+        if (instance == null) {
+            synchronized (InventoryLedger.class) {
+                if (instance == null) {
+                    instance = new InventoryLedger();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public boolean reserve(String sku, int quantity) {
+        // compute() aplica la comprobación y el descuento como una sola operación
+        // atómica sobre esa clave. Es lo que hace segura la reserva concurrente.
+        Integer remaining = stock.compute(sku, (key, available) -> {
+            int current = available == null ? 0 : available;
+            return current < quantity ? current : current - quantity;
+        });
+        return remaining != null && remaining >= 0 && stock.get(sku) != null;
+    }
+}
+```
+
+<Callout variant="warning" title="Dos mecanismos distintos, no uno">
+Es fácil mezclarlos. El _double-checked locking_ con `volatile` protege **la creación de la instancia única**. El `ConcurrentHashMap` con `compute()` protege **el estado que esa instancia guarda**. Resolver uno no resuelve el otro: un singleton correctamente inicializado con un `HashMap` común adentro sigue teniendo una condición de carrera (_race condition_) latente.
+
+Una versión anterior de este ejemplo marcaba `reserve` como `synchronized` y además usaba `ConcurrentHashMap`. Funcionaba, pero enseñaba un modelo confuso: la atomicidad venía del `synchronized`, y el mapa concurrente sugería una garantía que no se estaba usando.
+</Callout>
+
+```java
+// Client code, desde cualquier parte del sistema: siempre la misma instancia
+boolean reserved = InventoryLedger.getInstance().reserve("JKT-2024-BLUE", 1);
+```
+
+<Callout variant="note" title="La alternativa más simple en Java">
+El double-checked locking evita sincronizar en cada llamada una vez que la instancia existe, pero es fácil de escribir mal — sin `volatile`, por ejemplo, es incorrecto. Joshua Bloch recomienda en *Effective Java* (ítem 3) un `enum` de un solo valor: la JVM garantiza que se inicializa una única vez, es seguro ante serialización y reflexión, y no hay nada que romper.
+
+```java
+enum InventoryLedger {
+    INSTANCE;
+
+    private final Map<String, Integer> stock = new ConcurrentHashMap<>();
+
+    public boolean reserve(String sku, int quantity) { /* ... */ }
+}
+```
+</Callout>
+
+## Cuándo usarlo
+
+- Cuando necesitás que una clase tenga exactamente una instancia, accesible desde cualquier punto del código, típicamente para coordinar el acceso a un recurso compartido (una caché, un registro, un pool de conexiones).
+
+## Cuándo evitarlo
+
+Singleton es, en la práctica, el patrón más discutido del catálogo — porque introduce estado global, algo que dificulta escribir tests (las instancias quedan compartidas entre tests salvo que se resetee explícitamente) y esconde una dependencia real detrás de una llamada estática en vez de recibirla explícitamente. Antes de usarlo, vale la pena evaluar si alcanza con crear una única instancia en el punto de entrada de la aplicación e inyectarla donde haga falta, sin forzar la restricción a nivel de la clase misma.
+
+Dicho en los términos del [principio de inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle): `InventoryLedger.getInstance()` es una dependencia que no aparece en la firma de nadie. Un `Checkout` que la invoca depende de una clase concreta sin declararlo, y no hay forma de sustituirla en un test sin tocar estado global. Recibir un `InventoryLedger` por constructor conserva "hay una sola instancia" —la crea el punto de entrada— y elimina las dos consecuencias caras.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Garantiza una única instancia y un punto de acceso conocido a ella|Introduce estado global: cualquier módulo puede llamarlo sin declararlo, y eso acopla código que debería ser independiente|
+|Controla el acceso a un recurso compartido desde un solo lugar|Dificulta testear en aislamiento, salvo que se diseñe explícitamente para poder resetearse|
+|Permite inicialización perezosa (lazy), si la implementación la elige (no es inherente al patrón)|En entornos multihilo, una implementación mal hecha puede crear más de una instancia|
+
+## Relación con otros patrones
+
+- **[Abstract Factory](/diseno/patrones/abstract-factory/)**, **[Builder](/diseno/patrones/builder/)** y **[Prototype](/diseno/patrones/prototype/)** pueden implementarse como Singleton cuando alcanza con un único factory o builder compartido.
+- **[Facade](/diseno/patrones/facade/)** suele implementarse como Singleton, aunque no es un requisito del patrón.

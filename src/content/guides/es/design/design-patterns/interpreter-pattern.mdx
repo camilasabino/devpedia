@@ -1,0 +1,182 @@
+---
+id: interpreter-pattern
+slug: interpreter
+order: 19
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Interpreter"
+description: "Cómo representar las reglas de un lenguaje simple mediante objetos y combinarlos para interpretar expresiones."
+created: 2026-07-07
+lastUpdated: 2026-07-07
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**Interpreter** es un patrón de comportamiento que representa la gramática de un lenguaje chico como una jerarquía de clases, donde cada regla es una clase que sabe evaluarse a sí misma.
+
+## El problema
+
+AndesShop quiere que el equipo de marketing arme sus propias promociones sin pedirle un deploy a nadie. Las reglas que necesitan son de este estilo:
+
+```text
+total > 50000 AND categoria = "trekking"
+cliente_frecuente OR total > 100000
+NOT usa_cupon AND unidades >= 3
+```
+
+La primera versión suele ser un intérprete improvisado: un `if` gigante que parsea el string cada vez, o peor, una expresión guardada en base de datos que se evalúa con `eval`. Ambas se rompen en cuanto la regla se complica, y la segunda es un agujero de seguridad.
+
+El problema de fondo es que hay un **lenguaje** —chico, pero lenguaje al fin— con una gramática que se repite: comparaciones, condiciones booleanas y combinaciones anidadas de ambas. Y la estructura de ese lenguaje es recursiva: `A AND (B OR C)` tiene la misma forma que `A`, solo que compuesta.
+
+## La solución
+
+Interpreter propone modelar cada regla de la gramática como una clase con un único método de evaluación, y componerlas en un árbol. Una expresión compuesta evalúa sus hijas y combina los resultados; una expresión terminal lee un dato del contexto y devuelve un valor.
+
+<ClassDiagram
+  caption="Estructura de Interpreter: expresiones terminales y no terminales comparten la misma interfaz, y las no terminales contienen otras expresiones."
+  diagram={`    class PromotionRule {
+        <<interface · abstract expression>>
+        +interpret(Cart) boolean
+    }
+    class MinimumTotalRule {
+        <<terminal expression>>
+        -threshold Money
+        +interpret(Cart) boolean
+    }
+    class CategoryRule {
+        <<terminal expression>>
+        -category String
+        +interpret(Cart) boolean
+    }
+    class AndRule {
+        <<non-terminal expression>>
+        -left PromotionRule
+        -right PromotionRule
+        +interpret(Cart) boolean
+    }
+    class OrRule {
+        <<non-terminal expression>>
+        +interpret(Cart) boolean
+    }
+    class NotRule {
+        <<non-terminal expression>>
+        +interpret(Cart) boolean
+    }
+    class Cart {
+        <<context>>
+        -total Money
+        -lines List~CartLine~
+    }
+
+    PromotionRule <|.. MinimumTotalRule
+    PromotionRule <|.. CategoryRule
+    PromotionRule <|.. AndRule
+    PromotionRule <|.. OrRule
+    PromotionRule <|.. NotRule
+    AndRule --> "2" PromotionRule : left, right
+    OrRule --> "2" PromotionRule : left, right
+    NotRule --> "1" PromotionRule : inner
+    PromotionRule ..> Cart : lee el contexto`}
+/>
+
+## Ejemplo en Java
+
+```java
+// Abstract Expression: toda regla sabe evaluarse contra un carrito
+interface PromotionRule {
+    boolean interpret(Cart cart);
+}
+
+// Terminal Expressions: leen un dato del contexto y deciden
+record MinimumTotalRule(Money threshold) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return cart.total().isGreaterThan(threshold);
+    }
+}
+
+record CategoryRule(String category) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return cart.lines().stream()
+                .anyMatch(line -> line.category().equals(category));
+    }
+}
+
+// Non-terminal Expressions: combinan otras reglas
+record AndRule(PromotionRule left, PromotionRule right) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return left.interpret(cart) && right.interpret(cart);
+    }
+}
+
+record OrRule(PromotionRule left, PromotionRule right) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return left.interpret(cart) || right.interpret(cart);
+    }
+}
+
+record NotRule(PromotionRule inner) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return !inner.interpret(cart);
+    }
+}
+```
+
+```java
+// Client code: "total > $50.000 Y hay algo de trekking, o el cliente es frecuente"
+PromotionRule freeShipping = new OrRule(
+    new AndRule(
+        new MinimumTotalRule(Money.ars(50_000)),
+        new CategoryRule("trekking")
+    ),
+    new LoyaltyTierRule(Tier.GOLD)
+);
+
+boolean applies = freeShipping.interpret(cart);
+```
+
+El árbol de objetos y el árbol sintáctico de la expresión son la misma cosa. Sumar un operador nuevo —`XOR`, o una regla `BetweenDatesRule`— es agregar una clase, sin tocar las que ya funcionan.
+
+<Callout variant="note" title="El parser es otro problema">
+Interpreter define cómo se **evalúa** una expresión ya construida, no cómo se **parsea** el texto que la origina. Convertir `"total > 50000 AND categoria = trekking"` en ese árbol de objetos es responsabilidad de un parser aparte. GoF es explícito en esto: el patrón no dice nada sobre cómo crear el árbol sintáctico.
+</Callout>
+
+## Cuándo usarlo
+
+- Cuando tenés un lenguaje o conjunto de reglas **chico y estable**, con una gramática que se puede escribir en unas pocas producciones.
+- Cuando la eficiencia no es la prioridad y sí lo es que la gramática quede explícita y se pueda extender sin tocar las reglas que ya andan.
+- Cuando quienes definen las reglas no son quienes despliegan el sistema: reglas de negocio configurables, filtros de búsqueda, políticas de acceso, validaciones declarativas.
+
+## Cuándo evitarlo
+
+Interpreter es el patrón del catálogo que más seguido está de más. Tres señales:
+
+- **La gramática es grande o va a crecer.** Cada regla de la gramática implica al menos una clase; una gramática real de veinte producciones se vuelve inmanejable. Para eso existen los generadores de parsers (ANTLR y compañía), y GoF lo dice explícitamente.
+- **Con dos o tres condiciones fijas alcanza.** Si las promociones posibles son tres y las define el mismo equipo que escribe el código, un [Strategy](/diseno/patrones/strategy/) por promoción es más simple y más directo.
+- **La performance importa.** Interpretar un árbol de objetos en cada evaluación es notablemente más lento que compilar la regla una vez.
+
+<Callout variant="warning" title="Lo que nunca es una alternativa">
+Evaluar reglas provistas por usuarios con `eval`, con un motor de scripting embebido sin sandbox, o construyendo SQL por concatenación. Interpreter es, entre otras cosas, la forma segura de resolver esto: la gramática solo puede expresar lo que las clases permiten, así que no hay forma de que una regla se convierta en ejecución arbitraria.
+</Callout>
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|La gramática queda explícita en el código: cada regla es una clase con nombre|Una clase por regla de la gramática; escala mal cuando la gramática crece|
+|Sumar un operador nuevo no modifica los existentes (Open/Closed)|Evaluar un árbol de objetos es lento comparado con una expresión compilada|
+|Acota qué se puede expresar, lo que lo hace seguro para reglas de origen externo|No resuelve el parseo, que casi siempre hay que escribir aparte|
+
+## Relación con otros patrones
+
+- **[Composite](/diseno/patrones/composite/)** es la estructura sobre la que se apoya: el árbol sintáctico es un composite donde las expresiones no terminales son los nodos y las terminales, las hojas.
+- **[Visitor](/diseno/patrones/visitor/)** permite agregar operaciones nuevas sobre el árbol —imprimirlo, optimizarlo, validarlo— sin tocar cada clase de expresión.
+- **[Flyweight](/diseno/patrones/flyweight/)** sirve para compartir las expresiones terminales que se repiten muchas veces en un mismo árbol.
+- **[Iterator](/diseno/patrones/iterator/)** permite recorrer el árbol sin exponer su forma.
+- Se confunde con **[Strategy](/diseno/patrones/strategy/)**, y la diferencia es de escala: Strategy intercambia un algoritmo completo; Interpreter **compone** un comportamiento a partir de piezas gramaticales. Si las reglas posibles son un conjunto cerrado, es Strategy; si se combinan entre sí de formas que no podés enumerar de antemano, es Interpreter.

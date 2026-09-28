@@ -1,0 +1,218 @@
+---
+id: claude-code-skills-subagents-and-hooks
+slug: skills-subagentes-y-hooks
+order: 6
+topic: ai-engineering
+subtopic: claude-code
+section: extension
+title: "Skills, subagentes y hooks"
+description: "Tres formas de extender Claude Code: reutilizar procedimientos, delegar tareas y automatizar acciones. Qué aporta cada una y cuándo usarla."
+created: 2026-09-01
+lastUpdated: 2026-09-01
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+import Icon from '../../../../../../../src/components/Icon.astro';
+
+Claude Code no se limita a responder prompts sueltos: expone piezas que se combinan para armar flujos de trabajo repetibles. Conviene leerlas en este orden: en este artículo, las que corren **dentro** de una sesión (Skills, subagentes y hooks); en [MCP](/ai-engineering/claude-code/mcp/), la conexión con herramientas **externas**; y en [Plugins](/ai-engineering/claude-code/plugins/), el empaquetado de todo lo anterior para distribuirlo. Skills, subagentes y hooks permiten extender Claude Code de distintas maneras.
+
+<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="layers" class="h-5 w-5 text-neutral-400 light:text-neutral-600" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">CLAUDE.md</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">Reglas y contexto persistente</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="sparkles" class="h-5 w-5 text-accent-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Skill</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">Un método reutilizable</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="send" class="h-5 w-5 text-violet-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Subagente</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">Un especialista a quien delegar</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="check" class="h-5 w-5 text-sky-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Hook</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">Una automatización que SIEMPRE ocurre</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="plug" class="h-5 w-5 text-amber-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">MCP</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">Conexión a herramientas externas</p>
+  </div>
+</div>
+
+<div className="card-surface mt-3 flex flex-col gap-2 border-dashed p-4">
+  <div className="flex items-center gap-2">
+    <Icon name="briefcase" class="h-5 w-5 text-neutral-300 light:text-neutral-600" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Plugin</p>
+  </div>
+  <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">
+    Una caja que empaqueta varias de las anteriores para distribuirlas — contiene combinaciones de <strong className="text-neutral-300 light:text-neutral-700">Skill</strong>, <strong className="text-neutral-300 light:text-neutral-700">Subagente</strong>, <strong className="text-neutral-300 light:text-neutral-700">Hook</strong> y <strong className="text-neutral-300 light:text-neutral-700">MCP</strong>.
+  </p>
+</div>
+
+## Skill vs. subagente: la diferencia de fondo
+
+Es la confusión más común, porque ambos especializan a Claude — pero no del mismo modo.
+
+- **Una skill especializa el método.** Dice: "cuando aparezca este tipo de tarea, seguí esta receta, usá estos recursos, esta plantilla, esta validación." Es conocimiento y proceso empaquetado.
+- **Un subagente especializa al ejecutor.** Dice: "delegale este problema a un agente pensado específicamente para este trabajo." Es un rol, con su propio contexto y, muchas veces, sus propias restricciones de herramientas.
+
+Preguntas rápidas para decidir:
+
+| Si... | Usá |
+|---|---|
+| El valor está en el formato/plantilla de salida | **Skill** |
+| El valor está en la especialización de un rol (explorar, auditar seguridad, planificar) | **Subagente** |
+| Necesitás ejemplos, plantillas o scripts empaquetados | **Skill** |
+| Necesitás separar exploración o análisis del hilo principal | **Subagente** |
+| Debe ejecutarse siempre, sin depender de que el modelo "decida" hacerlo | **Hook** |
+| Es una regla corta y estable del proyecto | **CLAUDE.md** |
+
+Y, en la práctica, casi siempre rinde más combinarlas: un subagente explora y detecta patrones → una skill convierte ese análisis en una salida con formato fijo (un PRD, un post, un changelog) → un hook valida el resultado antes de dar la tarea por cerrada.
+
+## Skills: un método que Claude sabe usar cuando toca
+
+Los comandos slash personalizados —antes definidos en `.claude/commands/`— se fusionaron con las skills en versiones recientes: un archivo en `.claude/commands/deploy.md` y una skill en `.claude/skills/deploy/SKILL.md` generan el mismo `/deploy` y se comportan igual. Los definidos a la manera anterior siguen funcionando.
+
+Una skill vive en `.claude/skills/nombre/SKILL.md`, con frontmatter YAML y el cuerpo en Markdown:
+
+```yaml
+---
+name: revisar-pr
+description: >                    # Claude lee esto para decidir cuándo cargarla
+  Revisa el diff de un PR contra las guías de estilo y seguridad del
+  equipo, antes de pedir el review de una persona.
+argument-hint: "[numero-de-pr]"   # hint en el autocompletado
+disable-model-invocation: true    # tiene efectos colaterales (comenta en el PR): solo vos la disparás
+allowed-tools: Read Bash(gh pr diff *)   # pre-aprobadas, sin prompt, mientras corre
+model: sonnet
+effort: medium
+context: fork                     # corre en un subagente aislado
+agent: Explore                    # a qué subagente delega si usás context: fork
+paths: "src/**/*.ts"              # solo se activa cuando tocás estos archivos
+---
+Instrucciones en Markdown para el cuerpo de la skill.
+$ARGUMENTS = todo lo que sigue a /nombre-de-skill
+${CLAUDE_SKILL_DIR} = carpeta donde vive la skill
+```
+
+Dos campos generan confusión y vale la pena tenerlos claros:
+
+- **`disable-model-invocation: true`** → _solo vos_ podés dispararla (con `/nombre`); Claude nunca la va a usar por su cuenta. Pensala para acciones con efectos secundarios donde el timing importa: `/deploy`, `/commit`, `/send-slack-message`.
+- **`user-invocable: false`** → _solo Claude_ puede usarla; no aparece en tu menú `/`. Pensala para conocimiento de fondo que Claude debería aplicar solo, pero que no es una "acción" que vos dispararías a mano (ej.: convenciones de un sistema legacy).
+
+<Callout variant="warning" title="Son ejes independientes, no opuestos">
+Se pueden combinar, pero poner los dos en la posición más restrictiva a la vez deja la skill inalcanzable para todo el mundo. Además, `user-invocable: false` es una preferencia de *interfaz* (no aparece en el menú), no una garantía de que el modelo no la use — el control real sobre eso es `disable-model-invocation`.
+</Callout>
+
+**Cuándo crear una skill:** repetís la misma receta seguido, una parte de tu `CLAUDE.md` ya es un proceso de muchos pasos en vez de una regla, o querés empaquetar instrucciones + plantillas + scripts (auditar un workflow, generar un PRD, redactar posts con un tono fijo).
+
+**Dos ejemplos reales del ecosistema de skills de terceros:**
+
+- **`caveman`** — cambia el *estilo de comunicación* de Claude a uno ultra-comprimido (fragmentos en vez de prosa, sin artículos ni relleno) para reducir tokens de salida sin perder precisión técnica. Es una skill de proceso: no toca qué hace Claude, sino cómo lo cuenta.
+- **`ui-ux-pro-max`** — empaqueta conocimiento de diseño (paletas de producto, pares tipográficos, guías de UX, presets de animación) como una base de datos consultable, para que Claude tome decisiones de UI/UX fundamentadas en vez de "inventar" un estilo genérico. Es una skill de conocimiento de dominio.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener noreferrer">referencia oficial de Skills</a>.
+</p>
+
+## Subagentes: a quién delegarle una tarea
+
+Un subagente se define en Markdown con su propio frontmatter, y **no** recibe el _system prompt_ completo de Claude Code — solo el contenido de su archivo más detalles básicos del entorno:
+
+```yaml
+---
+name: auditor-seguridad
+description: >                    # CRÍTICO para la delegación automática
+  Revisa cambios de código en busca de vulnerabilidades comunes:
+  inyección, secrets, validación y permisos. Use proactively después
+  de cualquier cambio en rutas de la API.
+tools: Read, Grep, Glob, Bash(npm audit)   # allowlist de herramientas
+model: opus                       # sonnet | opus | haiku | inherit
+permissionMode: default
+maxTurns: 15
+memory: project                   # memoria persistente entre sesiones
+background: false
+isolation: worktree                # copia aislada del repo vía git worktree
+---
+System prompt del subagente en Markdown.
+```
+
+Claude Code trae subagentes integrados como **Explore** (búsqueda y análisis de código, modelo rápido, solo lectura) y **Plan**. Tiene sentido crear uno propio cuando la tarea es más "rol especializado" que "receta de formato": un revisor de seguridad, un analista de performance, un investigador de incidentes.
+
+**Subagentes propios habituales en un equipo:**
+
+| Subagente | Rol |
+|---|---|
+| `code-reviewer` | Revisa un diff o PR buscando bugs, deuda técnica y desvíos de estilo, sin tocar el código |
+| `debugger` | Trabaja aislado para reproducir un bug, formular hipótesis y confirmarlas con evidencia antes de tocar nada |
+| `planner` | Convierte un requerimiento ambiguo en un plan de implementación paso a paso, sin escribir código |
+| `test-runner` | Corre la suite de tests, interpreta fallos y reporta solo lo accionable |
+| `security-auditor` | Busca vulnerabilidades comunes (inyección, secrets, permisos) en cambios de código |
+| `docs-writer` | Redacta o actualiza documentación a partir del código, con un tono y formato fijos |
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: <a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener noreferrer">referencia oficial de Subagentes</a>.
+</p>
+
+## Hooks: lo que debe pasar sí o sí
+
+Un hook es un script (o endpoint HTTP, prompt de un modelo, o subagente) que se dispara automáticamente en un punto del ciclo de vida. La diferencia con `CLAUDE.md` es la clave: `CLAUDE.md` es una sugerencia que el modelo puede o no seguir; un hook es **determinista**.
+
+> Si `CLAUDE.md` es un cartel de "por favor, cerrá la puerta al salir", un hook es el mecanismo que la cierra solo, siempre.
+
+**Los cuatro tipos de handler:**
+
+| Tipo | Para qué |
+|---|---|
+| `command` | Scripts locales, validaciones rápidas, formateo, notificaciones |
+| `http` | Integración con servicios externos, webhooks, APIs de equipo |
+| `prompt` | Decisiones que requieren juicio semántico, no una regla fija |
+| `agent` | Validaciones complejas que necesitan inspeccionar archivos o código |
+
+**Eventos más usados en flujos profesionales:**
+
+| Evento | Se dispara | Uso típico |
+|---|---|---|
+| `SessionStart` | Al iniciar/reanudar sesión | Cargar contexto, variables de entorno |
+| `UserPromptSubmit` | Al enviar un prompt, antes de procesarlo | Enriquecer o validar el prompt |
+| `PreToolUse` | Antes de ejecutar una herramienta | Validar, bloquear o modificar el input — el más usado para seguridad |
+| `PostToolUse` | Después de que una herramienta corre con éxito | Lint, formateo, logging |
+| `PostToolUseFailure` | Después de que una herramienta falla | Logging de errores, alertas |
+| `Stop` | Cuando Claude termina de responder | Tests finales, forzar que continúe |
+| `SubagentStop` | Cuando termina un subagente | Validar su output |
+| `Notification` | Cuando Claude envía una alerta | Notificaciones de escritorio/Slack |
+
+**Exit codes (para hooks `command`):**
+
+- **Exit 0** → éxito. El `stdout` se parsea como JSON para campos de control; en `UserPromptSubmit` y `SessionStart` se agrega como contexto visible para Claude.
+- **Exit 2** → error bloqueante. El `stderr` se le manda a Claude como error, y bloquea la operación (en los eventos que lo soportan, como `PreToolUse`, `Stop` o `UserPromptSubmit`).
+- **Cualquier otro código** → error no bloqueante. Ojo con este: **el exit code 1 NO bloquea nada**, es una fuente clásica de bugs. Si tu hook tiene que impedir una acción, usá `exit 2`.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/block-payments-writes.sh" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "npx eslint --fix $(jq -r '.tool_input.file_path')" }]
+      }
+    ]
+  }
+}
+```
+
+Este es el subsistema que cambia con más frecuencia en Claude Code: en septiembre de 2026 la lista oficial supera los 30 eventos (incluye `PreCompact`, `ConfigChange`, `FileChanged`, `TaskCreated`, entre otros más específicos), y no todos bloquean vía `exit 2`. Antes de apoyarte en un hook nuevo para algo crítico, conviene confirmar el comportamiento exacto del evento en la [documentación oficial](https://code.claude.com/docs/en/hooks).
+
+Skills, subagentes y hooks especializan lo que ocurre **dentro** de una sesión. Para conectar Claude Code con herramientas que viven fuera de la máquina, el mecanismo es [MCP](/ai-engineering/claude-code/mcp/).

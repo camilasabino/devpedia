@@ -1,0 +1,115 @@
+---
+id: flyweight-pattern
+slug: flyweight
+order: 15
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Flyweight"
+description: "When many objects share information, storing it once can cut memory use. How to separate shared state from the state that depends on each context."
+created: 2026-06-30
+lastUpdated: 2026-06-30
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Flyweight** is a structural pattern that lets you hold more objects in memory by sharing the part of their state that repeats.
+
+## The problem
+
+AndesShop's "Trekking" category page shows thousands of products at once, and each product card can carry one or more visual badges — "New", "Sale", "Last few left". If each card creates its own `Badge` object with the badge's icon, color, and text, you end up with thousands of objects holding exactly the same three pieces of data repeated ("Sale" is always the same icon, the same orange, the same text). The only real difference is which product each badge belongs to.
+
+## The solution
+
+Flyweight splits an object's state in two: the **intrinsic state**, identical across many instances and therefore shareable (the icon, the color, and the text of "Sale"), and the **extrinsic state**, specific to each use (which product it belongs to, where it's displayed). The client code passes the extrinsic state as a parameter when using it. A factory always returns the same shared object for the same intrinsic state, instead of creating a new one each time.
+
+<ClassDiagram
+  caption="The structure of Flyweight: the intrinsic state lives once in the shared flyweight; the extrinsic state is supplied by each context at call time."
+  diagram={`    class BadgeStyle {
+        <<flyweight · shared intrinsic state>>
+        -icon String
+        -color String
+        -label String
+        +render(String sku, int x, int y) String
+    }
+    class BadgeFactory {
+        -cache Map~String, BadgeStyle~
+        +getBadge(String type) BadgeStyle
+    }
+    class ProductBadge {
+        <<context · extrinsic state>>
+        -sku String
+        -x int
+        -y int
+        -style BadgeStyle
+        +draw() String
+    }
+    BadgeFactory o-- "0..*" BadgeStyle : cache of shared instances
+    ProductBadge --> "1" BadgeStyle : shared style
+    ProductBadge ..> BadgeFactory : asks for the flyweight`}
+/>
+
+## Example in Java
+
+```java
+// Flyweight: holds only the intrinsic state, shared across many products
+class BadgeStyle {
+    private final String icon;
+    private final String color;
+    private final String label;
+
+    public BadgeStyle(String icon, String color, String label) {
+        this.icon = icon;
+        this.color = color;
+        this.label = label;
+    }
+
+    // The extrinsic state (productSku) arrives as a parameter, it isn't stored here
+    public String render(String productSku) {
+        return icon + " " + label + " (" + productSku + ")";
+    }
+}
+
+// Factory: guarantees a single BadgeStyle instance per type
+class BadgeFactory {
+    private final Map<String, BadgeStyle> cache = new HashMap<>();
+
+    public BadgeStyle getBadge(String type) {
+        return cache.computeIfAbsent(type, t -> switch (t) {
+            case "OFFER" -> new BadgeStyle("🏷️", "orange", "Sale");
+            case "NEW" -> new BadgeStyle("✨", "blue", "New");
+            default -> throw new IllegalArgumentException("Unknown badge type: " + t);
+        });
+    }
+}
+```
+
+```java
+// Client code: thousands of product cards, a handful of BadgeStyle instances
+BadgeFactory factory = new BadgeFactory();
+for (Product product : catalogPage) {
+    BadgeStyle badge = factory.getBadge("OFFER"); // the same instance for every sale badge
+    System.out.println(badge.render(product.getSku()));
+}
+```
+
+## When to use it
+
+- When you have a very large number of objects sharing a good part of their state, and that's noticeably consuming memory.
+- When that shared state can be cleanly separated from the state that does vary per instance.
+
+## When to avoid it
+
+With a moderate number of objects, or when the shareable state is small compared to what varies, the memory savings don't make up for the extra complexity of separating intrinsic and extrinsic state.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Cuts memory use when there are thousands of instances with the same intrinsic state|The code gains complexity from separating intrinsic and extrinsic state|
+|Changing how "Sale" looks is done once, not across thousands of instances|The extrinsic state has to be recalculated or passed every time, which can cost CPU in exchange for memory|
+
+## Relationship with other patterns
+
+- It's often combined with **[Facade](/en/design/patterns/facade/)** or a dedicated factory that hides the instance-sharing process.
+- It differs from **[Singleton](/en/design/patterns/singleton/)** in that Flyweight shares many different instances (one per combination of intrinsic state), not one single global instance.

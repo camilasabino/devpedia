@@ -1,0 +1,71 @@
+---
+import DiagramFigure from '../DiagramFigure.astro';
+
+// UML use case notation: stick-figure actors outside a system boundary rectangle,
+// use cases as ellipses inside it, plain association lines between them, and an
+// «include» dependency drawn as a dashed open arrow.
+//
+// The caption is the diagram's accessible name, so it follows the language of the
+// page it is rendered into (these figures are embedded from MDX and cannot be
+// handed a `lang` prop).
+import { langFromPath } from '../../../i18n';
+
+const CAPTION = {
+  es: 'Diagrama de casos de uso UML del sistema de Payments: dos actores, tres casos de uso dentro del límite del sistema, y una dependencia «include».',
+  en: 'UML use case diagram for the Payments system: two actors, three use cases inside the system boundary, and one «include» dependency.',
+} as const;
+
+const caption = CAPTION[langFromPath(Astro.url.pathname)];
+---
+
+<DiagramFigure
+  caption={caption}
+  viewBox="0 0 620 300"
+>
+  <!-- System boundary -->
+  <rect x="200" y="24" width="330" height="252" rx="6" class="uml-boundary" />
+  <text x="365" y="45" text-anchor="middle" class="uml-title">PAYMENT SYSTEM</text>
+
+  <!-- Actor: Customer -->
+  <g class="uml-figure" transform="translate(60 78)">
+    <circle cx="0" cy="-16" r="8" />
+    <path d="M0 -8 V14 M-13 0 H13 M0 14 -11 32 M0 14 11 32" />
+  </g>
+  <text x="60" y="132" text-anchor="middle">Customer</text>
+
+  <!-- Actor: Payment Provider -->
+  <g class="uml-figure" transform="translate(60 200)">
+    <circle cx="0" cy="-16" r="8" />
+    <path d="M0 -8 V14 M-13 0 H13 M0 14 -11 32 M0 14 11 32" />
+  </g>
+  <text x="60" y="254" text-anchor="middle">Payment</text>
+  <text x="60" y="268" text-anchor="middle">Provider</text>
+
+  <!-- Use cases -->
+  <ellipse cx="310" cy="88" rx="78" ry="26" class="uml-shape" />
+  <text x="310" y="92" text-anchor="middle">Authorize Payment</text>
+
+  <ellipse cx="310" cy="166" rx="78" ry="26" class="uml-shape" />
+  <text x="310" y="170" text-anchor="middle">Refund Payment</text>
+
+  <ellipse cx="310" cy="242" rx="78" ry="26" class="uml-shape" />
+  <text x="310" y="246" text-anchor="middle">Process Webhook</text>
+
+  <ellipse cx="452" cy="132" rx="52" ry="23" class="uml-shape" />
+  <text x="452" y="136" text-anchor="middle">Verify Card</text>
+
+  <!-- Associations (plain lines, no arrowheads) -->
+  <path d="M92 96 L232 88" class="uml-line" />
+  <path d="M92 104 L232 166" class="uml-line" />
+  <path d="M92 216 L232 242" class="uml-line" />
+
+  <!-- «include» dependency: dashed line, open arrowhead -->
+  <path d="M384 100 L398 118" class="uml-dashed" marker-end="url(#uc-open-arrow)" />
+  <text x="398" y="94" class="uml-stereotype">«include»</text>
+
+  <defs>
+    <marker id="uc-open-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="currentColor" stroke-width="1.4" />
+    </marker>
+  </defs>
+</DiagramFigure>

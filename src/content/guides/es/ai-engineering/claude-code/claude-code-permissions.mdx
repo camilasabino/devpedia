@@ -1,0 +1,112 @@
+---
+id: claude-code-permissions
+slug: permisos
+order: 5
+topic: ai-engineering
+subtopic: claude-code
+section: context-and-control
+title: "Permisos en Claude Code"
+description: "Cómo definir qué acciones puede ejecutar el agente, cuáles requieren confirmación y cuáles deben quedar bloqueadas."
+created: 2026-08-28
+lastUpdated: 2026-09-10
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+import PermissionCascade from '../../../../../components/mdx/PermissionCascade.astro';
+
+La pregunta que define este artículo es simple: **¿cuánto confiás en lo que Claude va a hacer sin preguntar?** Claude Code separa esa respuesta en dos capas que conviene entender por separado: los **modos** (comportamiento por defecto) y las **reglas** (excepciones puntuales).
+
+## Los 6 modos de permiso
+
+| Modo | Qué permite | Cuándo usarlo |
+|---|---|---|
+| **default**, mostrado como **"Manual"** desde v2.1.200 | Solo lectura sin preguntar; cualquier edición o comando pide aprobación | Trabajo sensible, repos desconocidos |
+| **acceptEdits** | Lee y edita archivos sin interrupciones | Estás iterando sobre código que vos mismo revisás activamente después |
+| **plan** | Solo lectura, ni edita ni ejecuta | Explorar un codebase nuevo o planificar un refactor antes de tocar nada |
+| **auto** | Todas las acciones, con un clasificador automático que verifica en segundo plano | Tareas largas donde querés reducir la fatiga de aprobar todo el tiempo |
+| **dontAsk** | Solo ejecuta herramientas pre-aprobadas explícitamente | Pipelines CI/CD y scripts automatizados |
+| **bypassPermissions** | Todo sin verificaciones | Únicamente en contenedores o VMs aisladas — nunca en tu máquina principal |
+
+<Callout variant="note" title="En qué modo arranca una sesión">
+No siempre arranca en Manual. En planes Pro, Max y Team, en terminal o con la extensión de VS Code, el modo inicial por defecto es **`auto`**. Con `claude -p`, con el Agent SDK, con un plan Enterprise o con una API key de la consola, arranca en `default`. Un `--permission-mode` explícito o un `permissions.defaultMode` en `settings.json` tienen prioridad sobre cualquiera de los dos.
+
+Vale la pena confirmarlo antes de suponer que tu sesión pide permiso por cada cosa: puede que no lo esté haciendo.
+</Callout>
+
+**Cómo se cambia:**
+
+```bash
+# Durante una sesión: Shift+Tab rota entre los modos disponibles.
+# bypassPermissions solo entra en el ciclo si arrancaste con
+# --dangerously-skip-permissions.
+
+claude --permission-mode plan
+claude --permission-mode acceptEdits
+claude --permission-mode auto
+claude --permission-mode dontAsk               # pensado para CI
+claude --permission-mode bypassPermissions     # solo en entornos aislados
+```
+
+Hay dos valores que no se aceptan desde `.claude/settings.json` ni `settings.local.json`: `auto` se ignora, y `bypassPermissions` hace que la sesión arranque en Manual. Es deliberado: son decisiones de quien lanza la sesión, no de un archivo commiteado en el repo.
+
+<Callout variant="warning" title="Lo que ningún modo aprueba solo">
+Ni siquiera `bypassPermissions` auto-aprueba todo. Quedan afuera, entre otras cosas: las herramientas que coinciden con una regla `ask` explícita, las que requieren interacción del usuario, y los borrados con `rm` o `rmdir` sobre rutas críticas. Las reglas `deny` de configuración administrada se aplican pase lo que pase.
+
+Las escrituras sobre rutas protegidas (`.git`, `.claude` y compañía) tampoco se auto-aprueban, salvo justamente en `bypassPermissions`.
+</Callout>
+
+## Reglas personalizadas: deny → ask → allow
+
+Además de los modos, hay un sistema de reglas granulares por herramienta. Se evalúan en este orden, y **gana la primera regla que coincide**:
+
+<PermissionCascade
+  gates={[
+    { question: '¿Coincide con una regla deny?', outcome: 'Bloqueado. Punto.', tone: 'block' },
+    { question: '¿Coincide con una regla ask?', outcome: 'Pide confirmación', tone: 'ask' },
+    { question: '¿Coincide con una regla allow?', outcome: 'Se ejecuta sin preguntar', tone: 'allow' },
+  ]}
+  fallback="comportamiento por defecto del modo activo"
+/>
+
+`deny` siempre gana: ni `bypassPermissions` puede anular un `deny` de configuración administrada, ni `acceptEdits` puede levantar un `Edit(...)` denegado.
+
+**Sintaxis:** `Herramienta` o `Herramienta(especificador)`.
+
+```jsonc
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test*)",       // cualquier comando que empiece con "npm test"
+      "Bash(docker compose *)",
+      "Bash(git log*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(~/.ssh/*)",
+      "WebFetch(domain:vault.miempresa.internal)"
+    ]
+  }
+}
+```
+
+Algunos detalles que conviene tener presentes:
+
+- **El espacio antes de `*` importa:** `Bash(ls *)` exige un espacio o fin de cadena después de `ls` (no coincide con `lsof`); `Bash(ls*)` sí coincide con ambos. `Bash(ls:*)` es la sintaxis moderna equivalente a `Bash(ls *)`.
+- **Los operadores de shell se evalúan por separado:** una regla `Bash(comando-seguro *)` no habilita `comando-seguro && comando-peligroso`, porque Claude Code entiende `&&`, `||` y `;` y evalúa cada subcomando.
+- **`Read`/`Edit` usan sintaxis estilo `.gitignore`:** `//ruta` es absoluta desde la raíz del filesystem, `~/ruta` desde tu home, `/ruta` es relativa a la raíz del **proyecto** (ojo, no del filesystem — `/Users/alice/file` es relativo al proyecto, no una ruta absoluta real) y `ruta` o `./ruta` es relativa al directorio actual.
+- **Límite importante:** las reglas `deny` de `Read`/`Edit` bloquean las herramientas internas de Claude, pero **no** bloquean lo que hagas vía `Bash` (un `cat .env` en Bash no lo frena una regla `Read(./.env)`). Para bloqueo real a nivel de sistema operativo hace falta un [**sandbox**](https://code.claude.com/docs/en/sandboxing), que combina las reglas `deny` con su propia lista de dominios permitidos para la red.
+
+## Qué agrega cada modo por encima de las reglas
+
+Los modos son el interruptor general; las reglas son el filtro fino. Un ejemplo de cómo interactúan:
+
+- En **plan**, aunque tengas `Edit(/src/**)` en `allow`, el modo no permite editar nada — es más restrictivo que las reglas permisivas.
+- En **auto**, al entrar al modo se descartan automáticamente reglas `allow` peligrosas como `Bash(*)` o `Agent(*)`, porque darían ejecución arbitraria antes de que el clasificador las evaluara. Las reglas específicas (`Bash(npm test)`) se mantienen. Al salir, se restauran.
+- En **dontAsk**, incluso las reglas `ask` se convierten en denegación — todo lo que no está explícitamente en `allow` se rechaza. Ideal para CI.
+
+Este es uno de los rincones de Claude Code que más rápido evoluciona. Antes de fijar una política de permisos para todo el equipo, conviene confirmar el comportamiento vigente en la [documentación oficial](https://code.claude.com/docs/en/permission-modes).
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: <a href="https://code.claude.com/docs/en/permissions" target="_blank" rel="noopener noreferrer">sintaxis completa de reglas</a> y{' '}
+  <a href="https://code.claude.com/docs/en/settings" target="_blank" rel="noopener noreferrer">referencia de settings.json</a>, donde viven todas estas reglas en disco.
+</p>

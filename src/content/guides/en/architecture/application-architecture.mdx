@@ -1,0 +1,223 @@
+---
+id: application-architecture
+slug: application-architecture
+order: 5
+topic: architecture
+section: domain-and-structure
+title: "Application architecture"
+description: "How to organize the code and keep business logic separate from technical details like data access and communication with other systems."
+created: 2026-05-12
+lastUpdated: 2026-05-12
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Once the structure of the system is settled, one question remains:
+
+> **How do we organize the code inside each application or module?**
+
+Two different ideas show up here: **splitting strategies** and **domain-centric architectures**.
+
+## Splitting strategies
+
+A splitting strategy decides how to carve up the code: **horizontally** or **vertically**.
+
+### By layer — horizontal split
+
+Organizes the code by technical responsibility:
+
+```text
+payments/
+├── controllers/
+├── services/
+├── repositories/
+├── entities/
+└── dto/
+```
+
+The typical flow of a request is:
+
+<MermaidDiagram code={`flowchart TD
+    H["HTTP"] --> C["Controller"] --> S["Service"] --> R["Repository"] --> DB[("Database")]`} />
+
+Say we need to add `Refund Payment`. We'll probably end up touching `RefundController`, `PaymentService`, `PaymentRepository`, `PaymentEntity`, and `RefundDTO`. That feature's change is split across several layers instead of sitting together in one place.
+
+**Benefit**
+
+It's simple to understand and can work very well in small applications.
+
+**Problem**
+
+As features grow, _feature locality_ drops:
+
+<MermaidDiagram code={`flowchart TD
+    F["Payment feature"] --> C["controllers"]
+    F --> S["services"]
+    F --> R["repositories"]
+    F --> E["entities"]
+    F --> D["dto"]`} />
+
+A business change forces you to walk through many parts of the structure.
+
+### By feature — vertical split
+
+A vertical split reorganizes the code around features or use cases:
+
+```text
+payments/
+│
+├── authorize-payment/
+│   ├── endpoint
+│   ├── validator
+│   ├── handler
+│   └── repository
+│
+├── capture-payment/
+│   ├── endpoint
+│   ├── validator
+│   ├── handler
+│   └── repository
+│
+└── refund-payment/
+    ├── endpoint
+    ├── validator
+    ├── handler
+    └── repository
+```
+
+A feature can cut through every layer it needs:
+
+<MermaidDiagram code={`flowchart LR
+    RP["Refund Payment"] --> H["HTTP"]
+    RP --> V["Validation"]
+    RP --> AL["Application logic"]
+    RP --> DL["Domain logic"]
+    RP --> P["Persistence"]`} />
+
+The main benefit is **locality of change**: when Refund Payment changes, most of the work is concentrated in one place.
+
+**A vertical split is not CQRS**
+
+Vertical slicing, CQRS, and DDD can be combined, but they're different concepts. A vertical split mostly describes **how we organize the code**. CQRS separates the responsibilities of _commands_ and _queries_.
+
+**It doesn't replace dependency inversion either**
+
+An application can combine a vertical split with Hexagonal Architecture:
+
+```text
+refund-payment/
+├── RefundPaymentHandler
+├── RefundPaymentValidator
+├── RefundPaymentController
+└── RefundPaymentPort
+```
+
+while the concrete adapters live in infrastructure.
+
+**Main reference**
+
+Jimmy Bogard popularized the term **Vertical Slice Architecture** for organizing applications around features instead of technical layers. [Vertical Slice Architecture — Jimmy Bogard](https://www.jimmybogard.com/vertical-slice-architecture/).
+
+## Domain-centric architectures
+
+Splitting strategies answer "how do we organize the code?". Hexagonal, Onion, and Clean put the emphasis on a different question:
+
+> **How do we keep business rules from being coupled to infrastructure details?**
+
+<MermaidDiagram code={`flowchart TD
+    I["Infrastructure"] --> A["Application"] --> D["Domain"]`} />
+
+The goal is for the core to be relatively independent of the database, HTTP, the framework, a message broker, a cloud provider, and external APIs.
+
+### Hexagonal Architecture
+
+Domain-centric architectures are, at bottom, the [dependency inversion principle](/en/design/principles/solid/#d--dependency-inversion-principle) applied at the scale of a whole application: the domain defines the ports and infrastructure implements them, so the dependency arrow always points inward.
+
+Also called **ports and adapters**.
+
+<MermaidDiagram code={`flowchart TD
+    HTTP["HTTP"] --> AD["Adapter"] --> IP["Input Port"] --> App["Application"] --> Dom["Domain"] --> OP["Output Port"]
+    OP --> PG["PostgreSQL Adapter"]
+    OP --> PP["Payment Provider Adapter"]`} />
+
+The core defines ports; adapters implement those ports:
+
+```text
+PaymentRepository
+        ▲
+        │ implements
+        │
+PostgresPaymentRepository
+```
+
+This keeps the domain from knowing about PostgreSQL.
+
+**Example**
+
+```text
+Domain
+  └── PaymentRepository
+
+Infrastructure
+  └── PostgresPaymentRepository
+```
+
+The application can swap PostgreSQL for another store without changing the domain's main rules.
+
+### Onion Architecture
+
+The fundamental idea is that dependencies point toward the center:
+
+<MermaidDiagram code={`flowchart TD
+    subgraph Infra["Infrastructure"]
+        subgraph App["Application"]
+            subgraph Dom["Domain"]
+                Core["Domain core"]
+            end
+        end
+    end`} />
+
+The domain is the core.
+
+### Clean Architecture
+
+Clean Architecture proposes a similar approach:
+
+<MermaidDiagram code={`flowchart TD
+    FD["Frameworks & Drivers"] --> IA["Interface Adapters"] --> UC["Application / Use Cases"] --> BR["Business Rules"]`} />
+
+Its fundamental rule is:
+
+> **Dependencies must point inward.**
+
+The domain shouldn't depend on Spring, Hibernate, PostgreSQL, Kafka, AWS, or HTTP. Those technologies can depend on the abstractions the core defines.
+
+## Hexagonal vs. Onion vs. Clean
+
+They're conceptually close:
+
+|Style|Central idea|
+|---|---|
+|Hexagonal|Ports and adapters|
+|Onion|Dependencies point inward|
+|Clean|Dependency rule + use cases + boundaries|
+
+It's not worth treating them as three completely different solutions. A real application can even combine ideas from all three.
+
+**When to use domain-centric architectures**
+
+It makes a lot of sense when:
+
+- the domain has complex rules;
+- the system has to survive infrastructure changes;
+- you want to test business logic in isolation;
+- there are multiple adapters;
+- the application will have a long life.
+
+**When to avoid it**
+
+For a very simple application (`GET /products`, `POST /products`), introducing five layers, multiple ports, and an enterprise structure can add complexity without enough benefit.
+
+**Common technologies**
+
+This approach shows up frequently in Spring Boot, .NET, NestJS, Kotlin, Java, and TypeScript. The framework doesn't determine the architecture.

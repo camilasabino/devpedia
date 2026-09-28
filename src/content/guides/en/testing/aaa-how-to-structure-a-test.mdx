@@ -1,0 +1,45 @@
+---
+id: aaa-how-to-structure-a-test
+slug: aaa-how-to-structure-a-test
+order: 4
+topic: testing
+section: unit-testing
+title: "AAA: how to structure a test"
+description: "Set up the scenario, run an action, check the result. How to use Arrange, Act, Assert to write tests that are easy to follow."
+created: 2026-08-03
+lastUpdated: 2026-08-03
+---
+
+One of the most widely used patterns for structuring a unit test is **AAA: Arrange, Act, Assert**.
+
+```text
+Arrange → Act → Assert
+```
+
+**Arrange** sets up the state the test needs in order to run.
+**Act** runs the behavior we want to verify — it's generally better to have a single main action, so the test's purpose is obvious.
+**Assert** checks the expected result.
+
+```typescript
+describe('calculateCancellationFee', () => {
+  it('charges 50% of the deposit when cancelled with less than 24h notice', () => {
+    // Arrange
+    const deposit = Money.of(2000);
+    const hoursBeforeReservation = 3;
+
+    // Act
+    const fee = calculateCancellationFee(deposit, hoursBeforeReservation);
+
+    // Assert
+    expect(fee).toEqual(Money.of(1000));
+  });
+});
+```
+
+The value of AAA isn't in writing a comment on each block. Its real benefit is that it makes the test's intent obvious — given this state, when this behavior happens, then this should be true — which is why it lines up naturally with the _Given/When/Then_ format from [What is testing](/en/testing/what-is-testing/).
+
+**One action per test.** If the Act block has three calls, the test is usually verifying three behaviors and its name can't describe all of them. When it fails, the message doesn't say which one broke.
+
+**A single concept, not a single line.** It doesn't mean a single `expect` line: it means a single concept verified. Checking the four fields of a newly created `Reservation` is one concept; also checking that the email was sent is another, and it goes in another test.
+
+When `ReservationService` depends on other components, you have to decide what to replace and with what: that's what [test doubles](/en/testing/test-doubles/) are about.

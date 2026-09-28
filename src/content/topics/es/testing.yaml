@@ -1,0 +1,17 @@
+id: testing
+slug: testing
+order: 3
+title: Testing
+description: >-
+  Principios, estrategias y prácticas para evaluar el comportamiento
+  y la calidad del software.
+icon: shield
+sections:
+  - id: fundamentals
+    title: Fundamentos
+  - id: unit-testing
+    title: Tests unitarios
+  - id: test-levels
+    title: Niveles de testing
+  - id: non-functional
+    title: Testing no funcional

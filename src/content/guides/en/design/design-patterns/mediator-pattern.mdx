@@ -1,0 +1,123 @@
+---
+id: mediator-pattern
+slug: mediator
+order: 21
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Mediator"
+description: "How to centralize coordination between objects to reduce their direct dependencies and simplify their interactions."
+created: 2026-07-10
+lastUpdated: 2026-07-10
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Mediator** is a behavioral pattern that reduces coupling between objects that call each other too much: instead of referencing each other, they communicate through a mediator.
+
+## The problem
+
+AndesShop's checkout form has several fields that affect each other: choosing express shipping disables cash on delivery; applying a coupon recalculates the total, which can enable or disable certain free shipping methods; changing the address can invalidate a coupon that only applies to certain areas. If every form component knows and directly calls the others to notify them of these changes, the form ends up a web of cross-references where touching one component means understanding how it affects all the rest.
+
+## The solution
+
+Mediator centralizes that coordination in a separate object. Each form component only knows the mediator, never the other components directly: when it changes, it tells the mediator, and the mediator is the one that decides which other components have to react and how.
+
+<ClassDiagram
+  caption="The structure of Mediator: the components don't know each other, only the mediator, which centralizes how they react to one another."
+  diagram={`    class CheckoutMediator {
+        <<interface>>
+        +notify(Component, String event) void
+    }
+    class CheckoutForm {
+        -shipping ShippingMethodField
+        -coupon CouponField
+        -payment PaymentMethodField
+        +notify(Component, String event) void
+    }
+    class Component {
+        <<abstract · colleague>>
+        #mediator CheckoutMediator
+        +changed(String event) void
+    }
+    class ShippingMethodField
+    class CouponField
+    class PaymentMethodField
+
+    CheckoutMediator <|.. CheckoutForm
+    Component <|-- ShippingMethodField
+    Component <|-- CouponField
+    Component <|-- PaymentMethodField
+    Component --> "1" CheckoutMediator : mediator
+    CheckoutForm --> "3" Component : colleagues`}
+/>
+
+## Example in Java
+
+```java
+// The method is called notifyMediator, not notify: Object.notify() already exists
+// on every Java object for thread synchronization, and reusing that name for
+// something completely different confuses anyone reading the class later.
+interface CheckoutMediator {
+    void notifyMediator(Object sender, String event);
+}
+
+class ShippingMethodField {
+    private final CheckoutMediator mediator;
+
+    public ShippingMethodField(CheckoutMediator mediator) {
+        this.mediator = mediator;
+    }
+
+    public void selectExpress() {
+        mediator.notifyMediator(this, "EXPRESS_SELECTED");
+    }
+}
+
+class PaymentMethodField {
+    public void disableCashOnDelivery() {
+        System.out.println("Cash on delivery disabled");
+    }
+}
+
+// The concrete Mediator: it knows every component and decides how they react
+class CheckoutForm implements CheckoutMediator {
+    private final PaymentMethodField paymentField = new PaymentMethodField();
+
+    public void notifyMediator(Object sender, String event) {
+        if (sender instanceof ShippingMethodField && event.equals("EXPRESS_SELECTED")) {
+            paymentField.disableCashOnDelivery();
+        }
+        // other sender/event combinations are handled here, in one place
+    }
+}
+```
+
+```java
+// Client code
+CheckoutForm form = new CheckoutForm();
+ShippingMethodField shippingField = new ShippingMethodField(form);
+shippingField.selectExpress(); // triggers the chain reaction, coordinated by the mediator
+```
+
+## When to use it
+
+- When you notice a group of objects communicating in a web of direct references that's hard to follow, and changing one means reviewing all the others.
+- When you want to reuse a component (a form field, a widget) in another context, without dragging along direct calls to the rest of the original context's components.
+
+## When to avoid it
+
+If there are only two or three objects with a simple, stable relationship between them, a Mediator adds an intermediate class for a problem that doesn't exist yet.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The components stop referencing each other; they all depend on the mediator|The mediator can end up accumulating too much logic and turning into an all-powerful object|
+|A shipping or coupon field can be reused in another form without dragging along calls to the rest|It adds an extra hop of indirection for any interaction between components|
+|The coordination lives in one place, instead of being scattered as rules across each field||
+
+## Relationship with other patterns
+
+- It differs from **[Facade](/en/design/patterns/facade/)** in that Facade simplifies access to a subsystem from outside; Mediator coordinates communication between peers that are already part of the same subsystem.
+- **[Observer](/en/design/patterns/observer/)** is sometimes used to implement the communication between the components and the mediator.

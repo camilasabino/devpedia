@@ -1,0 +1,105 @@
+---
+id: commonly-confused-patterns
+slug: patrones-que-suelen-confundirse
+order: 28
+topic: design
+subtopic: design-patterns
+section: reference
+title: "Patrones de diseño que suelen confundirse"
+description: "Algunos patrones tienen estructuras parecidas, pero resuelven problemas distintos. Qué los diferencia y cómo reconocer cuándo usar cada uno."
+created: 2026-07-24
+lastUpdated: 2026-07-24
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+Buena parte del catálogo GoF comparte estructura. Adapter, Decorator y Proxy envuelven un objeto y delegan; Factory Method y Abstract Factory crean objetos detrás de una abstracción; Strategy y State delegan comportamiento a un objeto intercambiable. Mirando solo el diagrama de clases, varios son indistinguibles.
+
+Lo que los separa no es la estructura sino la **intención**: qué problema estaban resolviendo. Este artículo recorre los cinco grupos donde esa confusión aparece más seguido y, para cada uno, la pregunta que los desambigua.
+
+<Callout variant="key" title="Por qué importa el nombre correcto">
+El valor principal de un patrón es el vocabulario compartido. Decir "esto es un Proxy" cuando en realidad es un Decorator hace que quien lee el código espere control de acceso y se encuentre con comportamiento agregado. El nombre equivocado comunica peor que ningún nombre.
+</Callout>
+
+Los artículos de cada patrón desarrollan el problema, el código y el cuándo usarlo. Acá el foco es otro: nombrar bien algo que ya está escrito, o entender qué esperaba quien lo escribió.
+
+## Wrappers: Adapter, Decorator, Proxy — y Facade
+
+[Adapter](/diseno/patrones/adapter/) y [Decorator](/diseno/patrones/decorator/) se llaman también _Wrapper_. [Proxy](/diseno/patrones/proxy/) entra en el mismo grupo: los tres reciben un objeto, guardan una referencia y delegan. [Facade](/diseno/patrones/facade/) se cuela en la comparación porque también se interpone delante de otro código, pero no envuelve un objeto: ofrece una entrada simple a un *subsistema*.
+
+La diferencia entre los tres wrappers está en **qué cambian al delegar**.
+
+| Patrón | ¿Cambia la interfaz? | ¿Cambia el comportamiento? | ¿Cuántos objetos? | Intención |
+|---|---|---|---|---|
+| [Adapter](/diseno/patrones/adapter/) | Sí | No | Uno | Hacer compatible lo que no lo era |
+| [Decorator](/diseno/patrones/decorator/) | No | Sí, agrega | Uno | Sumar responsabilidades sin heredar |
+| [Proxy](/diseno/patrones/proxy/) | No | No: controla el acceso | Uno | Decidir *si* y *cuándo* se llega al objeto real |
+| [Facade](/diseno/patrones/facade/) | Sí, la simplifica | No | Varios | Dar una entrada simple a un subsistema |
+
+La pregunta que ordena el grupo:
+
+- **¿La interfaz de salida es distinta de la de entrada?** Si envuelve un objeto para traducirlo, es Adapter. Si concentra varios para simplificar, es Facade.
+- **¿La interfaz es la misma?** Entonces es Decorator o Proxy. Si el wrapper **agrega** comportamiento observable —un cargo extra, un log, una validación—, es Decorator. Si el resultado es el mismo y lo que decide es **el acceso** —posponer la carga, cachear, verificar permisos, hablar con un objeto remoto—, es Proxy.
+
+<Callout variant="note" title="El caso límite">
+Un proxy de caché parece agregar comportamiento. La prueba: desde el punto de vista del cliente, ¿el resultado es distinto? Un caché devuelve exactamente lo mismo, solo que más rápido — es Proxy. Un Decorator que suma un cargo extra devuelve otro precio — es Decorator.
+
+Y la diferencia práctica más útil: un Decorator está pensado para **apilarse** (envolver a otro Decorator, muchas veces, en cualquier orden). Un Proxy casi nunca se apila.
+</Callout>
+
+## Factories: Factory Method, Abstract Factory y Simple Factory
+
+Este es el grupo donde más se confunde el nombre, en parte porque el tercero no es un patrón GoF.
+
+| | Qué produce | Cómo se elige la variante | ¿Es GoF? |
+|---|---|---|---|
+| **Simple Factory** | Un producto | Un `switch` o `if` dentro de un método estático | No: es un recurso habitual |
+| [Factory Method](/diseno/patrones/factory-method/) | Un producto | Eligiendo la subclase del Creator | Sí |
+| [Abstract Factory](/diseno/patrones/abstract-factory/) | Una familia de productos compatibles | Eligiendo el factory concreto | Sí |
+
+Un método estático con un `switch` que devuelve `new PdfExporter()` o `new CsvExporter()` es útil y legítimo, pero **no es Factory Method**. En Factory Method la decisión está en la jerarquía: cada subclase del creator sabe qué producto le corresponde, y no hay condicional que actualizar al sumar una variante.
+
+La pregunta que ordena el grupo:
+
+- **¿Cuántos productos relacionados se crean juntos?** Si es uno solo, mirá Factory Method. Si son varios que tienen que ser compatibles entre sí, es Abstract Factory: un factory por producto no garantiza que no se mezclen familias.
+- **¿La variante se elige extendiendo una clase o con un condicional?** Si es un condicional en un solo lugar y no molesta, es una Simple Factory y está bien. Llamala así.
+
+## Delegar comportamiento: Strategy, State y Template Method
+
+[Strategy](/diseno/patrones/strategy/) y [State](/diseno/patrones/state/) tienen diagramas de clases prácticamente idénticos: un contexto con una referencia a una interfaz, y varias implementaciones. Se distinguen por **quién decide cuál se usa**.
+
+| Patrón | Quién elige la implementación | ¿Las implementaciones se conocen? | Cuándo cambia |
+|---|---|---|---|
+| [Strategy](/diseno/patrones/strategy/) | El código cliente | No: son independientes | Cuando el cliente lo decide |
+| [State](/diseno/patrones/state/) | Los propios estados | Sí: cada uno sabe a cuál transiciona | Como consecuencia de una operación |
+| [Template Method](/diseno/patrones/template-method/) | Se fija al elegir la subclase | Irrelevante | No cambia en tiempo de ejecución |
+
+La pregunta decisiva: **¿una implementación puede reemplazarse a sí misma por otra?** Si el estado actual decide el siguiente, es State. Si el cliente elige el algoritmo y las implementaciones no se conocen entre sí, es Strategy.
+
+La otra distinción, frente a [Template Method](/diseno/patrones/template-method/), es composición contra herencia. Strategy y State se cambian en tiempo de ejecución porque son objetos referenciados. Template Method queda fijo: la clase base fija la secuencia y las subclases solo completan los pasos que varían.
+
+## Comunicar cambios: Observer y Mediator
+
+Los dos reducen el acoplamiento entre objetos que necesitan reaccionar unos a otros. La diferencia es **qué sabe el objeto del medio**.
+
+- En [Observer](/diseno/patrones/observer/) el flujo es **unidireccional y anónimo**: el sujeto anuncia que algo pasó y no sabe quién escucha. Los observadores no se conocen entre sí ni coordinan nada. Sumar un observador no cambia al sujeto.
+- En [Mediator](/diseno/patrones/mediator/) el flujo es **bidireccional y coordinado**: el mediador conoce a los componentes y contiene las reglas de cómo se afectan. Un cambio en uno puede recalcular otro o deshabilitar un tercero, y esa lógica vive en el mediador, no repartida en referencias cruzadas.
+
+La pregunta: **¿el objeto central tiene reglas?** Si solo reparte el aviso, es Observer. Si decide qué hacer según quién avisó, es Mediator. Un mediador suele usar Observer internamente para enterarse de los cambios; son complementarios más que alternativos.
+
+## Guardar y deshacer: Command y Memento
+
+Se confunden porque los dos aparecen cuando alguien pide "deshacer".
+
+- [Command](/diseno/patrones/command/) guarda **la operación**: qué se hizo y con qué argumentos. Deshacer es aplicar la operación inversa. Es más liviano en memoria y además permite encolar, reintentar y loguear.
+- [Memento](/diseno/patrones/memento/) guarda **el estado**: una foto de cómo estaba el objeto antes, sin exponer sus campos privados. Deshacer es restaurar la foto. Es más simple de escribir bien, y más caro si el estado es grande.
+
+La pregunta: **¿guardás la operación o el estado?** Si deshacer es aplicar la inversa —y además querés encolar o loguear—, es Command. Si deshacer es restaurar una foto, es Memento.
+
+En la práctica se combinan: un Command guarda un Memento del estado previo cuando calcular la operación inversa es difícil o imposible.
+
+## Cómo usar esta comparación
+
+Ninguna de estas preguntas sirve para decidir *qué patrón aplicar* a un problema nuevo. Sirven para lo contrario: nombrar correctamente algo que ya escribiste, o entender qué esperaba quien escribió el código que estás leyendo.
+
+Para elegir, el camino sigue siendo el del [artículo de introducción](/diseno/patrones/que-son-los-patrones-de-diseno/): partir del problema concreto, no del catálogo.

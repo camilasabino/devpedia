@@ -1,0 +1,172 @@
+---
+id: infrastructure-and-cloud-architecture
+slug: arquitectura-de-infraestructura-y-cloud
+order: 9
+topic: architecture
+section: operations
+title: "Arquitectura de infraestructura y cloud"
+description: "Cómo elegir dónde ejecutar un sistema, cómo escalarlo y desplegarlo, y cómo recuperar el servicio ante fallos de infraestructura."
+created: 2026-05-19
+lastUpdated: 2026-05-19
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+La arquitectura de Cloud responde una pregunta:
+
+> **¿Dónde y cómo se ejecuta el sistema y cómo se opera a escala?**
+
+Una arquitectura típica:
+
+<MermaidDiagram code={`flowchart TD
+    I["Internet"] --> D["DNS / CDN"] --> LB["Load Balancer"] --> App["Application"]
+    App --> DB[("Database")]
+    App --> Ca[("Cache")]
+    App --> MB["Message Broker"]
+    App --> OS[("Object Storage")]`} />
+
+Diseñar la arquitectura cloud es decidir dónde corre el sistema, cómo se conecta, cómo escala, cómo se despliega y cómo se recupera cuando falla una zona — y a qué costo operativo. Elegir un proveedor no sustituye esas decisiones.
+
+## Cómputo
+
+Las opciones principales son **VM**, **Contenedores**, **Orquestación** y **Serverless**.
+
+**VM**
+
+Una máquina virtual te deja más control sobre el sistema operativo y el runtime. A cambio, el equipo se hace cargo de parchearlo, dimensionarlo y operarlo.
+
+**Contenedores**
+
+Empaquetan la aplicación, el runtime y las dependencias. Tecnología habitual: Docker.
+
+**Orquestación**
+
+Kubernetes aporta mecanismos para scheduling, descubrimiento de servicios, health checks, despliegue rolling, escalado y gestión del estado deseado. Kubernetes no es una arquitectura por sí mismo: es una plataforma para operar determinadas arquitecturas.
+
+**Serverless**
+
+Ejemplos: AWS Lambda, Azure Functions, Google Cloud Functions.
+
+Ventajas: infraestructura gestionada, escalado elástico y pago por uso. A cambio: límites de ejecución, _cold starts_ en determinados escenarios, observabilidad y debugging más difíciles, y _vendor lock-in_.
+
+## Redes
+
+Una arquitectura cloud habitual separa una zona pública de una privada:
+
+<MermaidDiagram code={`flowchart TD
+    subgraph Public["Pública"]
+        CDN["CDN"]
+        LB["Load Balancer"]
+        GW["API Gateway"]
+    end
+    subgraph Private["Privada"]
+        App["Application"]
+        DB[("Database")]
+        Ca[("Cache")]
+        MB["Message Broker"]
+    end
+    GW --> App`} />
+
+**DNS**
+
+Resuelve nombres:
+
+<MermaidDiagram code={`flowchart LR
+    N["api.example.com"] --> LB["Load Balancer"]`} />
+
+**CDN**
+
+Acerca el contenido a los usuarios. Es especialmente útil para recursos estáticos, imágenes, videos y respuestas que pueden almacenarse en caché.
+
+**Load balancer**
+
+Distribuye tráfico y puede realizar health checks:
+
+<MermaidDiagram code={`flowchart TD
+    LB["Load Balancer"] --> A1["App"]
+    LB --> A2["App"]
+    LB --> A3["App"]`} />
+
+**API gateway**
+
+Puede centralizar autenticación, rate limiting, routing, políticas de requests y observabilidad. Pero no debería convertirse en el lugar donde vive toda la lógica de negocio.
+
+## Regiones / zonas de disponibilidad
+
+Una región contiene múltiples zonas de disponibilidad:
+
+<MermaidDiagram code={`flowchart TD
+    R["Region"] --> A["AZ A"]
+    R --> B["AZ B"]
+    R --> C["AZ C"]`} />
+
+Podemos distribuir instancias de la aplicación entre las tres AZs para reducir el impacto de la caída de una AZ.
+
+**Multirregión**
+
+<MermaidDiagram code={`flowchart LR
+    RA["Region A"] <--> RB["Region B"]`} />
+
+Puede mejorar la resiliencia frente a fallos regionales, pero introduce replicación, consistencia, routing, failover, residencia de datos, costos y complejidad operativa. No debería utilizarse solamente porque “más regiones es más robusto”.
+
+## Almacenamiento
+
+Cloud ofrece múltiples tipos: bases de datos relacionales, bases de datos NoSQL, almacenamiento de objetos, almacenamiento de bloques, almacenamiento de archivos y caché. En AWS, por ejemplo: RDS/Aurora, DynamoDB, S3, EBS, ElastiCache. El nombre del servicio importa menos que el workload: primero está qué vas a guardar, cómo lo vas a consultar y con qué consistencia; después, qué producto lo implementa.
+
+## Autoscaling
+
+No siempre hay que escalar por CPU. Podemos hacerlo según CPU, memoria, requests/sec, latencia, profundidad de la cola o métricas personalizadas. Para un worker que procesa pagos asíncronos:
+
+<MermaidDiagram code={`flowchart LR
+    Q["Profundidad de la cola"] --> S["Escalar workers"]`} />
+
+puede ser mucho mejor indicador que CPU.
+
+## IAM, secrets y cifrado
+
+La arquitectura de Cloud debe contemplar identidad, control de acceso, secrets, cifrado, gestión de claves y auditoría. Una regla general:
+
+> **Principio de mínimo privilegio**
+
+Un servicio debería tener solamente los permisos que necesita.
+
+## CI/CD
+
+<MermaidDiagram code={`flowchart TD
+    Dev["Developer"] --> Git["Git"] --> CI["CI"]
+    CI --> B["Build"]
+    CI --> T["Test"]
+    CI --> S["Controles de seguridad"]
+    CI --> Art["Artifact"] --> CD["CD"] --> Prod["Production"]`} />
+
+## Estrategias de despliegue
+
+**Rolling**: actualiza las instancias progresivamente.
+
+**Blue/Green**: `Blue` es la versión actual y `Green` la nueva versión; se redirige el tráfico cuando `Green` está validada.
+
+**Canary**: se expone la versión 2 a un porcentaje pequeño del tráfico (por ejemplo, 95% / 5%), se monitorean errores, latencia y métricas de negocio, y se aumenta progresivamente el porcentaje.
+
+## Infraestructura como código (IaC)
+
+IaC viene de *Infrastructure as Code*. Herramientas: Terraform, OpenTofu, CloudFormation, Pulumi. La infraestructura pasa a ser código:
+
+<MermaidDiagram code={`flowchart LR
+    C["Código"] --> V["Control de versiones"] --> R["Revisión"] --> CD["CI/CD"] --> I["Infraestructura"]`} />
+
+Esto aporta reproducibilidad, facilidad de revisión, versionado y automatización.
+
+## Recuperación ante desastres
+
+Dos conceptos fundamentales:
+
+| **Concepto** | **Significa** | **Ejemplo** |
+|---|---|---|
+| **RPO** (*Recovery Point Objective*) | Cuántos datos estamos dispuestos a perder | 5 minutos |
+| **RTO** (*Recovery Time Objective*) | Cuánto podemos tardar en recuperar el servicio | 30 minutos |
+
+Estos objetivos condicionan los backups, la replicación, el failover, la infraestructura de respaldo y los procedimientos de recuperación.
+
+**Referencia**
+
+- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/) — agrupa estos aspectos en seis pilares: excelencia operativa, seguridad, fiabilidad, eficiencia del rendimiento, optimización de costos y sostenibilidad.

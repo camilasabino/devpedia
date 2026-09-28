@@ -1,0 +1,55 @@
+---
+id: spec-driven-development
+slug: spec-driven-development
+order: 11
+topic: ai-engineering
+subtopic: claude-code
+section: teams-and-workflows
+title: "Spec-Driven Development"
+description: "How to guide development with explicit specifications, and when a framework gives you more than a collection of prompts."
+created: 2026-09-10
+lastUpdated: 2026-09-10
+---
+
+## The problem it solves
+
+Vibe-coding with an agent works fine on small tasks: you describe a change, the agent writes it, you review the result. The problem shows up when a feature touches many files at once. At that point the hard part stops being the implementation and becomes the **design decision**. Made in a hurry inside a prompt, that decision gets paid for later: edge cases nobody accounted for, or scope that drifted without anyone noticing.
+
+**Spec-Driven Development (SDD)** attacks that problem by putting the design decision in writing _before_ a single line of code is executed: you write a short spec saying what the change has to do, you turn it into a plan of numbered tasks, and only then does the agent implement, following that plan, with human review between steps.
+
+## The typical anatomy of an SDD flow
+
+| Artifact | What it holds |
+|---|---|
+| **Constitution** | The project's architecture principles; spec, plan, and tasks are checked against those principles before implementing. |
+| **Spec** | What the change has to do, in functional terms, with no implementation details |
+| **Plan** | How it's going to be built: technical decisions, the architecture of this specific change |
+| **Tasks** | A numbered, checkable list — the unit the agent executes one at a time |
+
+## Two reference frameworks
+
+**[GitHub Spec Kit](https://github.com/github/spec-kit)**
+
+- **Philosophy:** artifacts portable across agents, designed for review through a pull request.
+- **Installation:** a Python CLI (`uv tool install specify-cli`).
+- **Artifacts:** `constitution.md`, `spec.md`, `plan.md`, `tasks.md` under `.specify/` and `specs/`.
+- **Typical commands:** `/speckit.constitution`, `/speckit.specify`, `/speckit.plan`, `/speckit.tasks` (it adds ~8 commands in total).
+- **Fits best with:** teams that need traceability and where several people (or several agents) touch the same change.
+
+**[OpenSpec](https://github.com/Fission-AI/OpenSpec)**
+
+- **Philosophy:** lightweight, "in-tool", designed so you never leave the agent's loop.
+- **Installation:** `npm install -g @fission-ai/openspec` — simpler if your stack is already Node.
+- **Artifacts:** proposals and specs under `openspec/`.
+- **Typical commands:** `/opsx:explore` to think the proposal through, `/opsx:propose` to write it (it adds only a handful of commands in total, under the `opsx` prefix).
+- **Fits best with:** a single developer or a small team that wants discipline without so much ceremony.
+
+Neither one integrates natively with Claude Code: they generate the artifacts on disk, but you have to tell it explicitly — by hand or from `CLAUDE.md` — to read them and work from them before touching code. It's a working convention, not a feature of the tool.
+
+There are also heavier alternatives like **[BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)**, which organizes _roles_ instead of artifacts: it splits the path from spec to code into phases, each one carried out by an agent with a defined part (analyst, architect, developer, QA).
+
+## Is it worth it for you?
+
+SDD makes sense when the cost of a scope misunderstanding is high: features that touch several services, teams where several people (human or agent) work in parallel on the same domain, or changes where "what does done mean" isn't obvious at a glance. For a contained change in a project that's only yours, the five pieces from [How to write good prompts for Claude Code](/en/ai-engineering/claude-code/how-to-write-good-prompts/) (context, task, constraints, format, verification) are usually enough. SDD adds something else: the design decision ends up in reviewable artifacts, and the agent doesn't implement until that design has been agreed on.
+
+A spec and an [architecture decision record](/en/architecture/how-to-communicate-architecture-decisions/#architecture-decision-records-adrs) solve related, non-interchangeable problems: the spec says **what has to be built** before it's built; the ADR records **why one option was chosen** and what was ruled out. A Spec-Driven Development flow on a system with underlying architecture decisions needs both, and the ADR is the one that's still useful two years later.

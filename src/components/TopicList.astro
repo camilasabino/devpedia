@@ -1,0 +1,40 @@
+---
+// Provisional entry point into the taxonomy, so every route is reachable from home.
+import { plural, ui, type Lang } from '../i18n';
+import { getContent } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = ui[lang];
+const { index } = await getContent();
+---
+
+<section class="mt-12">
+  <h2 class="font-display text-xl font-semibold text-neutral-100 light:text-neutral-900">{copy.home.topicsHeading}</h2>
+  <ul class="mt-4 space-y-3">
+    {
+      index.topics(lang).map((topic) => (
+        <li>
+          <a href={index.pathOf(lang, 'topic', topic.id)} class="text-accent-400 light:text-accent-700 hover:underline">
+            {topic.title}
+          </a>
+          <span class="font-mono text-xs text-neutral-500"> · {plural(copy.hub.guidesCount, index.guideCount(lang, topic.id))}</span>
+          {index.subtopicsOf(lang, topic.id).length > 0 && (
+            <ul class="mt-1 ml-4 space-y-1">
+              {index.subtopicsOf(lang, topic.id).map((subtopic) => (
+                <li>
+                  <a href={index.pathOf(lang, 'subtopic', subtopic.id)} class="text-accent-400 light:text-accent-700 hover:underline">
+                    {subtopic.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</section>

@@ -1,0 +1,138 @@
+---
+id: test-doubles
+slug: test-doubles
+order: 5
+topic: testing
+section: unit-testing
+title: "Test doubles: dummy, stub, spy, mock, and fake"
+description: "What role each kind of double plays and how to pick the right one for controlling a test's dependencies."
+created: 2026-08-04
+lastUpdated: 2026-08-04
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+A **test double** is a stand-in used during testing to represent a real dependency. The most common terms — dummy, stub, spy, mock, fake — aren't interchangeable: each one plays a different role inside the test, and that distinction matters more than the tool used to create them.
+
+The taxonomy comes from Gerard Meszaros's *xUnit Test Patterns*. It's best not to read it as a scale from less to more, because the five don't line up along a single axis: there are **two independent ones**.
+
+| | Not part of the verification | Part of the verification |
+|---|---|---|
+| **No behavior of its own** | Dummy | — |
+| **Returns fixed responses** | Stub | Mock |
+| **Records what happened to it** | Spy | Spy + assertions |
+| **Working implementation** | Fake | — |
+
+The vertical axis is *how much real implementation it has*. The horizontal axis is *whether the double is part of what the test verifies*. A mock has no more real behavior than a stub: it's a stub that additionally demands to have been called in a certain way.
+
+That distinction translates into a practical difference that does matter:
+
+- **State verification** — the test looks at the result or the final state of the system. Use a dummy, a stub, or a fake.
+- **Interaction verification** — the test looks at *how* the unit used its collaborator. Use a spy or a mock.
+
+## Dummy
+
+Used because a dependency has to be present, but the test doesn't interact with it:
+
+```typescript
+const logger = new DummyLogger();
+const service = new ReservationService(reservationRepository, logger);
+```
+
+## Stub
+
+Returns predefined responses. If `ReservationService` asks `PricingService` how much deposit to charge, the test controls that response and then verifies the **result**:
+
+```typescript
+const pricingStub: PricingService = {
+  getDepositAmount: () => Money.of(2000),
+};
+
+const service = new ReservationService(pricingStub, tableRepository);
+const reservation = service.create(request);
+
+// The assertion is about the result, not about the stub
+expect(reservation.deposit).toEqual(Money.of(2000));
+```
+
+The question behind a stub is: what response do I need this dependency to hand back so I reach the case I want to verify? The focus isn't on how it was used, it's on the final state.
+
+<Callout variant="warning" title="The tool doesn't define the role">
+It's tempting to write that stub as `vi.spyOn(pricingService, 'getDepositAmount').mockReturnValue(...)`. It works, but the name lies: `spyOn` creates a spy, and nothing is being spied on here — the test never asks whether the method was called.
+
+The same framework creates objects that act as a stub, a spy, or a mock depending on how you configure them. That's why the role is defined by **what the test verifies**, not by the function used to build the double.
+</Callout>
+
+## Spy
+
+Records what happened to it, so the test can inspect it **after** the action. If `ReservationService` notifies `NotificationService` when a reservation is confirmed, the spy notes the call and the test reviews it at the end:
+
+```typescript
+class NotificationSpy implements NotificationService {
+  readonly sent: ReservationId[] = [];
+
+  sendConfirmation(id: ReservationId): void {
+    this.sent.push(id);   // only records, doesn't judge
+  }
+}
+
+// Act
+const spy = new NotificationSpy();
+new ReservationService(pricingStub, spy).confirm(reservationId);
+
+// Assert: the verification lives in the test, at the end
+expect(spy.sent).toEqual([reservationId]);
+```
+
+The spy is passive: it doesn't know what's expected of it. All the judgment is in the assertions block.
+
+## Mock
+
+A mock carries the expectation **inside**: you tell it in advance which calls it should receive, and it fails on its own if they don't happen as agreed.
+
+```typescript
+const paymentMock = mock<PaymentGateway>();
+// The expectation is declared BEFORE running
+paymentMock.expect('charge').once().with(Money.of(2000));
+
+new ReservationService(pricingStub, paymentMock).confirm(reservationId);
+
+// There's no assertion on values: the mock is asked to verify itself
+paymentMock.verify();
+```
+
+<Callout variant="note" title="Spy or mock, in practice">
+The conceptual difference is *where the expectation lives*: in the test (spy) or in the double (mock). In tools like Vitest or Jest the distinction blurs, because `vi.fn()` records calls like a spy and `expect(fn).toHaveBeenCalledWith(...)` verifies like a mock, with the same syntax.
+
+The tool not distinguishing them doesn't mean it makes no difference. The underlying question still matters: **is the test verifying a result, or verifying a conversation?** Verifying conversations couples the test to *how* the unit is implemented, and it's one of the most frequent causes of suites that break on every refactor without any observable behavior having changed.
+</Callout>
+
+Mocks are justified when the interaction **is** the behavior: that the charge happens exactly once, that the event is published, that the provider isn't called if the reservation was already cancelled. For everything else, verifying the result usually stays valid when the implementation changes.
+
+## Fake
+
+A simplified but working implementation of a dependency. Unlike a stub, a fake has behavior of its own:
+
+```typescript
+const repository = new InMemoryReservationRepository();
+
+repository.save(reservation);
+
+const result = repository.findById(reservation.id);
+```
+
+An `InMemoryReservationRepository` can be far simpler than Postgres and still be a realistic enough representation for certain kinds of test.
+
+| Test double | Main purpose |
+|---|---|
+| **Dummy** | Satisfy a dependency that isn't used |
+| **Stub** | Hand back controlled responses |
+| **Spy** | Record interactions |
+| **Mock** | Verify expected interactions, failing on its own |
+| **Fake** | A simplified but working implementation |
+
+The rule that sums the article up: **pick the double based on what the test needs to verify, not on the dependency you're replacing.** The same `PaymentService` can be a dummy in a validation test, a stub in a calculation test, and a mock in one that guards against charging twice.
+
+It's no accident that replacing a dependency is easy: it depends on the unit receiving an abstraction instead of constructing a concrete implementation directly. When isolating a dependency turns out to be hard, that's usually a sign the design has unnecessary coupling. It's one of the central ideas of [dependency inversion](/en/design/principles/solid/#d--dependency-inversion-principle).
+
+Isolation, AAA, and test doubles together let you build unit tests that are clear and maintainable. [Test-Driven Development](/en/testing/test-driven-development/) builds on these same ideas: using tests as part of the design process, not only as after-the-fact verification.

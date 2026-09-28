@@ -1,0 +1,121 @@
+---
+id: claude-code-mcp
+slug: mcp
+order: 7
+topic: ai-engineering
+subtopic: claude-code
+section: extension
+title: "MCP: cómo conectar herramientas externas"
+description: "Cómo conectar Claude Code con herramientas y fuentes de datos mediante MCP, y qué revisar al configurar un servidor."
+created: 2026-09-02
+lastUpdated: 2026-09-02
+---
+
+**MCP ([Model Context Protocol](https://modelcontextprotocol.io/introduction))** es la vía estándar para conectar Claude Code con herramientas externas — bases de datos, navegadores, APIs, tu backlog — sin salir de la sesión. Es un protocolo abierto, no algo propio de Claude Code: por eso el mismo servidor MCP que conectás acá también funciona en otros clientes compatibles.
+
+## Comandos de gestión
+
+```bash
+# Agregar un servidor (transporte stdio, por defecto)
+claude mcp add <nombre> -- <comando>
+
+# Agregar un servidor remoto (transporte HTTP, el recomendado;
+# SSE sigue funcionando, pero es legacy)
+claude mcp add --transport http <nombre> <url>
+
+# Con variables de entorno
+claude mcp add -e API_KEY=xxx <nombre> -- <comando>
+
+claude mcp list                        # listar servidores y su estado
+claude mcp get <nombre>                # inspeccionar uno en particular
+claude mcp remove <nombre>
+claude mcp add-from-claude-desktop     # importar desde Claude Desktop
+```
+
+## Los tres scopes
+
+Elegir bien el scope evita tanto filtrar credenciales como obligar a todo el equipo a reconfigurar lo mismo.
+
+**`--scope local`** _(default)_
+
+- Se guarda en `~/.claude.json`, bajo la ruta del proyecto.
+- Lo ves solo vos, solo en este proyecto.
+- Usalo para servidores experimentales o credenciales sensibles que no querés compartir.
+
+**`--scope project`**
+
+- Se guarda en `.mcp.json` en la raíz del proyecto (se versiona con Git).
+- Lo ve todo el equipo.
+- Usalo para los servidores que todo el equipo necesita.
+
+**`--scope user`**
+
+- Se guarda en `~/.claude.json` (global).
+- Lo ves solo vos, pero en todos tus proyectos.
+- Usalo para herramientas personales que usás siempre (buscadores, notas, etc.).
+
+El scope **local** de MCP se guarda en `~/.claude.json` (el home del usuario) — no confundir con la configuración local general del proyecto, que vive en `.claude/settings.local.json`. Si un mismo nombre de servidor existe en varios scopes, el orden de resolución es **local → project → user**.
+
+## Configuración compartida: `.mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "postgres-staging": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "$STAGING_DB_URL"]
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp",
+      "headers": { "Authorization": "Bearer $LINEAR_TOKEN" }
+    }
+  }
+}
+```
+
+Los valores de `command`, `args`, `url` y `headers` admiten `$VAR` y `${VAR}`, que se expanden desde tu shell al iniciar la sesión.
+
+## Servidores MCP habituales
+
+Tres ejemplos que cubren casos de uso bien distintos:
+
+- **GitHub** — expone issues, PRs, revisiones y CI de un repo como herramientas: crear/comentar PRs, leer diffs, disparar workflows, todo sin salir de la sesión.
+- **Playwright** — controla un navegador real (click, scroll, screenshot, lectura del DOM), útil para testear una UI que se acaba de construir o hacer scraping dirigido.
+- **Postgres** — da acceso de solo lectura (o de escritura acotada, según cómo se configure el usuario) a una base de datos, para que Claude explore el schema o valide una query antes de meterla en código.
+
+```bash
+claude mcp add github --transport http https://api.githubcopilot.com/mcp -e GITHUB_TOKEN=$GITHUB_TOKEN
+claude mcp add playwright -- npx -y @playwright/mcp
+claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres "$STAGING_DB_URL"
+```
+
+## Tool search: por qué el costo en tokens no crece con cada servidor que conectás
+
+A diferencia de otros clientes MCP que cargan por adelantado **todas** las definiciones de herramientas de **todos** los servidores conectados, Claude Code las descubre bajo demanda: solo carga el schema de la herramienta que realmente va a usar. En la práctica esto reduce el consumo de contexto en un orden de magnitud: el costo crece con el uso real, no con cuántos servidores agregaste. Sigue importando cuántos están activos: cada uno es un subproceso.
+
+## Checklist de seguridad con MCP
+
+1. **Auditá antes de instalar.** Leé el código fuente de cualquier servidor MCP antes de correrlo. Preferí los servidores oficiales del vendor antes que los forks comunitarios.
+2. **Principio de menor privilegio.** Usuarios de solo lectura para bases de datos, tokens con permisos mínimos, acceso acotado al sistema de archivos.
+3. **Controlá los scopes.** Solo promové a `user` los servidores en los que confiás por completo, ya que quedan disponibles en todos tus proyectos.
+4. **Nunca commiteés secrets.** Las credenciales van en variables de entorno (`$VARIABLE`), nunca escritas en `.mcp.json`.
+5. **Cuidado con prompt injection.** Los servidores que traen contenido de fuentes no confiables (scraping, emails, mensajes de chat) pueden exponerte a instrucciones maliciosas escondidas en ese contenido.
+6. **Limitá servidores activos.** Cada uno arranca un subproceso; más de 5-6 simultáneos pueden ralentizar tu entorno. Usá `/mcp disable` para lo que no estés usando.
+
+## Gestión en sesión
+
+```
+/mcp                 # abrir el panel de gestión
+/mcp enable <nombre>
+/mcp disable <nombre>
+/mcp enable all
+/mcp disable all
+```
+
+`/mcp` también maneja la autenticación OAuth 2.1 para servidores remotos que la requieran, guiándote por el flujo en el navegador.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer">referencia oficial de MCP en Claude Code</a> y la{' '}
+  <a href="https://modelcontextprotocol.io/introduction" target="_blank" rel="noopener noreferrer">especificación del protocolo</a> si querés entender qué hay del otro lado de cada servidor.
+</p>

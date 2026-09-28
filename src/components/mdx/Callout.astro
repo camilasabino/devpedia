@@ -1,0 +1,40 @@
+---
+import Icon from '../../../../src/components/Icon.astro';
+import { langFromPath, ui } from '../../i18n';
+
+type Variant = 'note' | 'warning' | 'key';
+
+interface Props {
+  /**
+   * `note` for an aside worth reading but not blocking, `warning` for something that
+   * bites if ignored, `key` for the one idea the section turns on. A plain Markdown
+   * `>` blockquote stays a neutral quote and is not a callout.
+   */
+  variant?: Variant;
+  /** Overrides the default label. Keep it to two or three words. */
+  title?: string;
+}
+
+const { variant = 'note', title } = Astro.props;
+
+// Callouts are written inside MDX, which cannot pass a `lang` prop down, so the
+// default label comes from the language of the page being rendered.
+const copy = ui[langFromPath(Astro.url.pathname)].guide;
+
+const ICONS = {
+  note: 'info',
+  warning: 'alert',
+  key: 'sparkles',
+} as const satisfies Record<Variant, string>;
+
+const icon = ICONS[variant];
+const heading = title ?? copy.callout[variant];
+---
+
+<aside class={`callout callout-${variant}`}>
+  <Icon name={icon} class="callout-icon h-5 w-5" decorative />
+  <div class="callout-body">
+    <span class="callout-title">{heading}</span>
+    <slot />
+  </div>
+</aside>

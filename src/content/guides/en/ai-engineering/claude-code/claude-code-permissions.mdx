@@ -1,0 +1,112 @@
+---
+id: claude-code-permissions
+slug: permissions
+order: 5
+topic: ai-engineering
+subtopic: claude-code
+section: context-and-control
+title: "Permissions in Claude Code"
+description: "How to define which actions the agent can run, which ones need confirmation, and which ones must stay blocked."
+created: 2026-08-28
+lastUpdated: 2026-09-10
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+import PermissionCascade from '../../../../../components/mdx/PermissionCascade.astro';
+
+The question that defines this article is simple: **how much do you trust what Claude is about to do without asking?** Claude Code splits that answer into two layers that are worth understanding separately: the **modes** (default behavior) and the **rules** (specific exceptions).
+
+## The 6 permission modes
+
+| Mode | What it allows | When to use it |
+|---|---|---|
+| **default**, shown as **"Manual"** since v2.1.200 | Read-only without asking; any edit or command requires approval | Sensitive work, unfamiliar repos |
+| **acceptEdits** | Reads and edits files without interruptions | You're iterating on code you actively review yourself afterwards |
+| **plan** | Read-only, neither edits nor runs anything | Exploring a new codebase or planning a refactor before touching anything |
+| **auto** | Every action, with an automatic classifier checking in the background | Long tasks where you want to reduce the fatigue of approving everything |
+| **dontAsk** | Only runs explicitly pre-approved tools | CI/CD pipelines and automated scripts |
+| **bypassPermissions** | Everything, with no checks | Only in isolated containers or VMs — never on your main machine |
+
+<Callout variant="note" title="Which mode a session starts in">
+It doesn't always start in Manual. On Pro, Max, and Team plans, in the terminal or with the VS Code extension, the default starting mode is **`auto`**. With `claude -p`, with the Agent SDK, on an Enterprise plan, or with a console API key, it starts in `default`. An explicit `--permission-mode` or a `permissions.defaultMode` in `settings.json` takes precedence over either.
+
+It's worth confirming before you assume your session asks permission for everything: it may not be.
+</Callout>
+
+**How to change it:**
+
+```bash
+# During a session: Shift+Tab cycles through the available modes.
+# bypassPermissions only enters the cycle if you started with
+# --dangerously-skip-permissions.
+
+claude --permission-mode plan
+claude --permission-mode acceptEdits
+claude --permission-mode auto
+claude --permission-mode dontAsk               # meant for CI
+claude --permission-mode bypassPermissions     # only in isolated environments
+```
+
+Two values aren't accepted from `.claude/settings.json` or `settings.local.json`: `auto` is ignored, and `bypassPermissions` makes the session start in Manual. That's deliberate: they're decisions for whoever launches the session, not for a file committed to the repo.
+
+<Callout variant="warning" title="What no mode approves on its own">
+Not even `bypassPermissions` auto-approves everything. Left out, among other things: tools matching an explicit `ask` rule, tools that require user interaction, and `rm` or `rmdir` deletions on critical paths. `deny` rules from managed configuration apply no matter what.
+
+Writes to protected paths (`.git`, `.claude`, and friends) aren't auto-approved either, except — precisely — under `bypassPermissions`.
+</Callout>
+
+## Custom rules: deny → ask → allow
+
+On top of the modes, there's a system of granular per-tool rules. They're evaluated in this order, and **the first matching rule wins**:
+
+<PermissionCascade
+  gates={[
+    { question: 'Does it match a deny rule?', outcome: 'Blocked. Full stop.', tone: 'block' },
+    { question: 'Does it match an ask rule?', outcome: 'Asks for confirmation', tone: 'ask' },
+    { question: 'Does it match an allow rule?', outcome: 'Runs without asking', tone: 'allow' },
+  ]}
+  fallback="the active mode's default behavior"
+/>
+
+`deny` always wins: `bypassPermissions` can't override a `deny` from managed configuration, and `acceptEdits` can't lift a denied `Edit(...)`.
+
+**Syntax:** `Tool` or `Tool(specifier)`.
+
+```jsonc
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test*)",       // any command starting with "npm test"
+      "Bash(docker compose *)",
+      "Bash(git log*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(~/.ssh/*)",
+      "WebFetch(domain:vault.mycompany.internal)"
+    ]
+  }
+}
+```
+
+A few details worth keeping in mind:
+
+- **The space before `*` matters:** a rule `Bash(ls *)` requires a space or end of string after `ls` (it doesn't match `lsof`); `Bash(ls*)` matches both. `Bash(ls:*)` is the modern syntax equivalent to `Bash(ls *)`.
+- **Shell operators are evaluated separately:** a `Bash(safe-command *)` rule doesn't enable `safe-command && dangerous-command`, because Claude Code understands `&&`, `||`, and `;` and evaluates each subcommand.
+- **`Read`/`Edit` use `.gitignore`-style syntax:** `//path` is absolute from the filesystem root, `~/path` from your home, `/path` is relative to the **project** root (careful, not the filesystem root — `/Users/alice/file` is relative to the project, not a real absolute path), and `path` or `./path` is relative to the current directory.
+- **An important limit:** `deny` rules on `Read`/`Edit` block Claude's internal tools, but they **don't** block what you do through `Bash` (a `cat .env` in Bash isn't stopped by a `Read(./.env)` rule). For real OS-level blocking you need a [**sandbox**](https://code.claude.com/docs/en/sandboxing), which combines the `deny` rules with its own allowlist of network domains.
+
+## What each mode adds on top of the rules
+
+The modes are the master switch; the rules are the fine filter. An example of how they interact:
+
+- In **plan**, even with `Edit(/src/**)` in `allow`, the mode doesn't let it edit anything — it's more restrictive than permissive rules.
+- In **auto**, entering the mode automatically discards dangerous `allow` rules like `Bash(*)` or `Agent(*)`, because they'd give arbitrary execution before the classifier had evaluated them. Specific rules (`Bash(npm test)`) are kept. On exit, they're restored.
+- In **dontAsk**, even `ask` rules turn into denial — anything not explicitly in `allow` is rejected. Ideal for CI.
+
+This is one of the corners of Claude Code that evolves fastest. Before setting a permission policy for a whole team, it's worth confirming the current behavior in the [official documentation](https://code.claude.com/docs/en/permission-modes).
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: <a href="https://code.claude.com/docs/en/permissions" target="_blank" rel="noopener noreferrer">complete rule syntax</a> and{' '}
+  <a href="https://code.claude.com/docs/en/settings" target="_blank" rel="noopener noreferrer">settings.json reference</a>, where all these rules live on disk.
+</p>

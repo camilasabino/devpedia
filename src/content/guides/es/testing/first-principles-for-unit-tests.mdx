@@ -1,0 +1,51 @@
+---
+id: first-principles-for-unit-tests
+slug: first-principios-para-tests-unitarios
+order: 3
+topic: testing
+section: unit-testing
+title: "F.I.R.S.T.: principios para tests unitarios"
+description: "Cinco criterios para escribir tests rápidos, independientes y repetibles, con resultados claros y creados en el momento adecuado."
+created: 2026-07-30
+lastUpdated: 2026-07-30
+---
+
+Una regla mnemotécnica muy usada para pensar unit tests es **F.I.R.S.T.**, atribuida a Tim Ottinger y Jeff Langr, y popularizada por *Clean Code* de Robert C. Martin. No es un estándar formal ni una especificación: funciona como checklist de buenas prácticas.
+
+| Principio | Qué significa | Riesgo si se ignora |
+|---|---|---|
+| **F**ast | Corre en milisegundos, sin arrancar servicios reales | Fricción para correr la suite seguido → se corre menos |
+| **I**ndependent | No depende de otros tests ni de estado compartido | Fallos en cascada sin relación con el bug real |
+| **R**epeatable | Mismo resultado siempre, bajo las mismas condiciones | Tests inestables (*flaky tests*) que erosionan la confianza en la suite |
+| **S**elf-Validating | Determina por sí mismo si pasó o falló, sin revisión manual | No se puede correr en CI/CD sin intervención humana |
+| **T**imely | Se escribe cerca del momento en que se implementa el comportamiento | El test documenta código viejo en vez de guiar el nuevo |
+
+Vale la pena detenerse en dos de estos principios, porque son los que más problemas causan en la práctica.
+
+## Fast
+
+No tiene sentido que un test de una regla de negocio dependa de levantar la aplicación, la base de datos y un request HTTP cuando el comportamiento se puede verificar sin ninguna de esas dependencias. La velocidad no es un objetivo aislado: habilita un ciclo de feedback corto y permite asociar un fallo con los cambios más recientes.
+
+## Repeatable
+
+Un test que falla de forma intermitente —un *flaky test*— es especialmente costoso, porque hace difícil distinguir un defecto real de un problema de timing o de infraestructura. Las causas más comunes son la hora actual, la aleatoriedad, el estado compartido, las condiciones de carrera (*race conditions*) y las dependencias de red.
+
+Por ejemplo, si `calculateCancellationFee` tomara la hora de la reserva y calculara internamente cuántas horas faltan con `new Date()`, el resultado del test dependería del momento exacto en que se ejecuta. La solución habitual es inyectar una abstracción controlable:
+
+```typescript
+function calculateCancellationFee(
+  deposit: Money,
+  reservationTime: Date,
+  clock: Clock = systemClock
+): Money {
+  const hoursBeforeReservation = clock.hoursUntil(reservationTime);
+  if (hoursBeforeReservation >= 24) return Money.zero();
+  return deposit.multiply(0.5);
+}
+```
+
+Así el test puede definir explícitamente el instante utilizado, en lugar de depender de cuándo se corre la suite. El mismo principio se aplica a la generación de IDs, los valores aleatorios, las variables de entorno y cualquier otra entrada no determinista.
+
+Fijate que esta versión resuelve *dos* cosas: calcula las horas restantes y decide la penalidad. La alternativa —dejar `calculateCancellationFee(deposit, hoursBeforeReservation)` como una función pura y calcular las horas afuera— es determinista sin necesidad de inyectar nada. **La forma más barata de tener un test repetible suele ser no dejar entrar el no-determinismo en la unidad**, antes que controlarlo con una abstracción. El resto de los ejemplos de este tema usa esa versión pura.
+
+Con la unidad bajo test aislada y determinista, [AAA: cómo estructurar un test](/testing/aaa-como-estructurar-un-test/) cubre cómo armar el test en sí.

@@ -1,0 +1,8 @@
+id: design
+slug: design
+order: 2
+title: Design
+description: >-
+  Principles and patterns for designing software that is simpler,
+  more maintainable, and easier to adapt.
+icon: layout

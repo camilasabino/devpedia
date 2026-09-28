@@ -1,0 +1,48 @@
+---
+id: integration-testing
+slug: integration-testing
+order: 7
+topic: testing
+section: test-levels
+title: "Integration testing"
+description: "What problems show up when you connect components, and how to test those interactions beyond unit tests."
+created: 2026-08-07
+lastUpdated: 2026-08-07
+---
+
+## What it is
+
+Integration testing verifies that two or more components work correctly when they interact. The focus shifts relative to a unit test:
+
+```text
+Unit:         does this component behave correctly?
+Integration:  do these components interact correctly?
+```
+
+In ReservaResto, a natural case is `ReservationService` against PostgreSQL:
+
+```text
+Create reservation → Persist (ReservationService) → PostgreSQL (test container) → Read reservation → Verify the expected result
+```
+
+Here the database is real — isolated in a test environment or a container — unlike the [unit test](/en/testing/what-is-a-unit-test/), where that dependency was replaced by a [test double](/en/testing/test-doubles/).
+
+## What it catches
+
+Integration tests are particularly good at finding errors unit tests can't see: incorrect SQL, badly configured ORM mappings, serialization/deserialization problems, badly defined transaction boundaries, mismatched schemas, configuration problems, or failures integrating with a message broker (for instance, if ReservaResto publishes a `reservation.created` event for `NotificationService` to consume).
+
+A unit test can prove the code assembles a `Reservation` object correctly. It doesn't prove the ORM persists it the way we expect.
+
+## Test doubles vs. real dependencies
+
+It's worth avoiding the oversimplification that "unit tests use mocks, integration tests don't". The right question is a different one:
+
+> Which boundary do we want to verify?
+
+If we want to verify the real interaction with PostgreSQL, we need PostgreSQL. If all we want to verify is a business rule, we probably don't.
+
+## What it doesn't catch
+
+An integration test of `ReservationService` against the database doesn't prove the complete business flow works: it doesn't prove the deposit is charged, that the table is held against other users, or that the confirmation actually reaches the diner. That's the next level's job: [system testing](/en/testing/system-testing/).
+
+And there's one limit even the next level doesn't cover well: if `NotificationService` is a separate service with its own release cycle, an integration test verifies that *your* side of the contract works, not that the other side still understands it. That's the problem [backward compatibility in APIs](/en/testing/compatibility-testing/#backward-compatibility) deals with, and the reason systems built on [asynchronous communication](/en/architecture/communication-patterns/) need to version their events.

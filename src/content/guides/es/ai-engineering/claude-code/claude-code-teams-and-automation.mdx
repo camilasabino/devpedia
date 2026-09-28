@@ -1,0 +1,61 @@
+---
+id: claude-code-teams-and-automation
+slug: equipos-y-automatizacion
+order: 10
+topic: ai-engineering
+subtopic: claude-code
+section: teams-and-workflows
+title: "Claude Code en equipos y automatizaciones"
+description: "Cinco escenarios para integrar Claude Code en procesos de equipo y automatizaciones más allá de una sesión individual."
+created: 2026-09-08
+lastUpdated: 2026-09-08
+---
+
+Todo lo anterior asume un developer que trabaja solo. Cuando Claude Code se expone como **servidor MCP**, deja de ser una herramienta personal y pasa a ser infraestructura: algo que corre en un servidor, que consumen varios usuarios, y que se integra con el resto del stack. Estos son cinco escenarios donde ese salto empieza a justificar la inversión.
+
+## 1. Servidor de desarrollo compartido para el equipo
+
+**El problema:** el entorno de cada developer diverge (versiones de Python, package managers, configuración de Docker), y cuando entra un agente esas diferencias se multiplican — necesita acceso a bases de datos de staging, credenciales internas, herramientas propietarias.
+
+**La arquitectura:** Claude Code corre en un servidor dedicado con el monorepo clonado, acceso a bases de datos de desarrollo y credenciales gestionadas por un vault (HashiCorp Vault, AWS Secrets Manager). Cada developer se conecta desde su cliente MCP habitual (Claude Desktop, un plugin de IDE, un bot de Slack).
+
+**El beneficio concreto:** un developer nuevo puede conectarse al entorno ya armado en minutos, en vez de pasar días instalando versiones, credenciales y herramientas a mano — si el servidor compartido está bien mantenido. Las credenciales no salen del servidor, y los builds pesados usan sus recursos en vez del notebook de cada uno. Un buen candidato para empaquetar como [Plugin](/ai-engineering/claude-code/plugins/): así cada developer nuevo se conecta ya con las mismas skills, subagentes y hooks configurados, sin copiarlos a mano.
+
+## 2. Orquestación multi-agente sobre varios repos
+
+**El problema:** en microservicios, una tarea de producto rara vez vive en un solo repo. Una sola instancia de Claude Code con todo el código no escala — el contexto se vuelve inmanejable.
+
+**La arquitectura:** una instancia de Claude Code por dominio (auth, perfiles, frontend), cada una expuesta como su propio servidor MCP con las convenciones de ese repo. Un orquestador (otro Claude Code, o Claude Desktop) delega cada parte de la tarea al servidor correspondiente y consolida el resultado.
+
+**El beneficio concreto:** cada agente trabaja con contexto acotado; se puede paralelizar; sumar un microservicio nuevo es simplemente desplegar un MCP más y registrarlo.
+
+## 3. Integración en pipelines CI/CD
+
+**El problema:** hay tareas repetitivas de ingeniería demasiado contextuales para una regla estática de linter, pero demasiado frecuentes para que las haga un humano: revisar un PR contra las convenciones internas, actualizar docs cuando cambia un endpoint, investigar por qué un test quedó intermitente.
+
+**La arquitectura:** jobs de CI que, en vez de correr un script fijo, abren una conexión MCP con una instrucción estructurada ("revisá este PR siguiendo las convenciones de `docs/CONTRIBUTING.md`"). El agente trabaja con el código real y devuelve el resultado como comentario de PR, commit en una rama, o issue en el tracker.
+
+**Consideración clave:** hay que acotar el _blast radius_ — solo lectura amplia, escritura limitada a ramas de feature y comentarios, nunca merge directo a `main` ni acceso a producción. Definí también un presupuesto de tokens/tiempo por tarea.
+
+## 4. Plataforma self-service para perfiles no técnicos
+
+**El problema:** la cola permanente de "pedidos chicos" (un campo en un formulario, un texto de email, un _feature flag_) consume una parte no despreciable del tiempo del equipo de ingeniería y genera frustración de los dos lados.
+
+**La arquitectura:** una interfaz pensada para el perfil no técnico (bot de Slack, dashboard con formularios, chat embebido) traduce el pedido en una instrucción para Claude Code, que abre un PR y devuelve el link para que un developer lo valide antes del merge.
+
+**El beneficio concreto:** el developer pasa de "ejecutar tareas chicas" a "validar cambios chicos" — mucho más rápido — sin perder el control.
+
+## 5. Entornos regulados o air-gapped
+
+**El problema:** en banca, salud, defensa o cualquier sector con propiedad intelectual crítica, el código no puede salir de una infraestructura controlada.
+
+**La arquitectura:** Claude Code corre dentro del perímetro (on-premise, VPC aislada, o entorno air-gapped conectado a un despliegue privado del modelo). Los developers acceden vía VPN o bastion host; del lado del cliente solo circula la conversación, mientras que archivos, diffs y comandos quedan del lado del servidor, con auditoría completa.
+
+**El beneficio concreto:** compatible con políticas de seguridad estrictas, revocación de acceso instantánea (das de baja el acceso al servidor, no recuperás código de un notebook), y mucho más fácil de defender ante auditorías (ISO 27001, SOC 2) que "cada developer tiene el código y una IA en su laptop". Es también el escenario donde más rinde todo lo de [Seguridad al trabajar con Claude Code](/ai-engineering/claude-code/seguridad/): sandbox, reglas `deny` y `/security-review` corriendo del lado del servidor, no del lado de cada developer.
+
+> Los cinco escenarios comparten una premisa: Claude Code funcionando como recurso de equipo, gobernable y auditable, en vez de una instalación individual. En un equipo chico, probablemente el escenario 1 (servidor de desarrollo compartido) sea el único que valga la pena evaluar por ahora — los otros cuatro se justifican a medida que crece el equipo o el nivel de regulación.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: <a href="https://code.claude.com/docs/en/admin-setup" target="_blank" rel="noopener noreferrer">Set up Claude Code for your organization</a> es el punto de partida oficial para administradores (managed settings, proveedores de API, políticas), y{' '}
+  <a href="https://code.claude.com/docs/en/sandbox-environments" target="_blank" rel="noopener noreferrer">Choose a sandbox environment</a> compara las opciones de aislamiento — bash sandboxeado, dev containers, Docker, VM — relevantes sobre todo para el escenario 5.
+</p>

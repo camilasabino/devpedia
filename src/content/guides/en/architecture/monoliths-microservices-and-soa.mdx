@@ -1,0 +1,182 @@
+---
+id: monoliths-microservices-and-soa
+slug: monoliths-microservices-and-soa
+order: 4
+topic: architecture
+section: domain-and-structure
+title: "Monoliths, microservices, and SOA"
+description: "Different ways to split and deploy a system: what each option involves and how to judge which one fits the problem."
+created: 2026-05-08
+lastUpdated: 2026-05-08
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+The architecture of the system changes scale. DDD helps us understand:
+
+> How do we split the domain conceptually?
+
+Now we ask:
+
+> **How do we split and deploy the system?**
+
+The main options are **monolith**, **modular monolith**, **microservices**, and **SOA**.
+
+## Monolith
+
+A monolith is deployed as a single unit:
+
+<MermaidDiagram code={`flowchart TD
+    App["Application"] --> Pay["Payments"]
+    App --> Ord["Orders"]
+    App --> Inv["Inventory"]
+    Pay --> DB[("Database")]
+    Ord --> DB
+    Inv --> DB`} />
+
+It's worth separating two ideas that often get conflated: **monolith ≠ bad architecture**. A monolith can be very well designed internally. It can also scale horizontally:
+
+<MermaidDiagram code={`flowchart TD
+    LB["Load Balancer"] --> A1["App"]
+    LB --> A2["App"]
+    LB --> A3["App"]
+    A1 --> DB[("Database")]
+    A2 --> DB
+    A3 --> DB`} />
+
+**Benefits**
+
+- simple deployment;
+- easier debugging;
+- lower latency for internal communication;
+- local transactions;
+- lower operational complexity.
+
+**Drawbacks**
+
+- every module ships together;
+- you can't scale each module separately;
+- internal boundaries can erode;
+- a change in one module can affect the whole application.
+
+## Modular monolith
+
+Deployed as a single unit, but with clear boundaries between its modules:
+
+<MermaidDiagram code={`flowchart TD
+    App["Application"] --> Pay["Payments"]
+    App --> Ord["Orders"]
+    App --> Inv["Inventory"]
+    App --> Cus["Customers"]`} />
+
+The modules have an explicit internal API. The difference between a good and a bad modular monolith usually comes down to this:
+
+<MermaidDiagram code={`flowchart LR
+    subgraph OK["Right"]
+        O1["Orders"] --> P1["Payments API"]
+    end
+    subgraph BAD["Wrong"]
+        O2["Orders"] --> P2["payments.internal.repository"]
+    end`} />
+
+**The goal**
+
+Get high modularity, simple deployment, and local transactions, without paying yet for the network, distributed state, and distributed failures.
+
+**When to use it**
+
+It's especially fitting when:
+
+- the application is complex;
+- the domains are well defined;
+- the team is still relatively small;
+- there's no clear need for independent deployment;
+- distributing would add complexity without solving a concrete problem.
+
+**When it can fall short**
+
+It can be insufficient when:
+
+- certain components need to scale independently;
+- different parts have very different release cycles;
+- teams need ownership and the ability to deploy autonomously;
+- a component has to be isolated because it fails, scales, or is regulated differently from the rest.
+
+## Microservices
+
+A microservices architecture spreads the system across several autonomous services:
+
+<MermaidDiagram code={`flowchart TD
+    GW["API Gateway"] --> PS["Payment Service"]
+    GW --> OS["Order Service"]
+    GW --> IS["Inventory Service"]
+    PS --> PDB[("Payment DB")]
+    OS --> ODB[("Order DB")]
+    IS --> IDB[("Inventory DB")]`} />
+
+A service should group closely related business functions and have clear boundaries. Microsoft recommends starting from domain analysis and bounded contexts to define those boundaries.
+
+**Benefits**
+
+- independent deployment
+- independent scalability
+- ownership
+- potential fault isolation
+- technology autonomy
+
+**Costs**
+
+Distribution introduces a whole new category of problems: network failures, timeouts, retries, partial failures, distributed tracing, eventual consistency, service discovery, data synchronization, and deployment complexity.
+
+> **Adopting microservices is also deciding to take on the complexity of a distributed system.**
+
+**A bad microservice**
+
+Not every small service is a good microservice:
+
+<MermaidDiagram code={`flowchart LR
+    CS["Checkout Service"] --> PS["Payment Service"]
+    PS --> PPS["Payment Provider Service"]
+    PPS --> CuS["Currency Service"]
+    CuS --> DS["Database Service"]`} />
+
+If a single simple operation takes eight network hops, the granularity is probably wrong. Microsoft also warns about excessively fine-grained services, because they can increase complexity and degrade performance.
+
+## SOA
+
+**Service-oriented architecture** (SOA) is a family of architectures that is especially relevant in enterprise settings. A classic layout:
+
+<MermaidDiagram code={`flowchart TD
+    Cl["Clients"] --> ESB["ESB"]
+    ESB --> PS["Payment Service"]
+    ESB --> CS["Customer Service"]
+    ESB --> OS["Order Service"]
+    ESB --> ERP["ERP"]`} />
+
+Historically, SOA was associated with enterprise integration, centralized governance, ESBs, service reuse, orchestration, and integrating heterogeneous systems.
+
+Microservices share some of those principles, but usually put more weight on autonomy, independent deployment, decentralized responsibility, and bounded contexts. There's no universally accepted line between the two.
+
+## Monolith vs. modular monolith vs. microservices
+
+||Monolith|Modular monolith|Microservices|
+|---|---|---|---|
+|Deployment|One|One|Many|
+|Boundaries|Can be weak|Strong|Distributed|
+|Network|Not between modules|Not between modules|Yes|
+|Local ACID|Straightforward|Straightforward|Limited across services|
+|Scaling|Global|Global|Independent|
+|Operations|Simple|Simple/moderate|Complex|
+|Failure model|Mostly local|Mostly local|Distributed|
+
+There's no hierarchy where "monolith → worse" and "microservices → better". There's a different set of trade-offs. Fowler points precisely at the extra cost — the so-called _Microservice Premium_ — of running a distributed architecture: it isn't a toll you pay once, it's complexity the team takes on every day.
+
+**Tools and technologies**
+
+Microservices are usually combined with Docker, Kubernetes, AWS ECS/EKS, Azure Kubernetes Service, a _service mesh_, Kafka, REST/gRPC, and distributed tracing. But none of these technologies automatically turns an application into a good microservices architecture.
+
+**References**
+
+- Martin Fowler, [*Microservices*](https://martinfowler.com/articles/microservices.html).
+- Martin Fowler, [*Monolith First*](https://martinfowler.com/bliki/MonolithFirst.html).
+- Microsoft Azure Architecture Center, [*Microservices Architecture Style*](https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/microservices).

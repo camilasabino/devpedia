@@ -1,0 +1,11 @@
+---
+// Every Spanish topic, subtopic and guide: /<topic>/[<subtopic>/][<guide>/].
+import NodePage from '../components/NodePage.astro';
+import { getStaticPathsFor } from '../lib/content';
+
+export const getStaticPaths = () => getStaticPathsFor('es');
+
+const { lang, kind, id } = Astro.props;
+---
+
+<NodePage lang={lang} kind={kind} id={id} />

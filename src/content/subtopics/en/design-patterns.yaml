@@ -1,0 +1,18 @@
+id: design-patterns
+slug: patterns
+order: 2
+topic: design
+title: Design patterns
+description: >-
+  Solutions to recurring design problems: how they work, when to apply
+  them, and when a simpler alternative is the better call.
+icon: layers
+sections:
+  - id: creational
+    title: Creational patterns
+  - id: structural
+    title: Structural patterns
+  - id: behavioral
+    title: Behavioral patterns
+  - id: reference
+    title: Comparisons and reference

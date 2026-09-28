@@ -1,0 +1,141 @@
+---
+id: builder-pattern
+slug: builder
+order: 7
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Builder"
+description: "Cómo construir objetos paso a paso cuando un constructor con muchos parámetros se vuelve difícil de usar y mantener."
+created: 2026-06-12
+lastUpdated: 2026-06-12
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Builder** es un patrón creacional que permite construir objetos complejos paso a paso, separando el proceso de construcción de la representación final.
+
+## El problema
+
+Un `Order` en AndesShop puede tener: uno o más productos, un método de envío, un cupón de descuento opcional, envoltorio para regalo opcional, un seguro de envío opcional, y una nota para el destinatario opcional. Un constructor que cubra todas las combinaciones termina así:
+
+```java
+new Order(items, shippingMethod, null, true, false, null);
+```
+
+Nadie puede leer esa línea y saber qué es cada `null` o cada `boolean` sin ir a mirar la firma del constructor. Y si mañana se agrega un campo nuevo, hay que agregar un parámetro más a una lista que ya es demasiado larga — o multiplicar constructores sobrecargados para cada combinación relevante.
+
+## La solución
+
+Builder extrae la lógica de construcción a un objeto aparte, que arma el resultado paso a paso a través de métodos con nombre propio, y lo entrega recién al final con un método `build()`. Cada llamada es legible por sí sola, y los pasos opcionales simplemente no se llaman.
+
+<ClassDiagram
+  caption="Estructura de Builder: el builder acumula partes y produce un Order ya válido, que es dueño de sus items."
+  diagram={`    class OrderBuilder {
+        -items List~Item~
+        -shippingMethod ShippingMethod
+        -giftWrap boolean
+        +addItem(Item) OrderBuilder
+        +withShippingMethod(ShippingMethod) OrderBuilder
+        +withGiftWrap() OrderBuilder
+        +build() Order
+    }
+    class Order {
+        -items List~Item~
+        -shippingMethod ShippingMethod
+        -giftWrap boolean
+        +items() List~Item~
+    }
+    class Item {
+        -sku String
+        -quantity int
+    }
+    OrderBuilder ..> Order : «create»
+    OrderBuilder o-- "0..*" Item : items acumulados
+    Order *-- "1..*" Item : items`}
+/>
+
+## Ejemplo en Java
+
+```java
+class Order {
+    private final List<Item> items;
+    private final ShippingMethod shippingMethod;
+    private final boolean giftWrap;
+    private final String couponCode;
+
+    // Constructor privado: solo el Builder puede crear un Order
+    private Order(OrderBuilder builder) {
+        this.items = builder.items;
+        this.shippingMethod = builder.shippingMethod;
+        this.giftWrap = builder.giftWrap;
+        this.couponCode = builder.couponCode;
+    }
+
+    static class OrderBuilder {
+        private final List<Item> items = new ArrayList<>();
+        private ShippingMethod shippingMethod = ShippingMethod.STANDARD;
+        private boolean giftWrap = false;
+        private String couponCode;
+
+        public OrderBuilder addItem(Item item) {
+            items.add(item);
+            return this;
+        }
+
+        public OrderBuilder withShippingMethod(ShippingMethod method) {
+            this.shippingMethod = method;
+            return this;
+        }
+
+        public OrderBuilder withGiftWrap() {
+            this.giftWrap = true;
+            return this;
+        }
+
+        public OrderBuilder withCoupon(String code) {
+            this.couponCode = code;
+            return this;
+        }
+
+        public Order build() {
+            if (items.isEmpty()) {
+                throw new IllegalStateException("An order needs at least one item");
+            }
+            return new Order(this);
+        }
+    }
+}
+```
+
+```java
+// Client code: cada línea explica qué está configurando
+Order order = new Order.OrderBuilder()
+    .addItem(jacket)
+    .addItem(hikingBoots)
+    .withShippingMethod(ShippingMethod.EXPRESS)
+    .withGiftWrap()
+    .build();
+```
+
+## Cuándo usarlo
+
+- Cuando construir un objeto requiere varios pasos, muchos de ellos opcionales, y un constructor tradicional se volvería ilegible.
+- Cuando querés poder construir distintas representaciones del mismo objeto reutilizando gran parte del mismo proceso.
+
+## Cuándo evitarlo
+
+Para objetos simples con dos o tres campos obligatorios, un constructor normal es más directo — o un constructor con nombre (_named constructor_) o un _factory_ estático — y no necesita una clase extra.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Permite construir objetos paso a paso, e ir omitiendo los pasos opcionales|Agrega una clase adicional (el Builder) por cada objeto complejo|
+|El código de construcción queda legible, cada paso tiene nombre propio|Puede quedar sobredimensionado para objetos con pocos campos|
+|Facilita reutilizar el mismo proceso de construcción para variantes distintas del objeto||
+
+## Relación con otros patrones
+
+- Se puede combinar con **[Abstract Factory](/diseno/patrones/abstract-factory/)**: el factory decide qué builder usar según la familia de producto.
+- A diferencia de **[Prototype](/diseno/patrones/prototype/)**, que crea objetos copiando uno existente, Builder los construye desde cero, pieza por pieza.

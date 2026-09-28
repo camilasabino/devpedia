@@ -1,0 +1,62 @@
+---
+id: usability-testing
+slug: usability-testing
+order: 12
+topic: testing
+section: non-functional
+title: "Usability testing and its relationship with UX"
+description: "How to evaluate whether people can understand and use the system, and how it differs from other UX research activities."
+created: 2026-08-18
+lastUpdated: 2026-08-18
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+## What it is
+
+Usability testing evaluates how easy it is for users to understand, learn, and correctly use the system. An application can be functionally correct, technically reliable, and secure, and still offer a poor experience.
+
+## What to watch for
+
+Some relevant aspects: learnability, discoverability, accessibility, navigation, cognitive load, error recovery, consistency, and feedback. The difference between a technically correct message and a genuinely useful one is enormous:
+
+| Technically correct | Useful to the user |
+|---|---|
+| "Payment failed." | "We couldn't process the deposit for your reservation. No charge was made. Try again or use a different payment method." |
+
+## How it's run
+
+Unlike the rest of this topic, there's no suite running in CI here. The most widely used method is the **moderated task-based test**: you give a representative person a concrete goal ("book a table for four on Friday at nine"), you watch them attempt it without helping, and you record where they hesitate, where they go wrong, and where they give up.
+
+What gets measured is usually:
+
+| Metric | What it tells you |
+|---|---|
+| Success rate | What percentage completed the task unaided |
+| Time to completion | How much friction the main flow has |
+| Errors per task | Where the system leads people into mistakes |
+| Drop-off points | Which step people fall off at |
+
+With five to eight participants, the serious usability problems usually surface: you don't need a statistically representative sample to find out that nobody can locate the cancel button.
+
+## Usability testing vs. UX research
+
+They aren't the same thing, and confusing them leads to answering the wrong question.
+
+| | Question | When it happens |
+|---|---|---|
+| **Usability testing** | Can people use *this thing* we built? | On something already built or prototyped |
+| **UX research** | What do people actually need? | Before deciding what to build |
+
+Usability testing evaluates a solution; UX research investigates the problem. A product can pass usability testing with flying colors and still be the wrong product — it's the same distinction between [verification and validation](/en/testing/what-is-testing/#verification-vs-validation), applied to the experience.
+
+## Usability is not accessibility
+
+They get lumped together often and it's worth separating them, because they have different criteria.
+
+- **Usability** asks whether the system is easy to understand and use. It's evaluated by observing people, and its results are largely qualitative.
+- **Accessibility** asks whether the system is *usable* by people with disabilities. It has a checkable standard — the W3C's [WCAG](https://www.w3.org/WAI/standards-guidelines/wcag/) — with conformance criteria at levels A, AA, and AAA, and a good part of it can be automated: color contrast, heading hierarchy, alternative text, visible focus, keyboard navigation.
+
+A system can be very usable for someone who sees and uses a mouse, and completely unusable with a screen reader. That's why accessibility isn't a subset of usability: it's a requirement of its own, with its own way of being verified, and a significant part of it can go into the automated suite.
+
+Usability and accessibility look at the person in front of the product. [Compatibility testing](/en/testing/compatibility-testing/) asks something more prosaic and just as expensive: whether the same product behaves in Safari, on an old Android, and in the API a partner is still consuming.

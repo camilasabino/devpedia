@@ -1,0 +1,146 @@
+---
+id: observability-and-reliability
+slug: observability-and-reliability
+order: 10
+topic: architecture
+section: operations
+title: "Observability and reliability"
+description: "How to understand what's happening in production and define the level of service you expect. The role of observability signals, SLOs, and error budgets."
+created: 2026-05-21
+lastUpdated: 2026-05-21
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Once the system is in production, two questions show up:
+
+> **Can we tell what's happening?**
+>
+> **Can we show that the system is meeting its targets?**
+
+The first one is mostly about **observability**. The second is about making **reliability measurable**.
+
+## Observability
+
+The three best-known signals are **logs**, **metrics**, and **traces**.
+
+**Logs**
+
+Individual events:
+
+```text
+Payment authorization failed
+payment_id=123
+provider=provider-a
+error=timeout
+```
+
+Good for investigating: what happened to this operation?
+
+**Metrics**
+
+Aggregated numeric values: `payment_requests_total`, `payment_errors_total`, `payment_latency_p95`, `provider_timeout_rate`, `queue_depth`. They let you watch trends.
+
+**RED (for services)**
+
+|Signal|Example|
+|---|---|
+|Rate|10k req/s|
+|Errors|1.2%|
+|Duration|p95 220ms|
+
+**USE (for resources)**
+
+|Signal|Example|
+|---|---|
+|Utilization|CPU utilization|
+|Saturation|Connection pool saturation|
+|Errors|Disk errors|
+
+## Distributed tracing
+
+A distributed request crosses several services:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant Ch as Checkout
+    participant O as Order Service
+    participant P as Payment Service
+    participant Pr as Payment Provider
+    Ch->>O: request
+    O->>P: request
+    P->>Pr: request
+    Pr-->>P: response
+    P-->>O: response
+    O-->>Ch: response`} />
+
+And it can be broken down by the time each hop takes:
+
+|Service|Latency|
+|---|---|
+|Checkout|40ms|
+|Order|20ms|
+|Payment|250ms|
+|Provider|220ms|
+
+That shows the problem isn't in Checkout, it's in the provider.
+
+Well-known tools: OpenTelemetry, Jaeger, Grafana Tempo, Datadog, New Relic, AWS X-Ray. OpenTelemetry matters particularly because it provides vendor-neutral APIs and standards for generating and exporting telemetry.
+
+## Reliability as a measurable target
+
+Observability tells you what's happening. Reliability also asks for a target: how well the system has to work, and what we do when it doesn't.
+
+That vocabulary — SLI, SLO, SLA, error budget — was popularized by SRE (*Site Reliability Engineering*). Here we use it as a design tool, not as a team model.
+
+**SLI — service level indicator**
+
+What we measure, for example:
+
+```text
+Successful payment requests
+--------------------------------
+Total payment requests
+```
+
+**SLO — service level objective**
+
+The target, for example `99.95%`.
+
+**SLA — service level agreement**
+
+A contractual commitment. Not every SLO needs to become an SLA.
+
+**Error budget**
+
+With an `SLO = 99.95%`, the error budget is roughly `0.05%`. That lets you balance reliability against delivery speed. If the team burns through the error budget repeatedly, it may be time to cut back on risky changes and prioritize reliability.
+
+## Reliability doesn't mean "never failing"
+
+A reliable system isn't one that never fails: it's one that detects the failure, contains it, recovers, and keeps it from happening again. Timeouts, retries, circuit breakers, redundancy, failover, backups, and graceful degradation are part of that design; observability is what lets you see whether it's working.
+
+## Failure domains
+
+A serious mistake is to consider only the individual component. We can analyze distinct failure domains: process, instance, availability zone, region, dependency, database, and network. For each one it's worth asking:
+
+- What happens if it fails?
+- Can we detect it?
+- Can we recover?
+- How fast?
+- How much data can we lose?
+
+## Reliability in Payments
+
+Say we have an `SLO` of 99.95% successful payment operations, plus the additional requirement of avoiding duplicate charges. Then we watch availability, latency, provider failures, timeouts, duplicate attempts, webhook failures, consumer lag, and database errors.
+
+A dashboard might end up including: Payment Success Rate, Payment p95, Provider Timeout Rate, Duplicate Request Rate, Webhook Processing Lag, and DLQ Messages. This connects the architectural design to operational reality.
+
+**Well-known tools**
+
+Prometheus, Grafana, Datadog, New Relic, OpenTelemetry, Elastic Stack, CloudWatch. The tool isn't the point. The goal is being able to answer:
+
+> **What's happening, why, and what's the impact?**
+
+**References**
+
+- Google, [*Site Reliability Engineering*](https://sre.google/sre-book/) and [*The Site Reliability Workbook*](https://sre.google/workbook/): where SLIs, SLOs, and error budgets come from.
+- [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/): reliability and operational excellence are two of its six pillars.

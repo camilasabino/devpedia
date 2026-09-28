@@ -1,0 +1,44 @@
+---
+id: system-testing
+slug: system-testing
+order: 8
+topic: testing
+section: test-levels
+title: "System testing"
+description: "How to evaluate the behavior of the complete system, and how it differs from testing the integration between components."
+created: 2026-08-10
+lastUpdated: 2026-08-10
+---
+
+## What it is
+
+System testing evaluates the complete system from a functional perspective. Unlike an integration test, the focus isn't a specific interaction between components but an end-to-end behavior.
+
+```text
+1. User searches availability   (Availability Service)
+2. Reservation created          (Reservation API)
+3. Deposit charged              (Payment Service)
+4. Table held                   (Table Service)
+5. Confirmation sent            (Notification Service)
+```
+
+The goal isn't to verify each component separately, it's that the system meets the functional requirements **as a whole**.
+
+## System testing vs. integration testing
+
+This difference causes confusion often, so it's worth spelling out:
+
+| | Focus |
+|---|---|
+| **Integration testing** | The interaction between components (`ReservationService → PostgreSQL`) |
+| **System testing** | A complete system behavior (`User → API → multiple components → result`) |
+
+A system test may pass through several integration points, but its goal is different: it doesn't verify one specific interaction, it verifies the final result that reaches the user.
+
+## The cost of going up a level
+
+As scope grows — from unit to integration to system — execution time, setup complexity, infrastructure requirements, and the cost of diagnosing a failure normally all grow with it. That's why turning the whole suite into end-to-end tests is a bad idea: it's exactly what the [test pyramid](/en/testing/what-is-testing/#where-each-test-belongs-the-pyramid) exists for.
+
+## What it doesn't catch
+
+A system test can confirm that ReservaResto's cancellation flow works exactly as implemented: the deposit is refunded according to the implemented rule, the table is released, the diner is notified. What it can't confirm is that the implemented rule is the one the business actually needs. That's where [UAT](/en/testing/user-acceptance-testing-uat/) comes in.

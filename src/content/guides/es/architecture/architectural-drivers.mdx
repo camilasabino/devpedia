@@ -1,0 +1,311 @@
+---
+id: architectural-drivers
+slug: drivers-de-arquitectura
+order: 2
+topic: architecture
+section: fundamentals
+title: "Drivers de arquitectura: qué guía las decisiones de arquitectura"
+description: "Requisitos y restricciones que orientan el diseño de un sistema. Cómo usarlos para elegir una arquitectura con fundamento."
+created: 2026-05-05
+lastUpdated: 2026-05-05
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Una de las formas más comunes de equivocarse al diseñar arquitectura es empezar demasiado pronto por la solución:
+
+> "Tenemos que usar microservicios."
+>
+> "Necesitamos Kafka."
+>
+> "Esto debería correr en Kubernetes."
+
+Estas afirmaciones pueden terminar siendo correctas, pero todavía no explican **por qué**. Una arquitectura debería partir de otra pregunta:
+
+> **¿Qué necesita hacer el sistema, bajo qué condiciones y dentro de qué restricciones?**
+
+Los **drivers de arquitectura** son los requisitos y restricciones que tienen suficiente impacto como para condicionar las decisiones arquitectónicas.
+
+<MermaidDiagram code={`flowchart LR
+    A["Requisitos"] --> C["Drivers"]
+    B["Restricciones"] --> C
+    C --> D["Decisiones"]`} />
+
+No todos los requisitos tienen el mismo peso arquitectónico. Una pantalla adicional probablemente no cambie la estructura del sistema. Un requisito como _99,99% de disponibilidad_ o _10.000 requests por segundo_ sí puede hacerlo.
+
+## Requisitos
+
+Los requisitos describen lo que el sistema debe ofrecer y las propiedades que debe cumplir. Para arquitectura resulta útil separarlos en dos grandes grupos:
+
+- **Requisitos funcionales**
+- **Atributos de calidad**
+
+### Requisitos funcionales
+
+Los **requisitos funcionales** describen qué debe hacer el sistema. En un sistema de Payments, por ejemplo:
+
+- Create Payment
+- Authorize Payment
+- Capture Payment
+- Refund Payment
+- Process Provider Webhook
+
+Un requisito podría ser:
+
+> El sistema debe permitir autorizar un pago mediante cualquiera de los proveedores de pago soportados.
+
+Este requisito define comportamiento, pero todavía no nos dice:
+
+- cuánto debería tardar;
+- cuánto tráfico debe soportar;
+- qué sucede si el proveedor no responde;
+- cómo evitamos cargos duplicados;
+- dónde se persiste la información.
+
+Eso pertenece a otras dimensiones.
+
+**Requisito funcional vs. implementación**
+
+Un error frecuente es convertir un requisito en una solución:
+
+> "Payments debe utilizar Kafka para procesar autorizaciones."
+
+Eso ya no es un requisito funcional. Es una **decisión técnica**. La diferencia es importante:
+
+<MermaidDiagram code={`flowchart LR
+    R["Requisito:<br/>'El pago debe poder autorizarse'"] -.no es lo mismo que.-> D["Decisión:<br/>'La autorización se procesará mediante X'"]`} />
+
+La arquitectura debería derivarse del problema, no al revés.
+
+### Atributos de calidad (requisitos no funcionales)
+
+Los **atributos de calidad** describen propiedades del sistema: cómo debe comportarse mientras cumple sus funciones. Algunos de los más habituales:
+
+- Performance
+- Disponibilidad
+- Confiabilidad
+- Escalabilidad
+- Seguridad
+- Consistencia
+- Durabilidad
+- Mantenibilidad
+- Operabilidad
+- Costo
+
+No existe una lista universal y cerrada; el vocabulario varía entre frameworks y organizaciones. Lo importante es convertir atributos abstractos en objetivos observables.
+
+**Performance**
+
+Performance suele dividirse, entre otras dimensiones, en **latencia** y **throughput** (capacidad de procesamiento):
+
+```text
+Throughput
+10.000 requests / segundo
+```
+
+Son conceptos diferentes: un sistema puede soportar 20.000 requests por segundo pero presentar latencias elevadas. También puede tener una latencia excelente para una request individual pero poca capacidad para manejar concurrencia.
+
+**Latencia y percentiles**
+
+En sistemas reales suele ser insuficiente decir:
+
+> "La respuesta tarda en promedio 100 ms."
+
+Es habitual utilizar percentiles:
+
+|Percentil|Latencia|
+|---|---|
+|p50|100 ms|
+|p95|180 ms|
+|p99|350 ms|
+
+Por ejemplo, un `p99` de 350 ms significa que el 99% de las requests respondió en 350 ms o menos, mientras que el 1% restante tardó más.
+
+Esto permite observar una parte de la distribución que el promedio puede ocultar y resulta especialmente útil para detectar problemas de latencia en las requests más lentas.
+
+**Disponibilidad**
+
+La disponibilidad expresa qué proporción del tiempo el sistema está operativo. Algunos valores aproximados de tiempo de caída anual:
+
+|Disponibilidad|Tiempo de caída / año|
+|---|---|
+|99%|3,65 días|
+|99,9%|8h 46m|
+|99,99%|52m 34s|
+|99,999%|5m 15s|
+
+El salto de `99,9%` a `99,99%` parece pequeño, pero puede requerir bastante más infraestructura y capacidad de recuperación. Por eso la disponibilidad debe ser un **objetivo de negocio**, no simplemente un número elegido por costumbre.
+
+**Confiabilidad**
+
+Confiabilidad y disponibilidad no son equivalentes. Supongamos el siguiente flujo:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant C as Client
+    participant S as Payments Service
+    C->>S: POST /payments
+    S-->>C: HTTP 200
+    Note over S: Pago cobrado dos veces`} />
+
+El sistema estuvo disponible y respondió correctamente desde el punto de vista del protocolo HTTP. Sin embargo, produjo un resultado incorrecto. La confiabilidad tiene que ver con que el sistema **realice correctamente su función de forma consistente**.
+
+**Escalabilidad**
+
+La escalabilidad describe cómo responde un sistema cuando aumenta la carga. Se puede escalar **en vertical** (una máquina más potente) o **en horizontal** (más instancias), pero la solución no es siempre "agregar máquinas". El cuello de botella podría estar en la base de datos, la red, la CPU, la memoria, los locks, las particiones calientes, un proveedor externo o los consumidores de una cola.
+
+Por eso un requisito como:
+
+> "El sistema debe escalar"
+
+es demasiado ambiguo. Uno más útil sería:
+
+> "El sistema debe soportar 10.000 RPS en hora pico manteniendo un p95 inferior a 300 ms."
+
+Eso sí puede orientar decisiones arquitectónicas.
+
+**Seguridad**
+
+La seguridad abarca distintos aspectos del sistema, entre ellos:
+
+- Autenticación
+- Autorización
+- Confidencialidad
+- Integridad
+- Cifrado
+- Gestión de secretos
+- Principio de mínimo privilegio
+- Auditabilidad
+
+En un sistema de Payments, por ejemplo, esto implica responder preguntas como:
+
+- ¿Quién puede ejecutar un refund?
+- ¿Qué datos puede ver cada rol?
+- ¿Dónde se almacenan las credenciales?
+- ¿Cómo se protegen los secrets?
+- ¿Cómo se auditan las operaciones sensibles?
+
+**Consistencia**
+
+La consistencia describe cuándo diferentes partes del sistema deben observar los mismos datos. Por ejemplo:
+
+|Origen|Estado del payment|
+|---|---|
+|Payment DB|CAPTURED|
+|Orders DB|PENDING|
+
+Esto puede ser completamente inaceptable, aceptable durante unos segundos, o irrelevante para determinadas lecturas. Depende del dominio. La pregunta arquitectónica correcta es:
+
+> **¿Qué operaciones requieren consistencia fuerte y dónde podemos aceptar consistencia eventual?**
+
+**Durabilidad**
+
+La durabilidad describe la capacidad de conservar datos una vez que fueron confirmados. Es especialmente importante para:
+
+- Payments
+- Orders
+- Transactions
+- logs de auditoría
+- registros financieros
+
+No es suficiente que un endpoint devuelva `200 OK` si el dato puede desaparecer posteriormente.
+
+## Restricciones
+
+Los requisitos describen lo que necesitamos. Las **restricciones** limitan las soluciones que podemos elegir:
+
+- **Restricciones técnicas**
+- **Restricciones de negocio**
+
+### Restricciones técnicas
+
+Ejemplos:
+
+- Debe ejecutarse en AWS
+- Debe utilizar PostgreSQL
+- Debe integrarse con un sistema PHP legacy
+- Debe utilizar la infraestructura existente de Kafka
+- Debe ser compatible con Java 21
+
+Una restricción técnica puede ser consecuencia de:
+
+- infraestructura existente;
+- contratos;
+- estándares internos;
+- conocimientos del equipo;
+- migraciones anteriores;
+- compliance.
+
+### Restricciones de negocio
+
+Ejemplos:
+
+- Presupuesto
+- Plazo
+- Tamaño del equipo
+- Contratos existentes
+- Regulaciones
+- Requisitos del mercado
+- Capacidad operativa
+
+Imaginemos:
+
+|Dimensión|Valor|
+|---|---|
+|Equipo|4 developers|
+|Fecha límite|4 meses|
+|Presupuesto|Limitado|
+|Disponibilidad objetivo|99,9%|
+
+Con un equipo de 4, 4 meses y presupuesto limitado, una arquitectura multirregión suele agregar más complejidad de la que pide un objetivo de 99,9%.
+
+## De requisitos a drivers de arquitectura
+
+Consideremos un sistema de Payments:
+
+**Funcionales**
+
+- Authorize payment
+- Capture payment
+- Refund payment
+
+**Atributos de calidad**
+
+- p95 < 300 ms
+- 99,99% de disponibilidad
+- 10k RPS en hora pico
+- Sin cargos duplicados
+
+**Restricciones**
+
+- AWS
+- PostgreSQL
+- Proveedores existentes
+- Equipo pequeño
+
+Los drivers resultantes podrían ser:
+
+<MermaidDiagram code={`flowchart TD
+    AD["Drivers de arquitectura"]
+    AD --> H["Alta disponibilidad"]
+    AD --> L["Baja latencia"]
+    AD --> T["Alto throughput"]
+    AD --> I["Procesamiento idempotente"]
+    AD --> S["Operaciones seguras"]
+    AD --> O["Simplicidad operativa"]`} />
+
+**Cuándo este análisis es especialmente útil**
+
+Cuando varias arquitecturas parecen razonables. Si una aplicación tiene 50 usuarios, 10 RPS y un objetivo de 99,5% de disponibilidad, es probable que no exista una razón de peso para distribuir el sistema. Si en cambio tiene 500.000 usuarios, 50k RPS, un objetivo de 99,99% de disponibilidad, necesidad de escalado independiente y múltiples equipos trabajando en paralelo, la discusión cambia radicalmente.
+
+**Cuándo no sobredimensionarlo**
+
+No todo proyecto necesita un documento de requisitos de 50 páginas. La clave es identificar **los requisitos que realmente pueden cambiar la arquitectura**.
+
+**Herramientas habituales**
+
+Para capturar requisitos y restricciones pueden utilizarse Jira, Linear, Confluence, Notion, GitHub Issues o documentos de arquitectura. La herramienta es secundaria: lo importante es que los drivers sean explícitos.
+
+**Referencias**
+
+- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/) — presenta principios para evaluar arquitecturas en áreas como excelencia operativa, seguridad, fiabilidad, eficiencia del rendimiento y optimización de costos.
+- [Microsoft Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/) — ofrece material sobre estilos arquitectónicos y cómo evaluarlos según sus beneficios, desafíos y contexto.

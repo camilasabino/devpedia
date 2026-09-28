@@ -1,0 +1,143 @@
+---
+id: observer-pattern
+slug: observer
+order: 23
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Observer"
+description: "How to notify subscribed objects of changes without depending on their concrete classes, and what that relationship means for the design."
+created: 2026-07-15
+lastUpdated: 2026-07-15
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+_Also known as: Listener_
+
+**Observer** is a behavioral pattern that makes everything depending on an object find out when it changes — without the changing object having to know them one by one.
+
+## The problem
+
+When an AndesShop product that was out of stock is available again, several things have to react: every user who signed up for the "notify me when it's back" list has to be told, the search index has to be updated so the product shows up in results again, and the recommendations cache has to be refreshed. If the code that updates stock calls each of those three processes directly, then every time a fourth process becomes interested in that event (analytics, say), that same function has to be modified again — and it ends up knowing far too much about who else needs to hear about a stock change.
+
+## The solution
+
+Observer inverts that dependency: the object that changes (`Product`) doesn't know who is interested in its changes. Instead, it keeps a list of "observers" that subscribe to its events, and simply tells all of them when something relevant happens. Adding a new interested party means adding it to the subscriber list, without touching `Product`'s code.
+
+<ClassDiagram
+  caption="The structure of Observer: the subject keeps a list of observers and notifies them without knowing their concrete classes. `unsubscribe` is not optional."
+  diagram={`    class StockSubject {
+        <<abstract · subject>>
+        -observers List~StockObserver~
+        +subscribe(StockObserver) void
+        +unsubscribe(StockObserver) void
+        #notifyObservers() void
+    }
+    class Product {
+        -sku String
+        -stock int
+        +setStock(int) void
+    }
+    class StockObserver {
+        <<interface>>
+        +onBackInStock(Product) void
+    }
+    class WaitlistNotifier {
+        +onBackInStock(Product) void
+    }
+    class SearchIndexUpdater {
+        +onBackInStock(Product) void
+    }
+    StockSubject <|-- Product
+    StockSubject --> "0..*" StockObserver : observers
+    StockObserver <|.. WaitlistNotifier
+    StockObserver <|.. SearchIndexUpdater`}
+/>
+
+## Example in Java
+
+```java
+interface StockObserver {
+    void onBackInStock(Product product);
+}
+
+class Product {
+    private final List<StockObserver> observers = new ArrayList<>();
+    private int stock;
+
+    public void subscribe(StockObserver observer) {
+        observers.add(observer);
+    }
+
+    public void setStock(int newStock) {
+        boolean wasOutOfStock = this.stock == 0;
+        this.stock = newStock;
+        if (wasOutOfStock && newStock > 0) {
+            for (StockObserver observer : observers) {
+                observer.onBackInStock(this);
+            }
+        }
+    }
+}
+
+class WaitlistNotifier implements StockObserver {
+    public void onBackInStock(Product product) {
+        System.out.println("Notifying waitlist for " + product);
+    }
+}
+
+class SearchIndexUpdater implements StockObserver {
+    public void onBackInStock(Product product) {
+        System.out.println("Re-indexing " + product + " for search");
+    }
+}
+```
+
+```java
+// Client code: adding a new interested party doesn't touch the Product class
+Product jacket = new Product();
+jacket.subscribe(new WaitlistNotifier());
+jacket.subscribe(new SearchIndexUpdater());
+
+jacket.setStock(10); // triggers both reactions, without Product knowing them
+```
+
+## When to use it
+
+- When a change in one object needs to trigger reactions in a variable number of other objects, only known at runtime.
+- When you want to keep the changing object from depending directly on everything that reacts to its change.
+
+## When to avoid it
+
+If the order observers are notified in matters and is rigid, or if you need a guarantee that the notification was processed before continuing, an in-memory Observer may not be enough: the order isn't guaranteed and one failing observer can cut off the rest. In those cases a message queue, or calling the interested parties explicitly, is the better fit.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|`Product` doesn't name the waitlist, the index, or the recommendations|The notification order between observers isn't always predictable or controllable|
+|The subscriber list is assembled and dismantled at runtime|A failing observer can affect the others if it isn't handled carefully|
+|A new interested party (analytics) is added without touching `Product`|With many observers chained to each other, tracing the full flow of reactions gets hard||
+
+## Relationship with other patterns
+
+- **[Mediator](/en/design/patterns/mediator/)** also reduces coupling between objects, but it centralizes _all_ of the coordination; Observer only notifies events one-to-many, without the emitter deciding how they react.
+- It's the conceptual basis behind event mechanisms and more general reactive programming.
+
+<Callout variant="warning" title="unsubscribe is not optional">
+The method most often missing from an Observer implementation is the one that removes a subscription. A long-lived subject holding references to observers nobody uses anymore keeps them alive forever: that's the pattern's classic memory leak, known as the *lapsed listener*.
+
+```java
+public void unsubscribe(StockObserver observer) {
+    observers.remove(observer);
+}
+```
+
+If the observer's lifetime is shorter than the subject's — a UI component, a request — it has to be unsubscribed explicitly, or held through weak references. And if `notifyObservers()` walks the list while an observer unsubscribes during the notification, you need to iterate over a copy to avoid failing with `ConcurrentModificationException`.
+</Callout>
+
+<Callout variant="note" title="Observer ≠ pub/sub">
+    Observer happens inside a single process, synchronously, with direct references; [pub/sub](/en/architecture/communication-patterns/#asynchronous) works across processes, asynchronously, with a broker in between.
+</Callout>

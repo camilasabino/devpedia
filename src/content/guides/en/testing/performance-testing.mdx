@@ -1,0 +1,55 @@
+---
+id: performance-testing
+slug: performance-testing
+order: 10
+topic: testing
+section: non-functional
+title: "Performance testing"
+description: "How to evaluate response times and capacity under different loads, without relying on averages alone."
+created: 2026-08-13
+lastUpdated: 2026-08-13
+---
+
+Non-functional testing evaluates quality attributes and operational characteristics of the system. It isn't limited to correct/incorrect: it asks how fast it responds, how much load it takes, how secure it is, how usable it turns out to be, and which environments it works in.
+
+What separates a useful quality attribute from a decorative one is that it's stated in measurable terms. Instead of:
+
+> Availability search should be fast.
+
+Much better:
+
+> The p95 latency of `GET /restaurants/:id/availability` must stay below 300 ms with 500 concurrent users.
+
+That turns a vague expectation into a checkable criterion.
+
+## What performance testing is
+
+Performance testing evaluates how a system behaves with respect to response time, throughput (requests per unit of time), resource utilization, scalability, and stability. For ReservaResto, a concrete target might be:
+
+```text
+GET /restaurants/:id/availability
+Target: p95 < 300 ms with 500 concurrent users
+Breaking point: at what load does it stop holding?
+```
+
+A target like that has the three pieces that make it checkable: **what is measured** (p95 latency), **how much** (300 ms), and **under what conditions** (500 concurrent users). Without the third, the number means nothing: almost any endpoint meets almost any latency with a single user.
+
+## Main categories
+
+- **Load testing**: evaluates behavior under the expected load, say a typical Friday night.
+- **Stress testing**: increases load gradually until it finds the system's breaking point.
+- **Spike testing**: evaluates abrupt changes in load, like the traffic spike a discount campaign on social media generates.
+- **Endurance / soak testing**: holds a sustained load — a whole long weekend — to catch memory leaks, resource exhaustion, or gradual degradation that only shows up over time.
+
+## What to measure
+
+Looking at the average isn't enough. p50, p95, p99, throughput, CPU, memory, database utilization, network, and queue depth are all particularly important. A ReservaResto endpoint with:
+
+```text
+average = 100 ms
+p99 = 4 seconds
+```
+
+can look excellent on a shallow dashboard, and be exactly why a significant share of users give up trying to book a table on a Friday night.
+
+Performance answers how fast and under what load. [Security testing](/en/testing/security-testing/) asks how exposed the system is when someone stops behaving like a good-faith user.

@@ -1,0 +1,41 @@
+---
+id: security-testing
+slug: testing-de-seguridad
+order: 11
+topic: testing
+section: non-functional
+title: "Testing de seguridad"
+description: "Cómo evaluar controles de acceso y detectar vulnerabilidades con pruebas y análisis estático y dinámico. Qué aporta cada enfoque."
+created: 2026-08-14
+lastUpdated: 2026-08-14
+---
+
+## Qué es
+
+El testing de seguridad busca identificar vulnerabilidades y comprobar autenticación, autorización, confidencialidad, integridad, acceso a datos, gestión de sesiones y validación de entradas. En ReservaResto, preguntas típicas serían:
+
+```text
+¿Puede un usuario cancelar la reserva de otro adivinando el ID?
+¿Puede un request sin autenticar acceder al endpoint interno que lista teléfonos de comensales?
+¿Puede un input malicioso en el buscador por zona alterar la query?
+```
+
+## Áreas comunes
+
+Entre otras: SQL Injection, XSS, CSRF, autenticación rota (*broken authentication*), autorización rota (*broken authorization*), referencias directas a objetos inseguras (IDOR), exposición de datos sensibles y vulnerabilidades en dependencias.
+
+El testing de seguridad no es exclusivamente responsabilidad del equipo de seguridad. Conviene incorporarlo en diseño, implementación, testing, despliegue y operaciones, no dejarlo como un control al final. Muchas de las decisiones que lo hacen posible se toman antes: quién puede ejecutar un reintegro, dónde viven los secrets y cómo se auditan las operaciones sensibles son [drivers de arquitectura](/arquitectura/drivers-de-arquitectura/), no detalles de implementación.
+
+## Testing de seguridad estático vs. dinámico
+
+```text
+SAST (Static Application Security Testing)
+  Código fuente → se analiza sin ejecutar → vulnerabilidades detectadas antes del despliegue
+
+DAST (Dynamic Application Security Testing)
+  Aplicación corriendo → se ataca / analiza en runtime → vulnerabilidades explotables detectadas en vivo
+```
+
+**SAST** analiza el código sin ejecutar la aplicación. **DAST** ataca o analiza la aplicación mientras está corriendo. A esto se suman herramientas de análisis de dependencias (*dependency scanning*) que complementan ambos enfoques. Ninguno reemplaza al otro: SAST detecta temprano, en el código; DAST detecta lo que solo se manifiesta en runtime.
+
+Que el sistema resista un ataque no dice nada sobre si una persona puede completar una reserva sin perderse. Eso lo cubre el [testing de usabilidad y su relación con UX](/testing/testing-de-usabilidad/).

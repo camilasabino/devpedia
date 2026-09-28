@@ -1,0 +1,141 @@
+---
+id: builder-pattern
+slug: builder
+order: 7
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Builder"
+description: "How to construct objects step by step when a constructor with many parameters becomes hard to use and maintain."
+created: 2026-06-12
+lastUpdated: 2026-06-12
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Builder** is a creational pattern that lets you construct complex objects step by step, separating the construction process from the final representation.
+
+## The problem
+
+An `Order` in AndesShop can have: one or more products, a shipping method, an optional discount coupon, optional gift wrapping, optional shipping insurance, and an optional note for the recipient. A constructor covering every combination ends up like this:
+
+```java
+new Order(items, shippingMethod, null, true, false, null);
+```
+
+Nobody can read that line and know what each `null` or each `boolean` means without going to look at the constructor's signature. And if a new field gets added tomorrow, you have to add one more parameter to a list that's already too long — or multiply the overloaded constructors for every relevant combination.
+
+## The solution
+
+Builder extracts the construction logic into a separate object that assembles the result step by step through methods with names of their own, and hands it over only at the end with a `build()` method. Each call is readable on its own, and the optional steps simply don't get called.
+
+<ClassDiagram
+  caption="The structure of Builder: the builder accumulates parts and produces an already-valid Order, which owns its items."
+  diagram={`    class OrderBuilder {
+        -items List~Item~
+        -shippingMethod ShippingMethod
+        -giftWrap boolean
+        +addItem(Item) OrderBuilder
+        +withShippingMethod(ShippingMethod) OrderBuilder
+        +withGiftWrap() OrderBuilder
+        +build() Order
+    }
+    class Order {
+        -items List~Item~
+        -shippingMethod ShippingMethod
+        -giftWrap boolean
+        +items() List~Item~
+    }
+    class Item {
+        -sku String
+        -quantity int
+    }
+    OrderBuilder ..> Order : «create»
+    OrderBuilder o-- "0..*" Item : accumulated items
+    Order *-- "1..*" Item : items`}
+/>
+
+## Example in Java
+
+```java
+class Order {
+    private final List<Item> items;
+    private final ShippingMethod shippingMethod;
+    private final boolean giftWrap;
+    private final String couponCode;
+
+    // Private constructor: only the Builder can create an Order
+    private Order(OrderBuilder builder) {
+        this.items = builder.items;
+        this.shippingMethod = builder.shippingMethod;
+        this.giftWrap = builder.giftWrap;
+        this.couponCode = builder.couponCode;
+    }
+
+    static class OrderBuilder {
+        private final List<Item> items = new ArrayList<>();
+        private ShippingMethod shippingMethod = ShippingMethod.STANDARD;
+        private boolean giftWrap = false;
+        private String couponCode;
+
+        public OrderBuilder addItem(Item item) {
+            items.add(item);
+            return this;
+        }
+
+        public OrderBuilder withShippingMethod(ShippingMethod method) {
+            this.shippingMethod = method;
+            return this;
+        }
+
+        public OrderBuilder withGiftWrap() {
+            this.giftWrap = true;
+            return this;
+        }
+
+        public OrderBuilder withCoupon(String code) {
+            this.couponCode = code;
+            return this;
+        }
+
+        public Order build() {
+            if (items.isEmpty()) {
+                throw new IllegalStateException("An order needs at least one item");
+            }
+            return new Order(this);
+        }
+    }
+}
+```
+
+```java
+// Client code: every line explains what it's setting
+Order order = new Order.OrderBuilder()
+    .addItem(jacket)
+    .addItem(hikingBoots)
+    .withShippingMethod(ShippingMethod.EXPRESS)
+    .withGiftWrap()
+    .build();
+```
+
+## When to use it
+
+- When constructing an object takes several steps, many of them optional, and a traditional constructor would become unreadable.
+- When you want to be able to construct different representations of the same object while reusing most of the same process.
+
+## When to avoid it
+
+For simple objects with two or three required fields, an ordinary constructor is more direct — or a named constructor, or a static factory — and doesn't need an extra class.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Lets you construct objects step by step, skipping the optional steps|Adds one extra class (the Builder) per complex object|
+|The construction code stays readable, with every step named|It can be oversized for objects with few fields|
+|Makes it easier to reuse the same construction process for different variants of the object||
+
+## Relationship with other patterns
+
+- It can be combined with **[Abstract Factory](/en/design/patterns/abstract-factory/)**: the factory decides which builder to use based on the product family.
+- Unlike **[Prototype](/en/design/patterns/prototype/)**, which creates objects by copying an existing one, Builder constructs them from scratch, piece by piece.

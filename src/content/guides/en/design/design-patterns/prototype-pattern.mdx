@@ -1,0 +1,109 @@
+---
+id: prototype-pattern
+slug: prototype
+order: 8
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Prototype"
+description: "Creating objects from existing ones can simplify their construction. How cloning works and what it demands care with."
+created: 2026-06-16
+lastUpdated: 2026-06-16
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Prototype** is a creational pattern that lets you copy existing objects without the code depending on their concrete classes.
+
+## The problem
+
+AndesShop's catalog team loads a trekking jacket with all of its information: long description, technical specs, size chart, processed photos, seasonal pricing rules. When the same jacket arrives in a new color, 90% of that data is identical — only the color, the SKU, and a couple of photos change. Rebuilding the whole object from scratch, field by field, is slow, repeats work that was already done, and is easy to get wrong through carelessness (forgetting to copy a field).
+
+## The solution
+
+Prototype delegates the copy to the object itself: instead of the client code knowing how to rebuild a `Product` from scratch, it asks the existing object to clone itself. The object knows its own fields (including the private ones), so it can copy them correctly without exposing them.
+
+<ClassDiagram
+  caption="The structure of Prototype: the client duplicates through the interface, without knowing the concrete class or how its internal state is copied."
+  diagram={`    class Product {
+        <<interface>>
+        +clone() Product
+        +price() Money
+    }
+    class TrekkingJacket {
+        -sku String
+        -color String
+        -specs Map~String, String~
+        +clone() TrekkingJacket
+    }
+    class CatalogEditor {
+        +duplicate(Product) Product
+    }
+    Product <|.. TrekkingJacket
+    CatalogEditor ..> Product : clones without knowing the concrete type
+    TrekkingJacket ..> TrekkingJacket : «create» deep copy of specs`}
+/>
+
+## Example in Java
+
+```java
+// Deliberately doesn't extend Cloneable: Java's own cloning (Object.clone())
+// has several well-known traps — here each class defines its own explicit copy.
+interface Product {
+    Product clone();
+}
+
+class TrekkingJacket implements Product {
+    private String sku;
+    private String color;
+    private String description;
+    private Map<String, String> specs;
+
+    public TrekkingJacket(String sku, String color, String description, Map<String, String> specs) {
+        this.sku = sku;
+        this.color = color;
+        this.description = description;
+        this.specs = specs;
+    }
+
+    @Override
+    public TrekkingJacket clone() {
+        // Deep copy of anything mutable, so we don't share state with the original
+        return new TrekkingJacket(this.sku, this.color, this.description, new HashMap<>(this.specs));
+    }
+
+    public void setSku(String sku) { this.sku = sku; }
+    public void setColor(String color) { this.color = color; }
+}
+```
+
+```java
+// Client code: it starts from an existing product instead of rebuilding it
+TrekkingJacket blueJacket = catalog.findBySku("JKT-2024-BLUE");
+
+TrekkingJacket greenJacket = blueJacket.clone();
+greenJacket.setSku("JKT-2024-GREEN");
+greenJacket.setColor("green");
+// The description, the specs, and everything else come already copied
+```
+
+## When to use it
+
+- When creating an object from scratch is expensive (in time, in calls to other systems, or in how much data has to be gathered) and a very similar one already exists to start from.
+- When you want to cut down subclasses that exist only to produce preconfigured variants of an object — a prototype configured once replaces those subclasses.
+
+## When to avoid it
+
+For simple objects that are cheap to construct, cloning adds nothing over an ordinary constructor. Watch out for shallow copies too: if the object has shared mutable fields (lists, maps, nested objects), you have to clone them explicitly or the original and the copy end up sharing state by accident.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The object copies its own fields, including the private ones, without the client rebuilding them one by one|Cloning objects with circular references or complex structures can be hard to get right|
+|Cuts down subclasses dedicated solely to producing preconfigured variants|Forces you to be careful about deep vs. shallow copies|
+
+## Relationship with other patterns
+
+- **[Abstract Factory](/en/design/patterns/abstract-factory/)** sometimes uses Prototype internally: instead of generating each product from scratch, the factory clones a registered prototype.
+- It differs from **[Builder](/en/design/patterns/builder/)** in that Builder constructs from scratch step by step, while Prototype starts from an object that already exists.

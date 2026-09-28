@@ -1,0 +1,122 @@
+---
+id: composite-pattern
+slug: composite
+order: 12
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Composite"
+description: "Cómo trabajar con objetos individuales y grupos de objetos a través de una misma interfaz, simplificando el manejo de estructuras jerárquicas."
+created: 2026-06-23
+lastUpdated: 2026-06-23
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Composite** es un patrón estructural que permite componer objetos en estructuras de árbol y tratar igual a un objeto individual que a una composición de esos objetos.
+
+## El problema
+
+El catálogo de AndesShop se organiza en categorías: "Trekking" contiene "Calzado" y "Indumentaria"; "Calzado" contiene "Botas" y "Zapatillas"; y dentro de cada categoría final hay productos concretos. Calcular el valor total de inventario de "Trekking" implica sumar el valor de todos los productos, sin importar cuántos niveles de subcategorías haya en el medio. Si el código de cálculo tiene que distinguir explícitamente entre "esto es un producto" y "esto es una categoría con subcategorías", termina con recorridos recursivos escritos a mano y duplicados en cada lugar que necesita recorrer el árbol.
+
+## La solución
+
+Composite define una interfaz común (`CatalogNode`) tanto para los nodos hoja (productos) como para los nodos compuestos (categorías), con una operación como `getTotalValue()`. Un producto simplemente devuelve su propio valor; una categoría delega la pregunta a cada uno de sus hijos y suma los resultados — sin que el código cliente necesite saber, en ningún momento, si está parado sobre una hoja o sobre una rama del árbol.
+
+<ClassDiagram
+  caption="Estructura de Composite: hoja y compuesto comparten la misma interfaz, y un compuesto contiene cero o más nodos, que a su vez pueden ser compuestos."
+  diagram={`    class CatalogNode {
+        <<interface>>
+        +getTotalValue() Money
+        +name() String
+    }
+    class Product {
+        -price Money
+        -stock int
+        +getTotalValue() Money
+    }
+    class Category {
+        -children List~CatalogNode~
+        +add(CatalogNode) void
+        +remove(CatalogNode) void
+        +getTotalValue() Money
+    }
+    CatalogNode <|.. Product
+    CatalogNode <|.. Category
+    Category *-- "0..*" CatalogNode : children`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface CatalogNode {
+    double getTotalValue();
+}
+
+// Leaf: un producto concreto
+class Product implements CatalogNode {
+    private final double price;
+    private final int stock;
+
+    public Product(double price, int stock) {
+        this.price = price;
+        this.stock = stock;
+    }
+
+    public double getTotalValue() {
+        return price * stock;
+    }
+}
+
+// Composite: una categoría, que puede contener productos u otras categorías
+class Category implements CatalogNode {
+    private final List<CatalogNode> children = new ArrayList<>();
+
+    public void add(CatalogNode node) {
+        children.add(node);
+    }
+
+    public double getTotalValue() {
+        double total = 0;
+        for (CatalogNode child : children) {
+            total += child.getTotalValue(); // no le importa si es Product o Category
+        }
+        return total;
+    }
+}
+```
+
+```java
+Category footwear = new Category();
+footwear.add(new Product(120.0, 30));  // botas
+footwear.add(new Product(80.0, 50));   // zapatillas
+
+Category trekking = new Category();
+trekking.add(footwear);
+trekking.add(new Product(200.0, 15)); // una campera, directo en Trekking
+
+System.out.println(trekking.getTotalValue()); // suma todo el árbol, sin distinguir niveles
+```
+
+## Cuándo usarlo
+
+- Cuando tu dominio tiene naturalmente una estructura de árbol (categorías y productos, carpetas y archivos, componentes visuales anidados).
+- Cuando querés que el código cliente trate objetos individuales y composiciones de objetos exactamente de la misma forma.
+
+## Cuándo evitarlo
+
+Si tu modelo no es realmente jerárquico, forzar una estructura de árbol donde no la hay agrega complejidad sin necesidad.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|El código cliente trabaja con hojas y composiciones de forma idéntica, porque ambas implementan `CatalogNode`|Puede ser difícil restringir qué tipos de hijos son válidos en cada rama del árbol|
+|Sigue el principio de abierto/cerrado: agregar un nuevo tipo de nodo no rompe el código existente|La interfaz común a veces termina siendo demasiado genérica|
+|Simplifica el código cliente, que ya no necesita condicionales por tipo de nodo||
+
+## Relación con otros patrones
+
+- **[Decorator](/diseno/patrones/decorator/)** comparte con Composite la idea de envolver objetos recursivamente, pero Decorator siempre envuelve un único objeto, sin ramificarse en varios hijos.
+- **[Iterator](/diseno/patrones/iterator/)** se combina naturalmente con Composite para recorrer el árbol sin exponer su estructura.
+- **[Visitor](/diseno/patrones/visitor/)** se usa a menudo junto con Composite para aplicar operaciones a todo el árbol sin ensuciar las clases `Product` y `Category` con cada operación nueva.

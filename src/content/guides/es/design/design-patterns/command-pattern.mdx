@@ -1,0 +1,136 @@
+---
+id: command-pattern
+slug: command
+order: 18
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Command"
+description: "Cómo representar acciones como objetos para encolarlas, registrarlas o permitir deshacerlas, separándolas del código que las invoca."
+created: 2026-07-06
+lastUpdated: 2026-07-06
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Command** es un patrón de comportamiento que convierte una solicitud en un objeto independiente, que se puede guardar, encolar, loguear o deshacer.
+
+## El problema
+
+El panel de administración de AndesShop necesita poder deshacer ciertas acciones: aplicar un descuento a un pedido, cancelar un pedido, reponer stock manualmente. Si cada botón del panel llama directamente al método correspondiente (`order.applyDiscount(10)`, `order.cancel()`), no hay ningún lugar donde registrar qué se hizo ni cómo revertirlo — el "deshacer" tendría que reconstruirse a mano para cada acción distinta.
+
+## La solución
+
+Command envuelve cada acción en un objeto propio, con un método `execute()` que la ejecuta y, opcionalmente, un método `undo()` que la revierte. Los botones del panel dejan de llamar métodos de negocio directamente y pasan a ejecutar objetos `Command` — que se pueden guardar en un historial para deshacer, encolar para ejecutar después, o loguear para auditoría.
+
+<ClassDiagram
+  caption="Estructura de Command: cada comando guarda el receptor y el estado necesario para revertir la acción; el invocador solo conoce la interfaz."
+  diagram={`    class Command {
+        <<interface>>
+        +execute() void
+        +undo() void
+    }
+    class ApplyDiscountCommand {
+        -order Order
+        -discount Money
+        -previousTotal Money
+        +execute() void
+        +undo() void
+    }
+    class CancelOrderCommand {
+        -order Order
+        -previousStatus OrderStatus
+        +execute() void
+        +undo() void
+    }
+    class CommandHistory {
+        <<invoker>>
+        -history Deque~Command~
+        +run(Command) void
+        +undoLast() void
+    }
+    class Order {
+        <<receiver>>
+    }
+    Command <|.. ApplyDiscountCommand
+    Command <|.. CancelOrderCommand
+    CommandHistory o-- "0..*" Command : history
+    ApplyDiscountCommand --> "1" Order : receiver
+    CancelOrderCommand --> "1" Order : receiver`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface Command {
+    void execute();
+    void undo();
+}
+
+class ApplyDiscountCommand implements Command {
+    private final Order order;
+    private final double discountPercent;
+    private double previousPrice;
+
+    public ApplyDiscountCommand(Order order, double discountPercent) {
+        this.order = order;
+        this.discountPercent = discountPercent;
+    }
+
+    public void execute() {
+        previousPrice = order.getPrice();
+        order.applyDiscount(discountPercent);
+    }
+
+    public void undo() {
+        order.setPrice(previousPrice);
+    }
+}
+
+// El invocador: no sabe qué hace cada Command, solo sabe ejecutarlo y guardarlo
+class CommandHistory {
+    private final Deque<Command> history = new ArrayDeque<>();
+
+    public void run(Command command) {
+        command.execute();
+        history.push(command);
+    }
+
+    public void undoLast() {
+        if (!history.isEmpty()) {
+            history.pop().undo();
+        }
+    }
+}
+```
+
+```java
+// Client code
+CommandHistory history = new CommandHistory();
+history.run(new ApplyDiscountCommand(order, 10));
+// ...
+history.undoLast(); // revierte el descuento, sin que CommandHistory sepa qué era
+```
+
+## Cuándo usarlo
+
+- Cuando necesitás poder deshacer o rehacer acciones.
+- Cuando querés encolar, programar o loguear solicitudes para ejecutarlas más tarde o en otro proceso.
+- Cuando un objeto tiene que recibir *qué hacer* —no los datos crudos de esa acción— para ejecutarla más tarde.
+
+## Cuándo evitarlo
+
+Si las acciones son simples y no necesitás deshacerlas, encolarlas ni loguearlas, envolverlas en objetos Command agrega una capa que no se aprovecha.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Quien dispara la acción no necesita saber cómo ejecutarla ni cómo revertirla|Agrega una clase nueva por cada tipo de acción distinta|
+|El historial de `execute()` / `undo()` queda natural: cada comando sabe deshacerse a sí mismo|Puede resultar excesivo para acciones simples que nunca necesitan revertirse|
+|Las acciones se pueden serializar, encolar, reintentar o loguear como cualquier otro objeto||
+
+## Relación con otros patrones
+
+- **[Memento](/diseno/patrones/memento/)** se usa a menudo junto con Command para poder implementar el `undo()` guardando una foto del estado anterior, en vez de revertir campo por campo.
+- **[Chain of Responsibility](/diseno/patrones/chain-of-responsibility/)** y Command se combinan cuando una solicitud viaja por una cadena de manejadores, encapsulada como Command.

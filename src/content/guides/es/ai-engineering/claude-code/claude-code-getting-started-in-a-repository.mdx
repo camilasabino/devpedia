@@ -1,0 +1,27 @@
+---
+id: claude-code-getting-started-in-a-repository
+slug: como-empezar-en-un-repositorio
+order: 12
+topic: ai-engineering
+subtopic: claude-code
+section: getting-started
+title: "Cómo empezar con Claude Code en un repositorio"
+description: "Una checklist para preparar las instrucciones, los permisos y las integraciones del proyecto, y decidir qué configuración versionar."
+created: 2026-09-11
+lastUpdated: 2026-09-11
+---
+
+Los primeros 30 minutos con Claude Code en un repo nuevo condicionan cómo va a trabajar el resto del proyecto. Conviene seguir esta lista en orden, porque algunos pasos dependen de los anteriores; otros pueden hacerse en paralelo. Cada ítem enlaza al artículo que lo explica en detalle.
+
+1. **Corré `/init`** para que Claude analice el repo y genere un `CLAUDE.md` inicial ([Memoria y contexto](/ai-engineering/claude-code/memoria-y-contexto/)). No lo dejes tal cual: es un punto de partida, no un producto terminado.
+2. **Podá ese `CLAUDE.md`** a lo esencial. Sacá todo lo que Claude ya sabría por su cuenta y dejá solo comandos exactos, convenciones propias y trampas del proyecto. Apuntá a no pasar las ~200 líneas ([Memoria y contexto](/ai-engineering/claude-code/memoria-y-contexto/)).
+3. **Separá lo personal de lo compartido.** Preferencias tuyas (no las del equipo) van a `CLAUDE.local.md`, y ese archivo va a `.gitignore` antes del primer commit.
+4. **Elegí el modo de permisos de arranque.** En un repo que no conocés todavía, arrancá en `default` (o `plan` si vas a hacer una exploración grande antes de tocar nada). Subí a `acceptEdits` recién cuando ya confiás en lo que está haciendo ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)).
+5. **Escribí las reglas `deny` no negociables** antes de escribir una sola línea de código: como mínimo, `.env`, credenciales, y cualquier carpeta de infraestructura sensible (`Read(./.env)`, `Edit(/src/db/migrations/**)`, etc.) ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)).
+6. **Decidí tu política de MCP.** ¿Qué servidores necesita este proyecto puntual? ¿Cuáles van en `--scope project` para que los use todo el equipo, y cuáles dejás en `--scope local` porque son experimentales o tuyos? ([MCP](/ai-engineering/claude-code/mcp/)).
+7. **Sumá los hooks de higiene mínima**, si el proyecto ya tiene linter/formatter: un `PostToolUse` que corra `prettier`/`eslint --fix` después de cada `Edit`/`Write` te ahorra pedírselo a mano en cada prompt ([Skills, subagentes y hooks](/ai-engineering/claude-code/skills-subagentes-y-hooks/)).
+8. **Corré `/security-review` una vez, aunque el proyecto ya exista.** Da una fotografía inicial de qué vulnerabilidades ya estaban ahí antes de que Claude Code tocara una sola línea — útil para no atribuirle después algo que ya existía ([Seguridad al trabajar con Claude Code](/ai-engineering/claude-code/seguridad/)).
+9. **Fijá el modelo default del proyecto** si tu equipo tiene una preferencia (por ejemplo, Sonnet para todo salvo un subagente de revisión de seguridad en Opus) ([Comandos y atajos esenciales](/ai-engineering/claude-code/comandos-y-atajos-esenciales/)).
+10. **Commiteá la configuración compartida** (`CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `.claude/rules/`) para que el resto del equipo arranque con el mismo comportamiento — y quede en el historial si algo hay que revertir.
+
+Si el proyecto es lo bastante grande como para que "qué significa terminado" no sea obvio a simple vista, este es también el momento de evaluar si conviene sumar [Spec-Driven Development](/ai-engineering/claude-code/spec-driven-development/) antes de la primera feature grande, no después de la tercera.

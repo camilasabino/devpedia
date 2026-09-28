@@ -1,0 +1,182 @@
+---
+id: interpreter-pattern
+slug: interpreter
+order: 19
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Interpreter"
+description: "How to represent the rules of a simple language as objects and combine them to interpret expressions."
+created: 2026-07-07
+lastUpdated: 2026-07-07
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**Interpreter** is a behavioral pattern that represents the grammar of a small language as a class hierarchy, where each rule is a class that knows how to evaluate itself.
+
+## The problem
+
+AndesShop wants the marketing team to build its own promotions without asking anyone for a deploy. The rules they need look like this:
+
+```text
+total > 50000 AND category = "trekking"
+loyalty_member OR total > 100000
+NOT uses_coupon AND units >= 3
+```
+
+The first version is usually an improvised interpreter: a giant `if` that parses the string every time, or worse, an expression stored in a database and evaluated with `eval`. Both break as soon as the rule gets complicated, and the second is a security hole.
+
+The underlying problem is that there's a **language** — small, but a language nonetheless — with a grammar that repeats: comparisons, boolean conditions, and nested combinations of both. And the structure of that language is recursive: `A AND (B OR C)` has the same shape as `A`, only composed.
+
+## The solution
+
+Interpreter proposes modeling each grammar rule as a class with a single evaluation method, and composing them into a tree. A composite expression evaluates its children and combines the results; a terminal expression reads a piece of data from the context and returns a value.
+
+<ClassDiagram
+  caption="The structure of Interpreter: terminal and non-terminal expressions share the same interface, and the non-terminal ones contain other expressions."
+  diagram={`    class PromotionRule {
+        <<interface · abstract expression>>
+        +interpret(Cart) boolean
+    }
+    class MinimumTotalRule {
+        <<terminal expression>>
+        -threshold Money
+        +interpret(Cart) boolean
+    }
+    class CategoryRule {
+        <<terminal expression>>
+        -category String
+        +interpret(Cart) boolean
+    }
+    class AndRule {
+        <<non-terminal expression>>
+        -left PromotionRule
+        -right PromotionRule
+        +interpret(Cart) boolean
+    }
+    class OrRule {
+        <<non-terminal expression>>
+        +interpret(Cart) boolean
+    }
+    class NotRule {
+        <<non-terminal expression>>
+        +interpret(Cart) boolean
+    }
+    class Cart {
+        <<context>>
+        -total Money
+        -lines List~CartLine~
+    }
+
+    PromotionRule <|.. MinimumTotalRule
+    PromotionRule <|.. CategoryRule
+    PromotionRule <|.. AndRule
+    PromotionRule <|.. OrRule
+    PromotionRule <|.. NotRule
+    AndRule --> "2" PromotionRule : left, right
+    OrRule --> "2" PromotionRule : left, right
+    NotRule --> "1" PromotionRule : inner
+    PromotionRule ..> Cart : reads the context`}
+/>
+
+## Example in Java
+
+```java
+// Abstract Expression: every rule knows how to evaluate itself against a cart
+interface PromotionRule {
+    boolean interpret(Cart cart);
+}
+
+// Terminal expressions: they read a piece of the context and decide
+record MinimumTotalRule(Money threshold) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return cart.total().isGreaterThan(threshold);
+    }
+}
+
+record CategoryRule(String category) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return cart.lines().stream()
+                .anyMatch(line -> line.category().equals(category));
+    }
+}
+
+// Non-terminal expressions: they combine other rules
+record AndRule(PromotionRule left, PromotionRule right) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return left.interpret(cart) && right.interpret(cart);
+    }
+}
+
+record OrRule(PromotionRule left, PromotionRule right) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return left.interpret(cart) || right.interpret(cart);
+    }
+}
+
+record NotRule(PromotionRule inner) implements PromotionRule {
+    @Override
+    public boolean interpret(Cart cart) {
+        return !inner.interpret(cart);
+    }
+}
+```
+
+```java
+// Client code: "total > $50,000 AND there's something from trekking, or the customer is a loyalty member"
+PromotionRule freeShipping = new OrRule(
+    new AndRule(
+        new MinimumTotalRule(Money.ars(50_000)),
+        new CategoryRule("trekking")
+    ),
+    new LoyaltyTierRule(Tier.GOLD)
+);
+
+boolean applies = freeShipping.interpret(cart);
+```
+
+The object tree and the expression's syntax tree are the same thing. Adding a new operator — `XOR`, or a `BetweenDatesRule` — means adding a class, without touching the ones that already work.
+
+<Callout variant="note" title="The parser is a separate problem">
+Interpreter defines how an already-built expression is **evaluated**, not how the text it came from is **parsed**. Turning `"total > 50000 AND category = trekking"` into that object tree is a separate parser's responsibility. GoF is explicit about this: the pattern says nothing about how to create the syntax tree.
+</Callout>
+
+## When to use it
+
+- When you have a **small and stable** language or rule set, with a grammar you can write in a few productions.
+- When efficiency isn't the priority and what matters is that the grammar stays explicit and can be extended without touching the rules that already work.
+- When the people defining the rules aren't the people deploying the system: configurable business rules, search filters, access policies, declarative validations.
+
+## When to avoid it
+
+Interpreter is the pattern in the catalog most often reached for when it isn't needed. Three signs:
+
+- **The grammar is large or going to grow.** Each grammar rule means at least one class; a real grammar with twenty productions becomes unmanageable. That's what parser generators (ANTLR and company) exist for, and GoF says so explicitly.
+- **Two or three fixed conditions are enough.** If there are three possible promotions and the same team that writes the code defines them, one [Strategy](/en/design/patterns/strategy/) per promotion is simpler and more direct.
+- **Performance matters.** Interpreting an object tree on every evaluation is noticeably slower than compiling the rule once.
+
+<Callout variant="warning" title="What is never an alternative">
+Evaluating user-supplied rules with `eval`, with an embedded scripting engine and no sandbox, or by building SQL through concatenation. Interpreter is, among other things, the safe way to solve this: the grammar can only express what the classes allow, so there's no way for a rule to turn into arbitrary execution.
+</Callout>
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The grammar stays explicit in the code: each rule is a named class|One class per grammar rule; it scales badly as the grammar grows|
+|Adding a new operator doesn't modify the existing ones (Open/Closed)|Evaluating an object tree is slow compared to a compiled expression|
+|It bounds what can be expressed, which makes it safe for rules of external origin|It doesn't solve parsing, which almost always has to be written separately|
+
+## Relationship with other patterns
+
+- **[Composite](/en/design/patterns/composite/)** is the structure it rests on: the syntax tree is a composite where the non-terminal expressions are the nodes and the terminal ones the leaves.
+- **[Visitor](/en/design/patterns/visitor/)** lets you add new operations over the tree — printing it, optimizing it, validating it — without touching each expression class.
+- **[Flyweight](/en/design/patterns/flyweight/)** helps share the terminal expressions that repeat many times within the same tree.
+- **[Iterator](/en/design/patterns/iterator/)** lets you traverse the tree without exposing its shape.
+- It gets confused with **[Strategy](/en/design/patterns/strategy/)**, and the difference is one of scale: Strategy swaps a complete algorithm; Interpreter **composes** a behavior out of grammatical pieces. If the possible rules are a closed set, it's Strategy; if they combine with each other in ways you can't enumerate in advance, it's Interpreter.

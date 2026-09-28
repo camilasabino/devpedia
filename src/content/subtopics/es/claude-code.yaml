@@ -1,0 +1,18 @@
+id: claude-code
+slug: claude-code
+order: 1
+topic: ai-engineering
+title: Claude Code
+description: >-
+  Cómo trabajar con Claude Code, desde el uso cotidiano hasta
+  su extensión y adopción en equipos.
+icon: code
+sections:
+  - id: getting-started
+    title: Primeros pasos
+  - id: context-and-control
+    title: Contexto y control
+  - id: extension
+    title: Extensión
+  - id: teams-and-workflows
+    title: Equipos y workflows

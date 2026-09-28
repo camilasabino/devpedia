@@ -1,0 +1,51 @@
+---
+id: first-principles-for-unit-tests
+slug: first-principles-for-unit-tests
+order: 3
+topic: testing
+section: unit-testing
+title: "F.I.R.S.T.: principles for unit tests"
+description: "Five criteria for writing tests that are fast, independent, and repeatable, with clear results and written at the right moment."
+created: 2026-07-30
+lastUpdated: 2026-07-30
+---
+
+A widely used mnemonic for thinking about unit tests is **F.I.R.S.T.**, attributed to Tim Ottinger and Jeff Langr, and popularized by Robert C. Martin's *Clean Code*. It isn't a formal standard or a specification: it works as a checklist of good practices.
+
+| Principle | What it means | Risk if ignored |
+|---|---|---|
+| **F**ast | Runs in milliseconds, without starting real services | Friction running the suite often → it gets run less |
+| **I**ndependent | Doesn't depend on other tests or on shared state | Cascading failures unrelated to the real bug |
+| **R**epeatable | Same result every time, under the same conditions | Flaky tests that erode trust in the suite |
+| **S**elf-Validating | Decides on its own whether it passed or failed, with no manual review | Can't run in CI/CD without human intervention |
+| **T**imely | Written close to the moment the behavior is implemented | The test documents old code instead of guiding new code |
+
+Two of these are worth dwelling on, because they cause the most trouble in practice.
+
+## Fast
+
+There's no reason for a test of a business rule to depend on booting the application, the database, and an HTTP request when the behavior can be verified without any of those dependencies. Speed isn't a goal in itself: it enables a short feedback loop and lets you associate a failure with the most recent changes.
+
+## Repeatable
+
+A test that fails intermittently — a *flaky test* — is especially expensive, because it makes it hard to tell a real defect from a timing or infrastructure problem. The most common causes are the current time, randomness, shared state, race conditions, and network dependencies.
+
+For example, if `calculateCancellationFee` took the reservation time and worked out internally how many hours were left using `new Date()`, the test's result would depend on the exact moment it runs. The usual fix is to inject a controllable abstraction:
+
+```typescript
+function calculateCancellationFee(
+  deposit: Money,
+  reservationTime: Date,
+  clock: Clock = systemClock
+): Money {
+  const hoursBeforeReservation = clock.hoursUntil(reservationTime);
+  if (hoursBeforeReservation >= 24) return Money.zero();
+  return deposit.multiply(0.5);
+}
+```
+
+That way the test can state the instant being used explicitly, instead of depending on when the suite runs. The same principle applies to ID generation, random values, environment variables, and any other non-deterministic input.
+
+Notice that this version solves *two* things: it works out the remaining hours and it decides the penalty. The alternative — leaving `calculateCancellationFee(deposit, hoursBeforeReservation)` as a pure function and calculating the hours outside it — is deterministic without injecting anything. **The cheapest way to get a repeatable test is usually to keep non-determinism out of the unit** rather than to control it with an abstraction. The rest of the examples in this topic use that pure version.
+
+With the unit under test isolated and deterministic, [AAA: how to structure a test](/en/testing/aaa-how-to-structure-a-test/) covers how to put the test itself together.

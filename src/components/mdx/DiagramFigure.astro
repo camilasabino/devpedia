@@ -1,0 +1,135 @@
+---
+import DiagramZoom from './DiagramZoom.astro';
+
+interface Props {
+  /** Describes what the diagram shows; used as the caption and the accessible name. */
+  caption: string;
+  /** Intrinsic viewBox aspect ratio, so the frame reserves the right height. */
+  viewBox: string;
+}
+
+const { caption, viewBox } = Astro.props;
+---
+
+<figure class="diagram-figure">
+  <div class="diagram-frame">
+    <div class="diagram-canvas">
+      <svg viewBox={viewBox} role="img" aria-label={caption} xmlns="http://www.w3.org/2000/svg">
+        <slot />
+      </svg>
+    </div>
+  </div>
+  <DiagramZoom caption={caption} scale={1.2} />
+  <figcaption>{caption}</figcaption>
+</figure>
+
+<style>
+  .diagram-figure {
+    margin-block: 2em;
+  }
+
+  .diagram-frame {
+    border-radius: 1rem;
+    border: 1px solid var(--border-subtle);
+    background: var(--diagram-surface);
+    padding: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .diagram-frame {
+      padding: 1.5rem;
+    }
+  }
+
+  .diagram-canvas {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    min-width: 34rem;
+    height: auto;
+    margin-inline: auto;
+    /* Every shape inherits these, so the diagram follows the theme instead of
+       baking in one palette. */
+    --uml-stroke: var(--color-neutral-400);
+    --uml-fill: rgba(255, 255, 255, 0.04);
+    --uml-text: var(--color-neutral-100);
+    --uml-muted: var(--color-neutral-400);
+    --uml-accent: var(--color-accent-400);
+    font-family: var(--font-mono);
+    /* Shapes inside <use> and <marker> live in a shadow tree that document class
+       selectors cannot reach, so they rely on `currentColor` instead. */
+    color: var(--uml-stroke);
+  }
+
+  :global(:root[data-theme='light']) svg {
+    --uml-stroke: var(--color-neutral-500);
+    --uml-fill: #ffffff;
+    --uml-text: var(--color-neutral-900);
+    --uml-muted: var(--color-neutral-600);
+    --uml-accent: var(--color-accent-700);
+  }
+
+  svg :global(.uml-shape) {
+    fill: var(--uml-fill);
+    stroke: var(--uml-stroke);
+    stroke-width: 1.2;
+  }
+
+  svg :global(.uml-boundary) {
+    fill: none;
+    stroke: var(--uml-stroke);
+    stroke-width: 1.2;
+    stroke-dasharray: 5 4;
+  }
+
+  svg :global(.uml-line) {
+    fill: none;
+    stroke: var(--uml-stroke);
+    stroke-width: 1.2;
+  }
+
+  svg :global(.uml-dashed) {
+    fill: none;
+    stroke: var(--uml-stroke);
+    stroke-width: 1.2;
+    stroke-dasharray: 6 4;
+  }
+
+  svg :global(.uml-figure) {
+    fill: none;
+    stroke: var(--uml-text);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+  }
+
+  svg :global(text) {
+    fill: var(--uml-text);
+    font-size: 11px;
+  }
+
+  svg :global(.uml-label) {
+    fill: var(--uml-muted);
+    font-size: 9.5px;
+  }
+
+  svg :global(.uml-stereotype) {
+    fill: var(--uml-muted);
+    font-size: 9px;
+    font-style: italic;
+  }
+
+  svg :global(.uml-title) {
+    fill: var(--uml-accent);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  figcaption {
+    margin-top: 0.75rem;
+  }
+</style>

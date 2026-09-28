@@ -1,0 +1,128 @@
+---
+id: singleton-pattern
+slug: singleton
+order: 9
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Singleton"
+description: "How to guarantee a single instance, and what offering global access to it means for dependencies and tests."
+created: 2026-06-17
+lastUpdated: 2026-06-17
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**Singleton** is a creational pattern that guarantees a class has a single instance, and gives a global access point to it.
+
+## The problem
+
+AndesShop needs an `InventoryLedger`: the record that keeps the current stock count for each product. If different parts of the system (checkout, the admin panel, the job that syncs with the warehouse) each create their own instance of this ledger, every instance ends up with its own copy of the count in memory — and those copies drift apart. Two different instances could each decide, on their own, that one unit of the same product is still available, and both sell it.
+
+The problem isn't only avoiding duplicate instances: it's that the whole system also needs to find _the same_ instance without every part of the code having to receive it explicitly as a parameter from the application's entry point.
+
+## The solution
+
+Singleton makes the class's constructor private, so nobody can instantiate it directly with `new`, and exposes a static method that creates the single instance the first time it's asked for and returns that same instance on every later call.
+
+<ClassDiagram
+  caption="The structure of Singleton: a private constructor, a single static instance, and a global access point any part of the system resolves on its own."
+  diagram={`    class InventoryLedger {
+        -instance InventoryLedger$
+        -stock Map~String, Integer~
+        -InventoryLedger()
+        +getInstance() InventoryLedger$
+        +reserve(String, int) boolean
+    }
+    class Checkout {
+        +confirm(Order) void
+    }
+    class WarehouseSyncJob {
+        +run() void
+    }
+    Checkout ..> InventoryLedger : getInstance()
+    WarehouseSyncJob ..> InventoryLedger : getInstance()
+    note for InventoryLedger "The underline ($) marks static members.\nThe private constructor prevents instantiating it with new."`}
+/>
+
+## Example in Java
+
+```java
+class InventoryLedger {
+    private static volatile InventoryLedger instance;
+    private final Map<String, Integer> stock = new ConcurrentHashMap<>();
+
+    // Private constructor: nobody can do "new InventoryLedger()" from outside
+    private InventoryLedger() {}
+
+    public static InventoryLedger getInstance() {
+        if (instance == null) {
+            synchronized (InventoryLedger.class) {
+                if (instance == null) {
+                    instance = new InventoryLedger();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public boolean reserve(String sku, int quantity) {
+        // compute() applies the check and the decrement as a single atomic
+        // operation on that key. That's what makes the concurrent reservation safe.
+        Integer remaining = stock.compute(sku, (key, available) -> {
+            int current = available == null ? 0 : available;
+            return current < quantity ? current : current - quantity;
+        });
+        return remaining != null && remaining >= 0 && stock.get(sku) != null;
+    }
+}
+```
+
+<Callout variant="warning" title="Two distinct mechanisms, not one">
+These are easy to mix up. Double-checked locking with `volatile` protects **the creation of the single instance**. The `ConcurrentHashMap` with `compute()` protects **the state that instance holds**. Solving one doesn't solve the other: a correctly initialized singleton with a plain `HashMap` inside still has a latent race condition.
+
+An earlier version of this example marked `reserve` as `synchronized` and also used a `ConcurrentHashMap`. It worked, but it taught a confusing model: the atomicity came from the `synchronized`, and the concurrent map suggested a guarantee that wasn't being used.
+</Callout>
+
+```java
+// Client code, from anywhere in the system: always the same instance
+boolean reserved = InventoryLedger.getInstance().reserve("JKT-2024-BLUE", 1);
+```
+
+<Callout variant="note" title="The simpler alternative in Java">
+Double-checked locking avoids synchronizing on every call once the instance exists, but it's easy to write wrong — without `volatile`, for example, it's incorrect. Joshua Bloch recommends a single-value `enum` in *Effective Java* (item 3): the JVM guarantees it's initialized exactly once, it's safe against serialization and reflection, and there's nothing to break.
+
+```java
+enum InventoryLedger {
+    INSTANCE;
+
+    private final Map<String, Integer> stock = new ConcurrentHashMap<>();
+
+    public boolean reserve(String sku, int quantity) { /* ... */ }
+}
+```
+</Callout>
+
+## When to use it
+
+- When you need a class to have exactly one instance, reachable from anywhere in the code, typically to coordinate access to a shared resource (a cache, a registry, a connection pool).
+
+## When to avoid it
+
+Singleton is, in practice, the most debated pattern in the catalog — because it introduces global state, which makes tests harder to write (instances stay shared across tests unless you reset them explicitly) and hides a real dependency behind a static call instead of receiving it explicitly. Before using it, it's worth evaluating whether creating a single instance at the application's entry point and injecting it where needed is enough, without enforcing the constraint at the class level.
+
+Put in terms of the [dependency inversion principle](/en/design/principles/solid/#d--dependency-inversion-principle): `InventoryLedger.getInstance()` is a dependency that appears in nobody's signature. A `Checkout` that calls it depends on a concrete class without declaring it, and there's no way to substitute it in a test without touching global state. Receiving an `InventoryLedger` through the constructor keeps "there's only one instance" — the entry point creates it — and removes both expensive consequences.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Guarantees a single instance and a known access point to it|Introduces global state: any module can call it without declaring it, and that couples code that should be independent|
+|Controls access to a shared resource from one place|Makes testing in isolation harder, unless it's explicitly designed to be resettable|
+|Allows lazy initialization, if the implementation chooses it (it isn't inherent to the pattern)|In multithreaded environments, a badly written implementation can create more than one instance|
+
+## Relationship with other patterns
+
+- **[Abstract Factory](/en/design/patterns/abstract-factory/)**, **[Builder](/en/design/patterns/builder/)**, and **[Prototype](/en/design/patterns/prototype/)** can be implemented as a Singleton when a single shared factory or builder is enough.
+- **[Facade](/en/design/patterns/facade/)** is often implemented as a Singleton, though that isn't a requirement of the pattern.

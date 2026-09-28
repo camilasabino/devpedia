@@ -1,0 +1,100 @@
+---
+id: test-driven-development
+slug: test-driven-development
+order: 6
+topic: testing
+section: unit-testing
+title: "Test-Driven Development (TDD)"
+description: "How the cycle of writing a test, making it pass, and refactoring guides the implementation and helps you review the design."
+created: 2026-08-05
+lastUpdated: 2026-08-05
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+TDD is a practice in which tests guide the implementation of behavior through a continuous feedback loop: red, green, and refactor.
+
+<MermaidDiagram caption="The red-green-refactor cycle" code={`flowchart LR
+    R["RED<br/>Failing test"]
+    G["GREEN<br/>Minimal implementation"]
+    F["REFACTOR<br/>Improve the design"]
+
+    R --> G --> F --> R
+
+    classDef red fill:#fee2e2,stroke:#ef4444,color:#991b1b
+    classDef green fill:#dcfce7,stroke:#22c55e,color:#166534
+    classDef refactor fill:#fef3c7,stroke:#f59e0b,color:#92400e
+
+    class R red
+    class G green
+    class F refactor`} />
+
+## Red
+
+We write a test that expresses the desired behavior. Since the implementation doesn't exist yet, it fails — and that failure is expected:
+
+```typescript
+it('waives the deposit for gold tier guests', () => {
+  const deposit = calculateDeposit(4, { loyaltyTier: 'GOLD' });
+  expect(deposit).toEqual(Money.zero());
+});
+```
+
+## Green
+
+We implement **the minimum** needed to make it pass. Literally the minimum:
+
+```typescript
+function calculateDeposit(partySize: number, guest: Guest): Money {
+  return Money.zero();
+}
+```
+
+Yes, it's wrong for every other case. That's exactly the point: if this absurd implementation passes the whole suite, the suite still says nothing about the general case. The next step is writing the test that breaks it.
+
+```typescript
+it('charges $20 per guest for regular tiers', () => {
+  const deposit = calculateDeposit(4, { loyaltyTier: 'STANDARD' });
+  expect(deposit).toEqual(Money.of(80));
+});
+```
+
+Only now is the generalization justified by a test that demands it:
+
+```typescript
+function calculateDeposit(partySize: number, guest: Guest): Money {
+  if (guest.loyaltyTier === 'GOLD') return Money.zero();
+  return Money.of(20).multiply(partySize);
+}
+```
+
+<Callout variant="key" title="Triangulation">
+Writing the obvious implementation in one go is valid, and it's usually the reasonable thing to do when the rule is self-evident. But when it isn't, this back-and-forth — minimal implementation, test that breaks it, generalization — is called **triangulation**, and it's the technique that makes every line of production code exist because some test asked for it.
+
+The cost of skipping it is concrete: code no test covers, written ahead of time, that nobody later dares delete because they don't know whether something depends on it.
+</Callout>
+
+## Refactor
+
+With the test green, we improve the design and the implementation without changing the observable behavior: extract methods, remove duplication, improve names, introduce an abstraction. The tests act as a safety net during that process.
+
+## TDD isn't just "writing tests first"
+
+That phrase describes the process, but not its most important effect: TDD also gives feedback on the design. If testing `ReservationService` means building six different dependencies, setting the test up becomes so laborious that the difficulty stops being a testing problem and becomes a design signal — too many responsibilities, excessive coupling, badly defined boundaries. It's far easier to test a class that separates domain rules, calculations, and state transitions than one that also mixes in database access, HTTP, the system clock, and environment variables. TDD makes that problem obvious early, because the test is the API's first consumer.
+
+That feedback is the same one the [design principles](/en/design/principles/) give from the other side: a test that's hard to set up is usually pointing at a [Single Responsibility](/en/design/principles/solid/#s--single-responsibility-principle) violation or a concrete dependency that should have been an abstraction ([dependency inversion](/en/design/principles/solid/#d--dependency-inversion-principle)). The difference is that the test tells you today, with a concrete example.
+
+## What unit tests shouldn't try to prove
+
+They have clear limits: they're no good for proving that database mappings are correct, that an external service works, that the deployment is configured properly, or that the complete user journey works end to end. A unit test of `calculateCancellationFee` proves the math is right; it doesn't prove the deposit is actually refunded through the real payment provider, or that the rest of the system reacts properly to that status change. Those questions need other levels of testing — integration, system, and quality attributes — not a more exhaustive unit test.
+
+## Common mistakes
+
+Beyond coupling to implementation details and overusing mocks, two problems come up often: testing only the happy path — leaving out boundaries, invalid inputs, and failure states that matter to the domain — and piling too many assertions into one test, which makes it harder to understand which specific behavior it protects. `shouldRejectExpiredCoupon` is a far more useful name than `shouldValidateCouponAndCalculateDiscountAndUpdateOrderAndNotifyUser`: the second one is probably verifying too much in a single test. Chasing a coverage percentage doesn't say whether the behavior is protected either: a test can execute code without verifying anything relevant. The question that matters is which important behaviors still have no meaningful tests.
+
+## A practical mental model
+
+Before writing a unit test, it helps to walk through this sequence: which behavior do I want to protect, which inputs and initial state matter, what's the expected observable result, which dependencies are involved and which do I need to isolate, what edge cases and failure cases exist, and whether the test I'm about to write is deterministic and independent of the rest of the suite. That reasoning should end in something simple: Arrange, Act, Assert. The hard part should be understanding the behavior; running the test shouldn't add complexity.
+
+When the unit stops being alone and starts interacting with other components, the level that applies is [integration testing](/en/testing/integration-testing/).

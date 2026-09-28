@@ -1,0 +1,123 @@
+---
+id: mediator-pattern
+slug: mediator
+order: 21
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Mediator"
+description: "Cómo centralizar la coordinación entre objetos para reducir sus dependencias directas y simplificar sus interacciones."
+created: 2026-07-10
+lastUpdated: 2026-07-10
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Mediator** es un patrón de comportamiento que reduce el acoplamiento entre objetos que se llaman demasiado entre sí: en vez de referenciarse unos a otros, se comunican a través de un mediador.
+
+## El problema
+
+El formulario de checkout de AndesShop tiene varios campos que se afectan entre sí: elegir envío express deshabilita el pago contra entrega; aplicar un cupón recalcula el total, lo que puede habilitar o deshabilitar ciertos métodos de envío gratuitos; cambiar la dirección puede invalidar un cupón que solo aplica a determinadas zonas. Si cada componente del formulario conoce y llama directamente a los demás para notificarles estos cambios, el formulario termina siendo una red de referencias cruzadas donde tocar un componente obliga a entender cómo afecta a todos los demás.
+
+## La solución
+
+Mediator centraliza esa coordinación en un objeto aparte. Cada componente del formulario solo conoce al mediador, nunca a los otros componentes directamente: cuando cambia, se lo informa al mediador, y es el mediador quien decide qué otros componentes tienen que reaccionar y cómo.
+
+<ClassDiagram
+  caption="Estructura de Mediator: los componentes no se conocen entre sí, solo conocen al mediador, que centraliza cómo reaccionan unos a otros."
+  diagram={`    class CheckoutMediator {
+        <<interface>>
+        +notify(Component, String event) void
+    }
+    class CheckoutForm {
+        -shipping ShippingMethodField
+        -coupon CouponField
+        -payment PaymentMethodField
+        +notify(Component, String event) void
+    }
+    class Component {
+        <<abstract · colleague>>
+        #mediator CheckoutMediator
+        +changed(String event) void
+    }
+    class ShippingMethodField
+    class CouponField
+    class PaymentMethodField
+
+    CheckoutMediator <|.. CheckoutForm
+    Component <|-- ShippingMethodField
+    Component <|-- CouponField
+    Component <|-- PaymentMethodField
+    Component --> "1" CheckoutMediator : mediator
+    CheckoutForm --> "3" Component : colleagues`}
+/>
+
+## Ejemplo en Java
+
+```java
+// El método se llama notifyMediator, no notify: Object.notify() ya existe en
+// todo objeto Java para sincronización de hilos, y reusar ese nombre para algo
+// completamente distinto confunde a cualquiera que lea la clase después.
+interface CheckoutMediator {
+    void notifyMediator(Object sender, String event);
+}
+
+class ShippingMethodField {
+    private final CheckoutMediator mediator;
+
+    public ShippingMethodField(CheckoutMediator mediator) {
+        this.mediator = mediator;
+    }
+
+    public void selectExpress() {
+        mediator.notifyMediator(this, "EXPRESS_SELECTED");
+    }
+}
+
+class PaymentMethodField {
+    public void disableCashOnDelivery() {
+        System.out.println("Cash on delivery disabled");
+    }
+}
+
+// El Mediator concreto: conoce a todos los componentes y decide cómo reaccionan
+class CheckoutForm implements CheckoutMediator {
+    private final PaymentMethodField paymentField = new PaymentMethodField();
+
+    public void notifyMediator(Object sender, String event) {
+        if (sender instanceof ShippingMethodField && event.equals("EXPRESS_SELECTED")) {
+            paymentField.disableCashOnDelivery();
+        }
+        // otras combinaciones sender/event se manejan acá, en un solo lugar
+    }
+}
+```
+
+```java
+// Client code
+CheckoutForm form = new CheckoutForm();
+ShippingMethodField shippingField = new ShippingMethodField(form);
+shippingField.selectExpress(); // dispara la reacción en cadena, coordinada por el mediador
+```
+
+## Cuándo usarlo
+
+- Cuando notás que un grupo de objetos se comunica en una red de referencias directas difícil de seguir, y cambiar uno implica revisar todos los demás.
+- Cuando querés reusar un componente (un campo de formulario, un widget) en otro contexto, sin arrastrar las llamadas directas al resto de componentes del contexto original.
+
+## Cuándo evitarlo
+
+Si solo hay dos o tres objetos con una relación simple y estable entre sí, un Mediator agrega una clase intermedia para un problema que todavía no existe.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Los componentes dejan de referenciarse entre sí; todos dependen del mediador|El mediador puede terminar acumulando demasiada lógica y volverse un "objeto todopoderoso"|
+|Un campo de envío o de cupón se puede reusar en otro formulario sin arrastrar las llamadas al resto|Agrega un salto extra de indirección para cualquier interacción entre componentes|
+|La coordinación queda en un solo lugar, en vez de repartida como reglas en cada campo||
+
+## Relación con otros patrones
+
+- Se diferencia de **[Facade](/diseno/patrones/facade/)** en que Facade simplifica el acceso a un subsistema desde afuera; Mediator coordina la comunicación entre pares que ya forman parte del mismo subsistema.
+- **[Observer](/diseno/patrones/observer/)** a veces se usa para implementar la comunicación entre los componentes y el mediador.

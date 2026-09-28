@@ -1,0 +1,8 @@
+id: design
+slug: diseno
+order: 2
+title: Diseño
+description: >-
+  Principios y patrones para diseñar software más simple,
+  mantenible y adaptable.
+icon: layout

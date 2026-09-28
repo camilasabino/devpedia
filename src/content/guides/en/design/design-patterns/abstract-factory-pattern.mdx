@@ -1,0 +1,150 @@
+---
+id: abstract-factory-pattern
+slug: abstract-factory
+order: 6
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Abstract Factory"
+description: "How to create families of compatible objects without depending on their concrete classes, and keep that compatibility when the implementation changes."
+created: 2026-06-11
+lastUpdated: 2026-06-11
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Abstract Factory** is a creational pattern that lets you produce families of related objects without specifying their concrete classes.
+
+## The problem
+
+AndesShop expands its sales into Chile. Each country has its own invoice format, its own shipping document, and its own tax rules — and those three documents have to be consistent with each other: an Argentine-format invoice can never end up alongside a shipping label in another country's format, because they're documents a single order generates together and that a regulator may ask for as a set.
+
+With Factory Method alone, you'd end up with one factory per document (one for invoices, another for labels, another for payment receipts), with no guarantee that, while processing a Chilean order, someone won't accidentally mix Argentina's invoice factory with Chile's label factory.
+
+## The solution
+
+Abstract Factory groups a set of related Factory Methods behind a single interface, so a concrete factory always produces a complete, compatible family of objects. The client code only interacts with the Abstract Factory and the product interfaces — never with any country's concrete class.
+
+<ClassDiagram
+  caption="The structure of Abstract Factory: each concrete factory produces a complete family and the client only knows the interface."
+  diagram={`    class DocumentFactory {
+        <<interface>>
+        +createInvoice(Order) Invoice
+        +createShippingLabel(Order) ShippingLabel
+    }
+    class ArgentinaDocumentFactory {
+        +createInvoice(Order) Invoice
+        +createShippingLabel(Order) ShippingLabel
+    }
+    class ChileDocumentFactory {
+        +createInvoice(Order) Invoice
+        +createShippingLabel(Order) ShippingLabel
+    }
+    class Invoice {
+        <<interface>>
+        +render() String
+    }
+    class ShippingLabel {
+        <<interface>>
+        +render() String
+    }
+    class ArgentinaInvoice
+    class ChileInvoice
+    class ArgentinaShippingLabel
+    class ChileShippingLabel
+    class OrderDocuments {
+        -factory DocumentFactory
+        +emit(Order) void
+    }
+
+    DocumentFactory <|.. ArgentinaDocumentFactory
+    DocumentFactory <|.. ChileDocumentFactory
+    Invoice <|.. ArgentinaInvoice
+    Invoice <|.. ChileInvoice
+    ShippingLabel <|.. ArgentinaShippingLabel
+    ShippingLabel <|.. ChileShippingLabel
+    OrderDocuments --> "1" DocumentFactory : factory
+    ArgentinaDocumentFactory ..> ArgentinaInvoice : «create»
+    ArgentinaDocumentFactory ..> ArgentinaShippingLabel : «create»
+    ChileDocumentFactory ..> ChileInvoice : «create»
+    ChileDocumentFactory ..> ChileShippingLabel : «create»`}
+/>
+
+## Example in Java
+
+```java
+// Product interfaces
+interface Invoice {
+    String render();
+}
+
+interface ShippingLabel {
+    String render();
+}
+
+// Concrete products — Argentina
+class ArgentinaInvoice implements Invoice {
+    public String render() { return "Factura A - CUIT included"; }
+}
+class ArgentinaShippingLabel implements ShippingLabel {
+    public String render() { return "AR label - Correo Argentino"; }
+}
+
+// Concrete products — Chile
+class ChileInvoice implements Invoice {
+    public String render() { return "Boleta electrónica - RUT included"; }
+}
+class ChileShippingLabel implements ShippingLabel {
+    public String render() { return "CL label - Chilexpress"; }
+}
+
+// Abstract Factory
+interface DocumentFactory {
+    Invoice createInvoice();
+    ShippingLabel createShippingLabel();
+}
+
+// Concrete factories: each one guarantees a consistent family
+class ArgentinaDocumentFactory implements DocumentFactory {
+    public Invoice createInvoice() { return new ArgentinaInvoice(); }
+    public ShippingLabel createShippingLabel() { return new ArgentinaShippingLabel(); }
+}
+
+class ChileDocumentFactory implements DocumentFactory {
+    public Invoice createInvoice() { return new ChileInvoice(); }
+    public ShippingLabel createShippingLabel() { return new ChileShippingLabel(); }
+}
+```
+
+```java
+// Client code: it receives the factory that applies and never mixes families
+DocumentFactory factory = order.getCountry() == Country.CHILE
+    ? new ChileDocumentFactory()
+    : new ArgentinaDocumentFactory();
+
+Invoice invoice = factory.createInvoice();
+ShippingLabel label = factory.createShippingLabel();
+```
+
+## When to use it
+
+- When your code has to work with families of related products, and you need to guarantee that products from one family are always used together.
+- When you want to offer the option of configuring the system with one of several product families (by country, by provider, by visual theme) without touching the code that consumes them.
+
+## When to avoid it
+
+With a single product (not a family), or with variants that don't need to stay consistent with each other, Abstract Factory is more structure than you need — Factory Method is enough there.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Guarantees that products from one family are compatible with each other|The code can get more complicated, with many new interfaces and classes|
+|The client only talks to `DocumentFactory` and the product interfaces, never to `ArgentinaInvoice` or `ChileInvoice`|Adding a new _kind_ of product to the family forces you to modify the factory interface and all of its implementations|
+|Follows the open/closed principle when adding a complete new family||
+
+## Relationship with other patterns
+
+- It's usually implemented with a group of **[Factory Methods](/en/design/patterns/factory-method/)**, one per product in the family.
+- Concrete factories are often implemented as a **[Singleton](/en/design/patterns/singleton/)**, since one instance per family is generally enough.
+- **[Builder](/en/design/patterns/builder/)** focuses on constructing one complex object step by step; Abstract Factory focuses on producing families of related objects. The two can be combined.

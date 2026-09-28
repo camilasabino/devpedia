@@ -1,0 +1,131 @@
+---
+id: chain-of-responsibility-pattern
+slug: chain-of-responsibility
+order: 17
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Chain of Responsibility"
+description: "How to process a request through a chain of handlers and decouple the sender from whoever can handle it."
+created: 2026-07-02
+lastUpdated: 2026-07-02
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Chain of Responsibility** is a behavioral pattern that passes a request along a chain of handlers: each one can reject it, resolve it, or let it move on.
+
+## The problem
+
+Before confirming an order, AndesShop needs to run it through several validations: that there's enough stock, that the payment method is valid, that the shipping address exists, and that the order doesn't trip the anti-fraud system's alerts. Solving this with a single `validate()` method full of nested `if`s works at first, but every new validation makes that method bigger, and changing the order of the validations — or skipping one depending on the customer type — means rewriting the whole logic.
+
+## The solution
+
+Chain of Responsibility turns each validation into an independent handler with a reference to the next one in the chain. Each one decides whether to reject the order or let it move on to the next. The code that triggers the validation only knows the first link — never the rest, or how many there are.
+
+<ClassDiagram
+  caption="The structure of Chain of Responsibility: each handler knows only the next one, and the client knows only the first."
+  diagram={`    class OrderValidator {
+        <<abstract>>
+        #next OrderValidator
+        +setNext(OrderValidator) OrderValidator
+        +validate(Order) void
+        #passToNext(Order) void
+    }
+    class StockValidator {
+        +validate(Order) void
+    }
+    class PaymentValidator {
+        +validate(Order) void
+    }
+    class FraudValidator {
+        +validate(Order) void
+    }
+    class Checkout {
+        -firstValidator OrderValidator
+    }
+    OrderValidator <|-- StockValidator
+    OrderValidator <|-- PaymentValidator
+    OrderValidator <|-- FraudValidator
+    OrderValidator --> "0..1" OrderValidator : next
+    Checkout --> "1" OrderValidator : first link`}
+/>
+
+## Example in Java
+
+```java
+abstract class OrderValidator {
+    private OrderValidator next;
+
+    public OrderValidator setNext(OrderValidator next) {
+        this.next = next;
+        return next; // allows chaining: a.setNext(b).setNext(c)
+    }
+
+    public void validate(Order order) {
+        if (next != null) {
+            next.validate(order);
+        }
+    }
+}
+
+class StockValidator extends OrderValidator {
+    @Override
+    public void validate(Order order) {
+        if (!order.hasAvailableStock()) {
+            throw new OrderRejectedException("Insufficient stock");
+        }
+        super.validate(order); // moves on to the next link
+    }
+}
+
+class PaymentValidator extends OrderValidator {
+    @Override
+    public void validate(Order order) {
+        if (!order.getPaymentMethod().isValid()) {
+            throw new OrderRejectedException("Invalid payment method");
+        }
+        super.validate(order);
+    }
+}
+
+class FraudValidator extends OrderValidator {
+    @Override
+    public void validate(Order order) {
+        if (order.matchesFraudPattern()) {
+            throw new OrderRejectedException("Flagged by fraud rules");
+        }
+        super.validate(order);
+    }
+}
+```
+
+```java
+// Client code: it assembles the chain once and uses it without knowing its internal links
+OrderValidator chain = new StockValidator();
+chain.setNext(new PaymentValidator()).setNext(new FraudValidator());
+
+chain.validate(order);
+```
+
+## When to use it
+
+- When more than one object can handle a request, and the concrete handler isn't known in advance — it's decided at runtime.
+- When you want to be able to change the order of the handlers, or add/remove one, without touching the code that triggers the chain.
+
+## When to avoid it
+
+A single handler that always ends up taking responsibility doesn't need a chain: that's indirection without benefit, and a direct call is enough.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Whoever triggers the validation knows neither the order nor the number of links|There's no guarantee that any handler in the chain will actually take responsibility|
+|Lets you add or reorder handlers without touching the client code|Debugging means tracing the whole chain to see at which link the order was rejected — or let through|
+|Each handler validates one thing; adding a new rule means adding a link, not growing an `if`||
+
+## Relationship with other patterns
+
+- It's often combined with **[Command](/en/design/patterns/command/)**: each request traveling down the chain can be encapsulated as a Command.
+- It shares its structure with **[Decorator](/en/design/patterns/decorator/)** (both chain objects together), but with a different intent: Decorator always passes through every wrapper; Chain of Responsibility can cut the chain off at any link.

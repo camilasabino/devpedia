@@ -1,0 +1,45 @@
+---
+id: aaa-how-to-structure-a-test
+slug: aaa-como-estructurar-un-test
+order: 4
+topic: testing
+section: unit-testing
+title: "AAA: cómo estructurar un test"
+description: "Preparar el escenario, ejecutar una acción y verificar el resultado. Cómo usar Arrange, Act, Assert para escribir tests fáciles de entender."
+created: 2026-08-03
+lastUpdated: 2026-08-03
+---
+
+Uno de los patrones más usados para estructurar un unit test es **AAA: Arrange, Act, Assert**.
+
+```text
+Arrange → Act → Assert
+```
+
+**Arrange** prepara el estado necesario para ejecutar el test.
+**Act** ejecuta el comportamiento que queremos verificar —en general conviene que haya una única acción principal, para que el propósito del test sea evidente—.
+**Assert** verifica el resultado esperado.
+
+```typescript
+describe('calculateCancellationFee', () => {
+  it('charges 50% of the deposit when cancelled with less than 24h notice', () => {
+    // Arrange
+    const deposit = Money.of(2000);
+    const hoursBeforeReservation = 3;
+
+    // Act
+    const fee = calculateCancellationFee(deposit, hoursBeforeReservation);
+
+    // Assert
+    expect(fee).toEqual(Money.of(1000));
+  });
+});
+```
+
+El valor de AAA no está en escribir los comentarios de cada bloque. Su beneficio real es que hace evidente la intención del test —dado este estado, cuando ocurre este comportamiento, entonces esto debería ser cierto—, por lo que se relaciona naturalmente con el formato _Given/When/Then_ de [Qué es el testing](/testing/que-es-el-testing/).
+
+**Una sola acción por test.** Si el bloque Act tiene tres llamadas, el test suele estar verificando tres comportamientos y su nombre no puede describirlos a todos. Cuando falla, el mensaje no dice cuál se rompió.
+
+**Un único concepto, no una única línea.** No significa una única línea de `expect`: significa un único concepto verificado. Comprobar los cuatro campos de una `Reservation` recién creada es un concepto; comprobar además que se envió el mail es otro, y va en otro test.
+
+Cuando `ReservationService` depende de otros componentes, hay que decidir qué reemplazar y con qué: de eso tratan los [dobles de test](/testing/dobles-de-test/).

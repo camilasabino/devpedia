@@ -1,0 +1,65 @@
+---
+id: claude-code-security
+slug: security
+order: 8
+topic: ai-engineering
+subtopic: claude-code
+section: context-and-control
+title: "Security when working with Claude Code"
+description: "What risks come with giving access to files, commands, and credentials, and how to review the security of generated code."
+created: 2026-09-03
+lastUpdated: 2026-09-03
+---
+
+## Why security is different with an agent
+
+With an ordinary chatbot, the worst that can happen is that it suggests the wrong text or the wrong code snippet, and you decide whether to use it. With an agent like Claude Code, that changes: it has real access to your filesystem, it runs shell commands, it can reach the network and, if you gave it MCP, external services with your credentials. That opens **two distinct fronts of risk**, and it's worth not mixing them up:
+
+| Front | The question it answers | Where it's handled |
+|---|---|---|
+| **The code it produces** | Does the result have the vulnerabilities typical of any code, human or generated? | Code review + `/security-review` (this article) |
+| **The agent itself** | What can it do without our explicit authorization, and can someone manipulate it into doing something we didn't ask for? | Permissions, sandboxing, MCP security ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/) and [MCP](/en/ai-engineering/claude-code/mcp/)) |
+
+The first is a code quality problem. The second is an access control problem. Both matter, and the tools for each are different.
+
+## Front 1: typical vulnerabilities in AI-generated code
+
+When you ask an agent to write backend code, the result usually works on the first try: the endpoint responds, the CRUD saves to the database, the login returns a token. But **"it works"** and **"it's secure"** are different things. Language models tend to optimize for the first, because code that handles the happy path well is the code most likely to get accepted without a thorough review. Authentication, validation, error handling, and permissions are exactly the layers you don't see until they break — and that's why they're the ones most often missing or left half-done.
+
+| Vulnerability | What happens in practice | How to avoid it |
+|---|---|---|
+| **Forgotten authentication** | A new endpoint is left exposed without requiring a login or token | Don't assume it's "already handled in the router" — confirm the middleware on every new route |
+| **SQL injection** | The query is assembled by concatenating user input as it arrives | Always use parameterized queries or an ORM, never string interpolation |
+| **Hardcoded secrets** | The key or password ends up written into the code instead of an environment variable | Review the diff before committing; add a `deny` rule on `.env` ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)) |
+| **Errors that expose internals** | The response to the client includes a stack trace, the SQL query, or infrastructure details | Log the detail server-side; return a generic message to the client |
+| **Missing validation** | The request body is assumed to arrive well-formed, with the expected types and ranges | Validate type, range, and allowed fields before touching the database |
+| **Overly open CORS** | `origin: '*'` stays as-is going from development to production | Restrict the origin to the real domains before deploying |
+| **"Flat" permissions** | There's authentication, but nobody checks that the user has permission on **that specific resource** | Check the resource's ownership/role in every handler, not just that a valid token exists |
+
+All seven share the same root: there's no internal incentive for the model to think about the adversarial scenario if nobody explicitly asked it to. So when reviewing AI-generated backend code, the useful question isn't "does it work?" but **"what did the model assume that I never asked it to verify?"**
+
+## Front 2: what the agent can do, and who decides
+
+Here the risk isn't that the code has a bug, it's that the agent itself has more room to act than you meant to give it. Three concrete things to watch:
+
+- **The level of autonomy you gave it.** Permission modes and `deny`/`ask`/`allow` rules ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)) are the first line of defense: they define what it can touch without asking. A `bypassPermissions` running on your main machine, "to go faster", is the most common way to turn a small problem into a big one.
+- **Prompt injection through external content.** If the agent reads content you don't control — a web page, an attachment, the response of an MCP server connected to a third-party service — that content can carry hidden instructions aimed at the model, not at you. The defense is the same as for any untrusted input: least privilege, and auditing what you connect (see the security checklist in [MCP](/en/ai-engineering/claude-code/mcp/)).
+- **Credential exposure.** An agent with legitimate access to secrets (API tokens, database credentials) is, no more and no less, a new place those secrets could leak from — through a badly framed prompt, a log, or malicious content that induces it to expose them. `deny` rules on sensitive paths and the sandbox ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)) exist precisely so that access has a real ceiling.
+
+## Concrete measures
+
+1. **[`/security-review`](https://claude.com/blog/automate-security-reviews-with-claude-code)** — a native Claude Code command (available in-session since August 2025): it runs a security pass over the changes on your current branch and returns each finding with its attack vector and a confidence level, so you can filter noise. You can ask it to apply the fix directly.
+2. **The security guidance plugin** — automatic review, without you having to remember to run anything: Claude reviews its own changes for vulnerabilities as it works, and fixes them in the same session, before they reach a PR.
+3. **[The equivalent GitHub Action](https://github.com/anthropics/claude-code-security-review)** — the same engine as `/security-review`, running on every pull request and leaving inline comments. For when the security review has to go through the whole team, not just you.
+4. **Your own `PostToolUse` hook** ([Skills, subagents, and hooks](/en/ai-engineering/claude-code/skills-subagents-and-hooks/)) — if your team already uses a security linter (semgrep, `eslint-plugin-security`), running it automatically after every `Edit`/`Write` takes the review out of "remember to do it" and makes it deterministic.
+5. **`deny` permission rules** ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)) — block reads of `.env`, `~/.ssh/*`, and any credential, so they don't end up in a prompt, a log, or a commit even by accident.
+6. **Sandbox** ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)) — for when that block needs to be real at the operating system level, not just at the level of Claude's native tools.
+7. **The [MCP](/en/ai-engineering/claude-code/mcp/) security checklist** — every server you connect is a new surface; auditing it before installing and applying least privilege reduces the risk of external content ending up giving the agent instructions without your noticing.
+
+None of these measures replaces the others: they act at different layers. Permissions bound what the agent can touch, `/security-review` and hooks review what it produces, and the MCP checklist filters what gets connected. The combination pays off more as a habit on every feature than as a one-off audit at the end.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: the <a href="https://code.claude.com/docs/en/security" target="_blank" rel="noopener noreferrer">security page in the official documentation</a> is the index for everything else (sandbox, usage monitoring, Trust Center, CISO guide).
+</p>
+
+None of this replaces the practice that precedes it: the vulnerability categories to look for, and the difference between analyzing the code and attacking the running application, are the same with or without an agent in the loop. They're in the article on [security testing](/en/testing/security-testing/).

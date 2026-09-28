@@ -1,0 +1,146 @@
+---
+id: observability-and-reliability
+slug: observabilidad-y-confiabilidad
+order: 10
+topic: architecture
+section: operations
+title: "Observabilidad y confiabilidad"
+description: "Cómo entender qué pasa en producción y definir el nivel de servicio esperado. El papel de las señales de observabilidad, los SLO y los presupuestos de error."
+created: 2026-05-21
+lastUpdated: 2026-05-21
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Una vez que el sistema está en producción aparecen dos preguntas:
+
+> **¿Podemos saber qué está sucediendo?**
+>
+> **¿Podemos demostrar que el sistema cumple sus objetivos?**
+
+La primera corresponde principalmente a **observabilidad**. La segunda, a hacer **medible la confiabilidad**.
+
+## Observabilidad
+
+Las tres señales más conocidas son **logs**, **métricas** y **traces**.
+
+**Logs**
+
+Eventos individuales:
+
+```text
+Payment authorization failed
+payment_id=123
+provider=provider-a
+error=timeout
+```
+
+Buenos para investigar: ¿qué sucedió con esta operación?
+
+**Métricas**
+
+Valores numéricos agregados: `payment_requests_total`, `payment_errors_total`, `payment_latency_p95`, `provider_timeout_rate`, `queue_depth`. Permiten observar tendencias.
+
+**RED (para servicios)**
+
+|Señal|Ejemplo|
+|---|---|
+|Rate|10k req/s|
+|Errors|1,2%|
+|Duration|p95 220ms|
+
+**USE (para recursos)**
+
+|Señal|Ejemplo|
+|---|---|
+|Utilization|CPU utilization|
+|Saturation|Connection pool saturation|
+|Errors|Disk errors|
+
+## Tracing distribuido
+
+Una request distribuida atraviesa varios servicios:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant Ch as Checkout
+    participant O as Order Service
+    participant P as Payment Service
+    participant Pr as Payment Provider
+    Ch->>O: request
+    O->>P: request
+    P->>Pr: request
+    Pr-->>P: response
+    P-->>O: response
+    O-->>Ch: response`} />
+
+Y puede desglosarse por el tiempo que consume cada salto:
+
+|Servicio|Latencia|
+|---|---|
+|Checkout|40ms|
+|Order|20ms|
+|Payment|250ms|
+|Provider|220ms|
+
+Eso permite ver que el problema no está en Checkout, sino en el proveedor.
+
+Herramientas conocidas: OpenTelemetry, Jaeger, Grafana Tempo, Datadog, New Relic, AWS X-Ray. OpenTelemetry es particularmente importante porque proporciona APIs y estándares para generar y exportar telemetría de forma independiente del proveedor.
+
+## Confiabilidad como objetivo medible
+
+La observabilidad te dice qué está pasando. La confiabilidad pide además un objetivo: qué tan bien tiene que funcionar el sistema, y qué hacemos cuando no se cumple.
+
+Ese vocabulario —SLI, SLO, SLA, presupuesto de error— lo popularizó SRE (*Site Reliability Engineering*). Acá lo usamos como herramienta de diseño, no como modelo de equipo.
+
+**SLI — indicador de nivel de servicio**
+
+Qué medimos, por ejemplo:
+
+```text
+Successful payment requests
+--------------------------------
+Total payment requests
+```
+
+**SLO — objetivo de nivel de servicio**
+
+El objetivo, por ejemplo `99,95%`.
+
+**SLA — acuerdo de nivel de servicio**
+
+Es un compromiso contractual. No todo SLO necesita convertirse en SLA.
+
+**Presupuesto de error (*error budget*)**
+
+Si tenemos un `SLO = 99,95%`, el presupuesto de error es aproximadamente `0,05%`. Esto permite equilibrar confiabilidad y velocidad de entrega. Si el equipo consume repetidamente el presupuesto de error, puede ser necesario reducir los cambios riesgosos y priorizar la confiabilidad.
+
+## Confiabilidad no significa “nunca fallar”
+
+Un sistema confiable no es el que nunca falla: es el que detecta el fallo, lo contiene, se recupera y evita que se repita. Timeout, reintentos, circuit breaker, redundancia, failover, backups y degradación elegante son parte de ese diseño; la observabilidad es lo que permite ver si está funcionando.
+
+## Dominios de fallo
+
+Un error grave es considerar solamente el componente individual. Podemos analizar distintos dominios de fallo: proceso, instancia, zona de disponibilidad, región, dependencia, base de datos y red. Para cada uno conviene preguntarse:
+
+- ¿Qué pasa si falla?
+- ¿Podemos detectarlo?
+- ¿Podemos recuperarnos?
+- ¿Qué tan rápido?
+- ¿Cuántos datos podemos perder?
+
+## Confiabilidad en Payments
+
+Supongamos un `SLO` de 99,95% de operaciones de pago exitosas, con el requisito adicional de evitar cargos duplicados. Entonces observamos disponibilidad, latencia, fallos de proveedores, timeouts, intentos duplicados, fallos de webhooks, consumer lag y errores de base de datos.
+
+Un dashboard puede terminar incluyendo: Payment Success Rate, Payment p95, Provider Timeout Rate, Duplicate Request Rate, Webhook Processing Lag y DLQ Messages. Esto conecta el diseño arquitectónico con la realidad operativa.
+
+**Herramientas conocidas**
+
+Prometheus, Grafana, Datadog, New Relic, OpenTelemetry, Elastic Stack, CloudWatch. La herramienta no es lo importante. El objetivo es poder responder:
+
+> **¿Qué está pasando, por qué y cuál es el impacto?**
+
+**Referencias**
+
+- Google, [*Site Reliability Engineering*](https://sre.google/sre-book/) y [*The Site Reliability Workbook*](https://sre.google/workbook/): de dónde salen SLI, SLO y error budgets.
+- [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/): fiabilidad y excelencia operativa son dos de sus seis pilares.

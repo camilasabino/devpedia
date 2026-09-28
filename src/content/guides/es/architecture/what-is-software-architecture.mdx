@@ -1,0 +1,67 @@
+---
+id: what-is-software-architecture
+slug: que-es-la-arquitectura-de-software
+order: 1
+topic: architecture
+section: fundamentals
+title: "¿Qué es la arquitectura de software?"
+description: "Cómo las decisiones sobre la estructura de un sistema influyen en su evolución y por qué algunas son difíciles de revertir."
+created: 2026-05-04
+lastUpdated: 2026-05-04
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+Diseñar software a escala no consiste simplemente en escribir código que funcione. A medida que un sistema crece, aparecen decisiones sobre sus límites, sus dependencias, sus datos, sus comunicaciones, su infraestructura y la forma en que se comporta ante fallos.
+
+Estas decisiones tienen consecuencias que van mucho más allá de una clase o un endpoint. Determinan qué tan fácil es modificar el sistema, cuánto tráfico puede soportar, qué sucede cuando una dependencia deja de responder, cuánto cuesta operarlo y qué tan rápido puede evolucionar.
+
+## Una definición utilizable
+
+La definición de referencia es la de Bass, Clements y Kazman en *Software Architecture in Practice*:
+
+> La arquitectura de software de un sistema es el conjunto de estructuras necesarias para razonar sobre él, compuestas por elementos de software, las relaciones entre ellos y las propiedades de ambos.
+
+Vale la pena desarmarla, porque cada parte cumple una función:
+
+- **"Estructuras", en plural.** No hay *una* arquitectura. Hay una estructura de módulos, una de componentes en ejecución, una de despliegue, y sirven para razonar sobre preguntas distintas. Por eso el [artículo sobre comunicar decisiones](/arquitectura/como-comunicar-decisiones-de-arquitectura/) insiste en que cada diagrama responde una pregunta y ninguno las responde todas.
+- **"Relaciones" y no solo elementos.** Saber que existen un servicio de pagos y uno de órdenes no dice nada; qué le pide cada uno al otro, de forma síncrona o asíncrona, es lo que determina el comportamiento del sistema.
+- **"Propiedades".** Latencia, disponibilidad, consistencia. Son las que convierten una decisión en correcta o incorrecta *para este caso*.
+- **"Razonar sobre él".** Es el criterio práctico: si una decisión no cambia cómo razonás sobre el sistema, probablemente no sea arquitectónica.
+
+Una segunda formulación, más informal y muy citada, es la de Ralph Johnson, popularizada por Martin Fowler:
+
+> La arquitectura es aquello que la gente considera difícil de cambiar.
+
+No es una definición rigurosa, y por eso complementa bien a la anterior: pone el foco en el **costo de revertir**. Cambiar el color de un botón es barato; cambiar de una base compartida a una por servicio, con datos en producción, no lo es. Esa asimetría es la que justifica pensar antes de construir.
+
+<Callout variant="key" title="El criterio operativo">
+Juntando las dos: una decisión es arquitectónica cuando **afecta a más de un componente** y **revertirla cuesta mucho**. Si cumple las dos, conviene analizarla de forma explícita y, probablemente, dejar un [ADR](/arquitectura/como-comunicar-decisiones-de-arquitectura/#registros-de-decisiones-de-arquitectura-adr). Si no afecta a varios componentes ni es difícil de revertir, podés decidir y seguir sin ese rigor.
+</Callout>
+
+## Qué no es arquitectura
+
+Tres confusiones frecuentes, que este tema evita de forma deliberada:
+
+- **Arquitectura no es una lista de tecnologías.** "Kubernetes, Kafka y Postgres" no es una arquitectura, es un inventario. La arquitectura son los límites y las relaciones; las tecnologías son cómo se implementan, y suelen derivarse de los [drivers de arquitectura](/arquitectura/drivers-de-arquitectura/), no al revés.
+- **Arquitectura no es lo mismo que diseño de software.** La diferencia es de alcance. Cómo se reparten las responsabilidades entre servicios es arquitectura; cómo se reparten entre clases dentro de uno es [diseño](/diseno/principios/), y ahí operan los [patrones](/diseno/patrones/). No son dos disciplinas separadas: en las dos escalas importa el acoplamiento y la cohesión.
+- **La arquitectura no se cierra antes de escribir código.** Se decide de a poco, y se revisa cuando cambian los drivers que la justificaron.
+
+## Cómo se organiza este tema
+
+- **[Drivers de arquitectura: qué guía las decisiones de arquitectura](/arquitectura/drivers-de-arquitectura/)** — por qué una arquitectura debería derivarse de requisitos y restricciones explícitos, y no de una tecnología elegida de antemano.
+- **[Domain-Driven Design (DDD)](/arquitectura/domain-driven-design/)** — cómo modelar el dominio del negocio: contextos delimitados, lenguaje compartido, entidades, aggregates y eventos de dominio.
+- **[Monolitos, microservicios y SOA](/arquitectura/monolitos-microservicios-y-soa/)** — cómo dividir y desplegar el sistema: monolito, monolito modular, microservicios y SOA, con las contrapartidas reales de cada opción.
+- **[Arquitectura de la aplicación](/arquitectura/arquitectura-de-la-aplicacion/)** — cómo organizar el código dentro de cada aplicación: división horizontal vs. vertical, y arquitecturas centradas en el dominio como Hexagonal, Onion y Clean.
+- **[Patrones de comunicación](/arquitectura/patrones-de-comunicacion/)** — síncrona vs. asíncrona, REST, gRPC, GraphQL, colas y pub/sub.
+- **[Arquitectura de datos](/arquitectura/arquitectura-de-datos/)** — ownership de los datos, SQL vs. NoSQL, y cuándo tiene sentido event sourcing.
+- **[Resiliencia en sistemas distribuidos](/arquitectura/resiliencia-en-sistemas-distribuidos/)** — timeout, reintentos, circuit breaker, idempotencia, bulkhead, sagas y el resto de los mecanismos para convivir con fallos parciales.
+- **[Arquitectura de infraestructura y cloud](/arquitectura/arquitectura-de-infraestructura-y-cloud/)** — cómputo, redes, regiones, autoscaling, IaC y recuperación ante desastres.
+- **[Observabilidad y confiabilidad](/arquitectura/observabilidad-y-confiabilidad/)** — logs, métricas y traces, y cómo SLI/SLO/SLA convierten la confiabilidad en un objetivo medible.
+- **[Cómo comunicar decisiones de arquitectura](/arquitectura/como-comunicar-decisiones-de-arquitectura/)** — ADRs, diagramas UML y el modelo C4 para que una arquitectura no exista solo en la cabeza de quien la diseñó.
+
+## El sistema de ejemplo
+
+Los ejemplos de este tema giran alrededor del dominio de **Payments** dentro de una plataforma de e-commerce: el tipo de sistema donde disponibilidad, consistencia e idempotencia dejan de ser preocupaciones abstractas y se vuelven requisitos concretos con consecuencias en dinero real.
+
+Esa plataforma es **AndesShop**, el mismo e-commerce que usa como ejemplo el [tema de patrones de diseño](/diseno/patrones/). La diferencia es la escala de la mirada: allá se resuelven problemas de diseño dentro de una clase; acá se decide dónde van los límites entre servicios, quién es dueño de qué dato y qué pasa cuando el proveedor de pagos no responde.

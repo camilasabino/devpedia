@@ -1,0 +1,182 @@
+---
+id: monoliths-microservices-and-soa
+slug: monolitos-microservicios-y-soa
+order: 4
+topic: architecture
+section: domain-and-structure
+title: "Monolitos, microservicios y SOA"
+description: "Distintas formas de dividir y desplegar un sistema: qué implica cada opción y cómo evaluar cuál se adapta al problema."
+created: 2026-05-08
+lastUpdated: 2026-05-08
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+La arquitectura del sistema cambia de escala. DDD nos ayuda a entender:
+
+> ¿Cómo dividir conceptualmente el dominio?
+
+Ahora preguntamos:
+
+> **¿Cómo dividimos y desplegamos el sistema?**
+
+Las opciones principales son **monolito**, **monolito modular**, **microservicios** y **SOA**.
+
+## Monolito
+
+Un monolito se despliega como una única unidad:
+
+<MermaidDiagram code={`flowchart TD
+    App["Application"] --> Pay["Payments"]
+    App --> Ord["Orders"]
+    App --> Inv["Inventory"]
+    Pay --> DB[("Database")]
+    Ord --> DB
+    Inv --> DB`} />
+
+Es importante separar dos ideas que suelen confundirse: **monolito ≠ mala arquitectura**. Un monolito puede estar muy bien diseñado internamente. También puede escalar horizontalmente:
+
+<MermaidDiagram code={`flowchart TD
+    LB["Load Balancer"] --> A1["App"]
+    LB --> A2["App"]
+    LB --> A3["App"]
+    A1 --> DB[("Database")]
+    A2 --> DB
+    A3 --> DB`} />
+
+**Ventajas**
+
+- despliegue simple;
+- debugging más sencillo;
+- menor latencia en la comunicación interna;
+- transacciones locales;
+- menor complejidad operativa.
+
+**Desventajas**
+
+- todos los módulos se despliegan juntos;
+- no permite escalar cada módulo por separado;
+- los límites internos pueden debilitarse;
+- un cambio en un módulo puede afectar a toda la aplicación.
+
+## Monolito modular
+
+Se despliega como una única unidad, pero mantiene límites claros entre sus módulos:
+
+<MermaidDiagram code={`flowchart TD
+    App["Application"] --> Pay["Payments"]
+    App --> Ord["Orders"]
+    App --> Inv["Inventory"]
+    App --> Cus["Customers"]`} />
+
+Los módulos tienen una API interna explícita. La diferencia entre un buen y un mal monolito modular suele estar en esto:
+
+<MermaidDiagram code={`flowchart LR
+    subgraph OK["Correcto"]
+        O1["Orders"] --> P1["Payments API"]
+    end
+    subgraph BAD["Incorrecto"]
+        O2["Orders"] --> P2["payments.internal.repository"]
+    end`} />
+
+**El objetivo**
+
+Obtener alta modularidad, despliegue sencillo y transacciones locales, sin pagar todavía el costo de la red, el estado distribuido y los fallos distribuidos.
+
+**Cuándo usarlo**
+
+Es especialmente apropiado cuando:
+
+- la aplicación es compleja;
+- hay dominios bien definidos;
+- el equipo todavía es relativamente pequeño;
+- no existe una necesidad clara de despliegue independiente;
+- la distribución agregaría complejidad sin resolver un problema concreto.
+
+**Cuándo puede quedarse corto**
+
+Puede resultar insuficiente cuando:
+
+- determinados componentes necesitan escalar independientemente;
+- distintas partes tienen ciclos de despliegue muy diferentes;
+- los equipos necesitan ownership y poder desplegar de forma autónoma;
+- un componente tiene que aislarse porque falla, escala o se regula de forma distinta al resto.
+
+## Microservicios
+
+Una arquitectura de microservicios distribuye el sistema en varios servicios autónomos:
+
+<MermaidDiagram code={`flowchart TD
+    GW["API Gateway"] --> PS["Payment Service"]
+    GW --> OS["Order Service"]
+    GW --> IS["Inventory Service"]
+    PS --> PDB[("Payment DB")]
+    OS --> ODB[("Order DB")]
+    IS --> IDB[("Inventory DB")]`} />
+
+Un servicio debería agrupar funciones de negocio estrechamente relacionadas y tener límites claros. Microsoft recomienda partir del análisis del dominio y de los contextos delimitados (*bounded contexts*) para definir esos límites.
+
+**Ventajas**
+
+- despliegue independiente
+- escalabilidad independiente
+- ownership
+- aislamiento potencial de fallos
+- autonomía tecnológica
+
+**Costos**
+
+La distribución introduce toda una nueva categoría de problemas: fallos de red, timeouts, reintentos, fallos parciales, tracing distribuido, consistencia eventual, descubrimiento de servicios, sincronización de datos y complejidad de despliegue.
+
+> **Adoptar microservicios es también decidir asumir la complejidad de un sistema distribuido.**
+
+**Un mal microservicio**
+
+No todo servicio pequeño es un buen microservicio:
+
+<MermaidDiagram code={`flowchart LR
+    CS["Checkout Service"] --> PS["Payment Service"]
+    PS --> PPS["Payment Provider Service"]
+    PPS --> CuS["Currency Service"]
+    CuS --> DS["Database Service"]`} />
+
+Si una única operación simple requiere ocho saltos de red, probablemente la granularidad sea incorrecta. Microsoft también advierte sobre servicios excesivamente granulares, porque pueden aumentar la complejidad y degradar la performance.
+
+## SOA
+
+**Arquitectura orientada a servicios** (SOA, por sus siglas en inglés) es una familia de arquitecturas especialmente relevante en contextos enterprise. Un esquema clásico:
+
+<MermaidDiagram code={`flowchart TD
+    Cl["Clients"] --> ESB["ESB"]
+    ESB --> PS["Payment Service"]
+    ESB --> CS["Customer Service"]
+    ESB --> OS["Order Service"]
+    ESB --> ERP["ERP"]`} />
+
+Históricamente, SOA estuvo asociado a la integración empresarial, la gobernanza centralizada, los ESB, la reutilización de servicios, la orquestación y la integración de sistemas heterogéneos.
+
+Microservicios comparte algunos principios, pero suele enfatizar más la autonomía, el despliegue independiente, la responsabilidad descentralizada y los bounded contexts. No existe una frontera universalmente aceptada entre ambos.
+
+## Monolito vs. monolito modular vs. microservicios
+
+||Monolito|Monolito modular|Microservicios|
+|---|---|---|---|
+|Despliegue|Uno|Uno|Múltiples|
+|Límites|Pueden ser débiles|Fuertes|Distribuidos|
+|Red|No entre módulos|No entre módulos|Sí|
+|ACID local|Sencillo|Sencillo|Limitado entre servicios|
+|Escalado|Global|Global|Independiente|
+|Operaciones|Simples|Simples/moderadas|Complejas|
+|Modelo de fallos|Principalmente local|Principalmente local|Distribuido|
+
+No existe una jerarquía donde "Monolito → peor" y "Microservicios → mejor". Existe un conjunto diferente de trade-offs. Fowler destaca precisamente el costo adicional —el llamado _Microservice Premium_— de operar una arquitectura distribuida: no es un peaje que se paga una vez, es complejidad que el equipo asume todos los días.
+
+**Herramientas y tecnologías**
+
+Microservicios suele combinarse con Docker, Kubernetes, AWS ECS/EKS, Azure Kubernetes Service, _service mesh_, Kafka, REST/gRPC y tracing distribuido. Pero ninguna de estas tecnologías convierte automáticamente una aplicación en una buena arquitectura de microservicios.
+
+**Referencias**
+
+- Martin Fowler, [*Microservices*](https://martinfowler.com/articles/microservices.html).
+- Martin Fowler, [*Monolith First*](https://martinfowler.com/bliki/MonolithFirst.html).
+- Microsoft Azure Architecture Center, [*Microservices Architecture Style*](https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/microservices).

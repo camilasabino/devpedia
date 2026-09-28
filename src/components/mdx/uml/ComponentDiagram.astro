@@ -1,0 +1,80 @@
+---
+import DiagramFigure from '../DiagramFigure.astro';
+
+// UML component notation: components carry the «component» stereotype and the
+// component icon, and they connect through ball-and-socket assembly connectors —
+// the provided interface is the ball, the required interface is the socket.
+//
+// The caption is the diagram's accessible name, so it follows the language of the
+// page it is rendered into (these figures are embedded from MDX and cannot be
+// handed a `lang` prop).
+import { langFromPath } from '../../../i18n';
+
+// The one label drawn inside the figure also follows the page's language.
+const CONNECTOR_NOTE = {
+  es: 'El conector ensambla la interfaz requerida (socket) con la provista (ball).',
+  en: 'The connector assembles the required interface (socket) with the provided one (ball).',
+} as const;
+
+const CAPTION = {
+  es: 'Diagrama de componentes UML: Checkout requiere la interfaz PaymentApi que Payments provee, y Payments requiere PaymentProviderApi. Los conectores son ball-and-socket.',
+  en: 'UML component diagram: Checkout requires the PaymentApi interface that Payments provides, and Payments requires PaymentProviderApi. The connectors are ball-and-socket.',
+} as const;
+
+const lang = langFromPath(Astro.url.pathname);
+const caption = CAPTION[lang];
+const connectorNote = CONNECTOR_NOTE[lang];
+---
+
+<DiagramFigure
+  caption={caption}
+  viewBox="0 0 660 220"
+>
+  <!-- Checkout component -->
+  <g>
+    <rect x="24" y="70" width="150" height="76" rx="3" class="uml-shape" />
+    <rect x="150" y="82" width="18" height="12" class="uml-shape" />
+    <rect x="150" y="102" width="18" height="12" class="uml-shape" />
+    <path d="M156 88 h-12 M156 108 h-12" class="uml-line" />
+    <text x="90" y="102" text-anchor="middle" class="uml-stereotype">«component»</text>
+    <text x="90" y="118" text-anchor="middle">Checkout</text>
+  </g>
+
+  <!-- Required interface (socket) on Checkout -->
+  <path d="M174 108 h34" class="uml-line" />
+  <path d="M208 92 A16 16 0 0 0 208 124" class="uml-line" />
+  <text x="222" y="62" text-anchor="middle" class="uml-label">PaymentApi</text>
+
+  <!-- Provided interface (ball) on Payments -->
+  <circle cx="238" cy="108" r="8" class="uml-shape" />
+  <path d="M246 108 h32" class="uml-line" />
+
+  <!-- Payments component -->
+  <g>
+    <rect x="278" y="70" width="150" height="76" rx="3" class="uml-shape" />
+    <rect x="404" y="82" width="18" height="12" class="uml-shape" />
+    <rect x="404" y="102" width="18" height="12" class="uml-shape" />
+    <path d="M410 88 h-12 M410 108 h-12" class="uml-line" />
+    <text x="344" y="102" text-anchor="middle" class="uml-stereotype">«component»</text>
+    <text x="344" y="118" text-anchor="middle">Payments</text>
+  </g>
+
+  <!-- Required interface on Payments -->
+  <path d="M428 108 h34" class="uml-line" />
+  <path d="M462 92 A16 16 0 0 0 462 124" class="uml-line" />
+  <text x="470" y="62" text-anchor="middle" class="uml-label">PaymentProviderApi</text>
+
+  <circle cx="492" cy="108" r="8" class="uml-shape" />
+  <path d="M500 108 h30" class="uml-line" />
+
+  <!-- Provider component -->
+  <g>
+    <rect x="530" y="78" width="106" height="60" rx="3" class="uml-shape" />
+    <text x="583" y="102" text-anchor="middle" class="uml-stereotype">«component»</text>
+    <text x="583" y="118" text-anchor="middle">Provider SDK</text>
+  </g>
+
+  <text x="330" y="185" text-anchor="middle" class="uml-label"
+    >{connectorNote}</text
+  >
+</DiagramFigure>

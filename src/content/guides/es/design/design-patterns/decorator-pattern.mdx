@@ -1,0 +1,134 @@
+---
+id: decorator-pattern
+slug: decorator
+order: 13
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Decorator"
+description: "Cómo agregar comportamiento a un objeto mediante composición y combinar extensiones sin crear una subclase para cada variante."
+created: 2026-06-25
+lastUpdated: 2026-06-25
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+_También llamado: Wrapper_
+
+**Decorator** es un patrón estructural que permite agregarle responsabilidades nuevas a un objeto en tiempo de ejecución, envolviéndolo en objetos decoradores compatibles con su misma interfaz.
+
+## El problema
+
+El precio final de un producto en AndesShop se arma combinando varios ajustes: puede sumar un cargo por envoltorio de regalo, puede sumar un cargo por envío express, puede restar un descuento por cupón, y siempre suma impuestos. Cualquier combinación de estos ajustes es válida al mismo tiempo. Resolverlo con subclases (`GiftWrappedExpressDiscountedPrice`, `ExpressDiscountedPrice`, `GiftWrappedPrice`...) requeriría una subclase por cada combinación posible — y cada ajuste nuevo que se agregue duplica ese número.
+
+## La solución
+
+Decorator resuelve esto envolviendo el objeto base en una cadena de decoradores, cada uno de los cuales implementa la misma interfaz que el objeto original y le agrega su propio ajuste antes o después de delegar al objeto que envuelve. Cualquier combinación de ajustes es simplemente una combinación distinta de wrappers, sin necesidad de una clase por cada mezcla.
+
+<ClassDiagram
+  caption="Estructura de Decorator: el decorador implementa la misma interfaz que decora, por eso se puede apilar sobre otro decorador."
+  diagram={`    class PricedItem {
+        <<interface>>
+        +getPrice() Money
+        +describe() String
+    }
+    class BaseProduct {
+        -price Money
+        +getPrice() Money
+    }
+    class PriceDecorator {
+        <<abstract>>
+        #wrapped PricedItem
+        +getPrice() Money
+    }
+    class GiftWrapDecorator {
+        +getPrice() Money
+    }
+    class ExpressShippingDecorator {
+        +getPrice() Money
+    }
+    PricedItem <|.. BaseProduct
+    PricedItem <|.. PriceDecorator
+    PriceDecorator <|-- GiftWrapDecorator
+    PriceDecorator <|-- ExpressShippingDecorator
+    PriceDecorator --> "1" PricedItem : wrapped`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface PricedItem {
+    double getPrice();
+}
+
+class BaseProduct implements PricedItem {
+    private final double basePrice;
+
+    public BaseProduct(double basePrice) {
+        this.basePrice = basePrice;
+    }
+
+    public double getPrice() {
+        return basePrice;
+    }
+}
+
+// Decorator base: envuelve un PricedItem y delega en él
+abstract class PriceDecorator implements PricedItem {
+    protected final PricedItem wrapped;
+
+    protected PriceDecorator(PricedItem wrapped) {
+        this.wrapped = wrapped;
+    }
+}
+
+class GiftWrapDecorator extends PriceDecorator {
+    public GiftWrapDecorator(PricedItem wrapped) { super(wrapped); }
+
+    public double getPrice() {
+        return wrapped.getPrice() + 5.0; // cargo fijo por envoltorio
+    }
+}
+
+class ExpressShippingDecorator extends PriceDecorator {
+    public ExpressShippingDecorator(PricedItem wrapped) { super(wrapped); }
+
+    public double getPrice() {
+        return wrapped.getPrice() + 12.0; // cargo fijo por envío express
+    }
+}
+```
+
+```java
+// Client code: cualquier combinación es solo anidar decoradores
+PricedItem item = new ExpressShippingDecorator(
+    new GiftWrapDecorator(
+        new BaseProduct(89.90)
+    )
+);
+
+System.out.println(item.getPrice()); // 89.90 + 5.0 + 12.0
+```
+
+## Cuándo usarlo
+
+- Cuando necesitás agregar o quitar responsabilidades a objetos individuales en tiempo de ejecución, sin afectar a otros objetos de la misma clase.
+- Cuando extender por herencia generaría una explosión de subclases para cubrir todas las combinaciones posibles.
+
+## Cuándo evitarlo
+
+Con pocas combinaciones posibles y estables, un conjunto pequeño y explícito de clases puede ser más fácil de leer que una cadena de decoradores anidados.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Permite combinar responsabilidades envolviendo el objeto, sin una subclase por cada mezcla|Puede ser difícil de leer cuando la cadena de decoradores crece mucho|
+|Respeta el principio de responsabilidad única: cada decorador hace una sola cosa|El orden en que se aplican los decoradores puede importar y no siempre es obvio|
+|Sigue el principio de abierto/cerrado: se agregan decoradores nuevos sin tocar los existentes|Quitar un decorador específico del medio de la cadena no es sencillo|
+
+## Relación con otros patrones
+
+- Se diferencia de **[Adapter](/diseno/patrones/adapter/)** en el propósito: Adapter cambia la interfaz de un objeto; Decorator mantiene la misma interfaz y solo agrega comportamiento.
+- Se diferencia de **[Composite](/diseno/patrones/composite/)** en la forma: Composite ramifica en varios hijos; Decorator siempre envuelve un único objeto.
+- **[Proxy](/diseno/patrones/proxy/)** también envuelve un objeto detrás de la misma interfaz, pero para controlar el acceso a él, no para sumarle comportamiento.

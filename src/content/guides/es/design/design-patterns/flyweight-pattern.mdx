@@ -1,0 +1,115 @@
+---
+id: flyweight-pattern
+slug: flyweight
+order: 15
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Flyweight"
+description: "Cuando muchos objetos comparten información, almacenarla una sola vez puede reducir el uso de memoria. Cómo separar el estado compartido del que depende de cada contexto."
+created: 2026-06-30
+lastUpdated: 2026-06-30
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Flyweight** es un patrón estructural que permite tener más objetos en memoria al compartir entre ellos la parte del estado que se repite.
+
+## El problema
+
+La página de categoría "Trekking" de AndesShop muestra miles de productos en simultáneo, y cada tarjeta de producto puede llevar una o más etiquetas visuales — "Nuevo", "Oferta", "Últimas unidades". Si cada tarjeta crea su propio objeto `Badge` con el ícono, el color y el texto de la etiqueta, terminás con miles de objetos que contienen exactamente los mismos tres datos repetidos ("Oferta" siempre es el mismo ícono, el mismo color naranja, el mismo texto). La única diferencia real es a qué producto pertenece cada etiqueta.
+
+## La solución
+
+Flyweight separa el estado de un objeto en dos partes: el **estado intrínseco**, idéntico entre muchas instancias y por eso compartible (el ícono, el color y el texto de "Oferta"), y el **estado extrínseco**, propio de cada uso (a qué producto pertenece, en qué posición se muestra). El código cliente pasa el estado extrínseco como parámetro al usarlo. Una _factory_ devuelve siempre el mismo objeto compartido para un mismo estado intrínseco, en vez de crear uno nuevo cada vez.
+
+<ClassDiagram
+  caption="Estructura de Flyweight: el estado intrínseco vive una sola vez en el flyweight compartido; el extrínseco lo aporta cada contexto en la llamada."
+  diagram={`    class BadgeStyle {
+        <<flyweight · estado intrínseco compartido>>
+        -icon String
+        -color String
+        -label String
+        +render(String sku, int x, int y) String
+    }
+    class BadgeFactory {
+        -cache Map~String, BadgeStyle~
+        +getBadge(String type) BadgeStyle
+    }
+    class ProductBadge {
+        <<contexto · estado extrínseco>>
+        -sku String
+        -x int
+        -y int
+        -style BadgeStyle
+        +draw() String
+    }
+    BadgeFactory o-- "0..*" BadgeStyle : cache de instancias compartidas
+    ProductBadge --> "1" BadgeStyle : style compartido
+    ProductBadge ..> BadgeFactory : pide el flyweight`}
+/>
+
+## Ejemplo en Java
+
+```java
+// Flyweight: contiene solo el estado intrínseco, compartido entre muchos productos
+class BadgeStyle {
+    private final String icon;
+    private final String color;
+    private final String label;
+
+    public BadgeStyle(String icon, String color, String label) {
+        this.icon = icon;
+        this.color = color;
+        this.label = label;
+    }
+
+    // El estado extrínseco (productSku) llega como parámetro, no se guarda acá
+    public String render(String productSku) {
+        return icon + " " + label + " (" + productSku + ")";
+    }
+}
+
+// Factory: garantiza una única instancia de BadgeStyle por tipo
+class BadgeFactory {
+    private final Map<String, BadgeStyle> cache = new HashMap<>();
+
+    public BadgeStyle getBadge(String type) {
+        return cache.computeIfAbsent(type, t -> switch (t) {
+            case "OFFER" -> new BadgeStyle("🏷️", "orange", "Oferta");
+            case "NEW" -> new BadgeStyle("✨", "blue", "Nuevo");
+            default -> throw new IllegalArgumentException("Unknown badge type: " + t);
+        });
+    }
+}
+```
+
+```java
+// Client code: miles de tarjetas de producto, un puñado de instancias de BadgeStyle
+BadgeFactory factory = new BadgeFactory();
+for (Product product : catalogPage) {
+    BadgeStyle badge = factory.getBadge("OFFER"); // misma instancia para todas las ofertas
+    System.out.println(badge.render(product.getSku()));
+}
+```
+
+## Cuándo usarlo
+
+- Cuando tenés una cantidad muy grande de objetos que comparten buena parte de su estado, y eso está consumiendo memoria de forma notoria.
+- Cuando ese estado compartido se puede separar limpiamente del estado que sí varía por instancia.
+
+## Cuándo evitarlo
+
+Con una cantidad moderada de objetos, o cuando el estado compartible es chico frente al que varía, el ahorro de memoria no compensa la complejidad extra de separar estado intrínseco y extrínseco.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Baja el consumo de memoria cuando hay miles de instancias con el mismo estado intrínseco|El código gana complejidad al separar estado intrínseco y extrínseco|
+|Cambiar el aspecto de "Oferta" se hace una sola vez, no en miles de instancias|El estado extrínseco tiene que recalcularse o pasarse cada vez, lo que puede costar tiempo de CPU a cambio de memoria|
+
+## Relación con otros patrones
+
+- Suele combinarse con **[Facade](/diseno/patrones/facade/)** o una factory dedicada que oculta el proceso de compartir instancias.
+- Se diferencia de **[Singleton](/diseno/patrones/singleton/)** en que Flyweight comparte muchas instancias distintas (una por cada combinación de estado intrínseco), no una única instancia global.

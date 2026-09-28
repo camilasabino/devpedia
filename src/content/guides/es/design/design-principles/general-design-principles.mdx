@@ -1,0 +1,269 @@
+---
+id: general-design-principles
+slug: principios-generales-de-diseno
+order: 2
+topic: design
+subtopic: design-principles
+title: "Principios generales de diseño"
+description: "Seis principios para manejar la complejidad, la duplicación y las dependencias. Qué aporta cada uno y cuándo aplicarlos puede complicar el diseño."
+created: 2026-05-27
+lastUpdated: 2026-05-27
+---
+
+import MermaidDiagram from '../../../../../components/mdx/MermaidDiagram.astro';
+
+## KISS — Keep It Simple, Stupid
+
+KISS apunta a mantener una solución tan simple como sea posible, siempre que cumpla los requisitos. El objetivo no es escribir la menor cantidad de líneas de código posible — es minimizar la **complejidad innecesaria**.
+
+Supongamos que hay que calcular un descuento:
+
+```java
+public BigDecimal calculateDiscount(Order order) {
+    return order.getTotal().multiply(new BigDecimal("0.10"));
+}
+```
+
+Si el requisito es un descuento fijo del 10%, una jerarquía de estrategias, una _factory_, un motor de configuración y un DSL de reglas agregan complejidad sin valor. La función de unas líneas se entiende, se testea y se cambia sin ese aparato.
+
+### ¿Qué significa realmente "simple"?
+
+La simplicidad es contextual. Un sistema puede tener mucho código y seguir siendo simple si sus responsabilidades y dependencias son fáciles de seguir. Al revés: una base de código chica puede ser difícil de entender si tiene comportamiento implícito, indirección excesiva o abstracciones complejas.
+
+Algunas señales de complejidad innecesaria:
+
+- Demasiadas capas para un caso de uso sencillo.
+- Abstracciones con una única implementación y sin una razón de ser clara.
+- Uso excesivo de patrones de diseño.
+- Jerarquías de herencia profundas.
+- Abstracciones de framework que ocultan comportamiento simple.
+- Configuración usada en lugar de código simple, sin necesidad concreta.
+- Infraestructura genérica construida antes de tener un caso de uso real.
+
+### KISS no significa "evitar la arquitectura"
+
+Una interpretación frecuente y equivocada es que KISS implica evitar abstracciones o patrones arquitectónicos. No es así. Un sistema distribuido puede necesitar, con razón, colas, reintentos, idempotencia, observabilidad, caching y múltiples servicios. Sacar esos componentes no necesariamente simplifica el sistema — puede volverlo incorrecto o poco confiable.
+
+> **No introduzcas complejidad a menos que el problema la requiera.**
+
+La complejidad _necesaria_ viene con el problema. La _accidental_ la introducimos nosotros con el diseño, y es la que KISS trata de recortar.
+
+## DRY — Don't Repeat Yourself
+
+DRY se refiere a evitar la duplicación de **conocimiento**, no simplemente de líneas de código. La idea central es que cada pieza de conocimiento del sistema viva en un solo lugar: una única representación de la que el resto deriva.
+
+Supongamos que distintas partes del sistema implementan, cada una por su cuenta, la misma regla de negocio:
+
+```java
+if (customer.getAge() >= 18) {
+    // allow operation
+}
+```
+
+Si la regla cambia y la edad mínima pasa a ser 21, hay que tocar varios lugares. El problema no es que exista código repetido — es que existe una duplicación del **conocimiento de negocio**. Si centralizamos la regla:
+
+```java
+public boolean canPerformOperation(Customer customer) {
+    return customer.getAge() >= 21;
+}
+```
+
+queda una única fuente de verdad.
+
+### DRY no significa "nunca repitas código"
+
+Dos fragmentos que se ven parecidos no necesariamente representan el mismo concepto:
+
+```java
+calculateShippingPrice(...)
+calculateInsurancePrice(...)
+```
+
+Pueden tener cálculos similares hoy, pero si el envío y el seguro son conceptos de negocio independientes, forzarlos a compartir una abstracción común genera acoplamiento innecesario: un cambio en uno arrastra al otro.
+
+> **La duplicación suele ser más barata que una abstracción incorrecta.**
+
+Eliminar prematuramente cualquier duplicación sintáctica puede producir abstracciones más difíciles de entender que el código original.
+
+### Tipos de duplicación
+
+|Tipo|Descripción|
+|---|---|
+|**De código**|La misma implementación aparece en distintos lugares.|
+|**De lógica**|El mismo comportamiento se implementa de forma independiente.|
+|**De conocimiento**|La misma regla de negocio existe en múltiples lugares.|
+|**De datos**|La misma información se almacena de forma redundante.|
+
+DRY se ocupa principalmente de la duplicación de **conocimiento**.
+
+### DRY y acoplamiento
+
+Eliminar duplicación puede reducir el mantenimiento, pero también puede aumentar el acoplamiento. Si dos módulos tienen una función similar (`calculatePrice(...)`) y sus reglas evolucionan de forma independiente, extraerla a una librería compartida los ata a la misma abstracción — una pequeña duplicación local puede ser una mejor decisión arquitectónica.
+
+Antes de abstraer conviene preguntarse:
+
+> **¿Estas piezas representan realmente el mismo conocimiento y deberían evolucionar juntas?**
+
+## YAGNI — You Aren't Gonna Need It
+
+YAGNI recomienda no implementar features antes de que exista un requisito concreto que la justifique.
+
+Si una API hoy necesita soportar:
+
+```text
+POST /orders
+GET /orders/{id}
+```
+
+construir además `PATCH`, `DELETE`, operaciones en lote, órdenes versionadas, órdenes programadas e import/export "porque podrían llegar a necesitarse" agrega código y mantenimiento sin resolver ningún problema actual.
+
+> **Implementá lo que necesitás, no lo que suponés que podrías necesitar.**
+
+### Por qué las features prematuras son costosas
+
+Cada capacidad adicional trae código para mantener, tests, documentación, consideraciones de seguridad, complejidad operacional y restricciones de compatibilidad. Y una vez que algo forma parte de una API pública, sacarlo sale caro: ya hay consumidores que dependen de eso.
+
+### YAGNI y extensibilidad
+
+YAGNI no significa que un sistema nunca deba diseñarse pensando en el cambio. Hay una diferencia entre **diseñar para el cambio** e **implementar features hipotéticas**. Crear una abstracción alrededor de una dependencia externa que ya sabemos que puede cambiar está justificado. Crear cinco implementaciones para proveedores hipotéticos, no.
+
+La idea es mantener una arquitectura que **pueda evolucionar sin implementar requisitos imaginarios**.
+
+### YAGNI no significa ignorar riesgos conocidos
+
+Hay decisiones anticipadas que sí están justificadas:
+
+- requisitos regulatorios conocidos
+- límites de escalabilidad ya identificados
+- requisitos de seguridad explícitos
+- restricciones de infraestructura
+- compatibilidad con sistemas externos conocidos
+- decisiones arquitectónicas costosas de cambiar después
+
+La clave es distinguir entre **incertidumbre real** y **especulación**.
+
+## Separación de responsabilidades
+
+**Separación de responsabilidades** (*Separation of Concerns*, SoC) organiza el software para que distintos aspectos (*concerns*) se puedan cambiar sin arrastrar a los demás. Un *concern* es un eje del sistema con su propia razón de cambio: persistencia, presentación, reglas de negocio, notificaciones.
+
+Un controller HTTP que concentra el parsing del request, la validación, las reglas de negocio, las queries a la base, el procesamiento de pagos, las notificaciones por email y el formateo de la respuesta termina con múltiples responsabilidades y dependencias. Una separación más clara:
+
+<MermaidDiagram code={`flowchart TD
+    A[Controller] --> B[Servicio de aplicación]
+    B --> C[Lógica de dominio]
+    C --> D[Repository]`} />
+
+Cada componente se ocupa de un concern distinto.
+
+### Por qué importa la separación
+
+Esa separación recorta las razones por las que un cambio toca un componente. Un cambio en la base no debería exigir reescribir las reglas de negocio; un cambio en el JSON de la respuesta no debería obligar a tocar el dominio; sumar un proveedor de pagos no debería reescribir el flujo de órdenes. El efecto práctico es que el dominio se puede testear sin HTTP ni base, y que dos personas pueden trabajar el controller y las reglas sin pisarse.
+
+### SoC y Single Responsibility Principle
+
+Están estrechamente relacionados, pero no son lo mismo. SoC es el principio general: separar concerns. SRP da un criterio más concreto para determinar cuándo una clase o módulo agrupa responsabilidades que deberían evolucionar de forma independiente — el detalle está en [SOLID](/diseno/principios/solid/).
+
+### Separación no significa crear más capas
+
+Un error habitual es interpretar SoC como "cada concern necesita su propia clase", lo que puede producir fragmentación excesiva. Una base de código con cientos de clases chicas no necesariamente tiene mejor separación que otra con menos clases pero más cohesivas.
+
+La pregunta relevante:
+
+> **¿Estas responsabilidades tienen razones de cambio independientes?**
+
+Si la respuesta es no, separarlas solo agrega indirección.
+
+## Composición sobre herencia
+
+Este principio recomienda preferir la composición de objetos para construir comportamiento, en lugar de depender excesivamente de jerarquías de herencia.
+
+La herencia establece una relación fuerte entre una clase y su clase base: el subtipo hereda comportamiento e implementación del supertipo. La composición, en cambio, permite construir comportamiento a partir de componentes independientes:
+
+<MermaidDiagram code={`flowchart LR
+    OS[OrderService] --> PP[PricingPolicy]
+    OS --> PAY[PaymentProcessor]
+    OS --> NS[NotificationService]
+    PAY -.implementaciones.-> MP[MercadoPagoProcessor]
+    PAY -.implementaciones.-> ST[StripeProcessor]
+    PAY -.implementaciones.-> PPL[PayPalProcessor]`} />
+
+```java
+public class OrderService {
+
+    private final PricingPolicy pricingPolicy;
+    private final PaymentProcessor paymentProcessor;
+
+    public OrderService(
+            PricingPolicy pricingPolicy,
+            PaymentProcessor paymentProcessor) {
+        this.pricingPolicy = pricingPolicy;
+        this.paymentProcessor = paymentProcessor;
+    }
+}
+```
+
+El comportamiento se ensambla mediante dependencias en lugar de quedar acoplado a una jerarquía.
+
+### Por qué suele preferirse la composición
+
+La herencia acopla al subtipo con la implementación de la clase base: hereda su comportamiento, se vuelve frágil cuando el padre cambia, y queda atado a una taxonomía que después cuesta cambiar. La composición permite reemplazar componentes por separado — un `OrderService` puede recibir cualquier `PaymentProcessor` sin formar parte de una jerarquía.
+
+### Composición y reutilización
+
+Una razón histórica para usar herencia es reutilizar código. Pero compartir implementación no implica necesariamente que exista una relación conceptual de subtipo. La composición permite reutilizar comportamiento sin establecer una relación de herencia, lo que suele producir componentes más chicos, reemplazables y fáciles de testear.
+
+Dos patrones del catálogo GoF son este principio llevado a su forma canónica: [Decorator](/diseno/patrones/decorator/) agrega comportamiento por envoltura en lugar de por herencia, y [Strategy](/diseno/patrones/strategy/) intercambia un algoritmo por composición en vez de por subclase.
+
+### Cuándo la herencia puede ser apropiada
+
+No es intrínsecamente mala. Tiene sentido cuando:
+
+- existe una verdadera relación semántica entre subtipo y supertipo
+- el subtipo cumple el contrato de comportamiento del supertipo
+- la jerarquía representa una relación estable del dominio
+- la reutilización no es la única razón para usarla
+
+El problema no es la herencia en sí misma — es usarla principalmente como mecanismo de **reutilización de código**.
+
+## Ley de Demeter
+
+La **Ley de Demeter** (*Law of Demeter*, LoD) es una guía para reducir el conocimiento innecesario que un objeto tiene sobre la estructura interna de otros objetos: **un objeto debería comunicarse únicamente con sus colaboradores directos.**
+
+```java
+order.getCustomer()
+     .getAddress()
+     .getCity()
+     .getCountry();
+```
+
+<MermaidDiagram code={`flowchart LR
+    Order --> Customer --> Address --> City --> Country`} />
+
+El código que llama conoce una parte importante del grafo interno de objetos y queda acoplado a varias relaciones internas. Una alternativa es exponer el comportamiento directamente:
+
+```java
+order.getShippingCountry();
+```
+
+<MermaidDiagram code={`flowchart LR
+    Order -->|getShippingCountry| Country`} />
+
+`Order` encapsula cómo obtiene esa información.
+
+### Por qué importa
+
+Las cadenas de navegación largas hacen que el código sea más sensible a cambios estructurales. Si el modelo cambia de `Customer → Address` a `Customer → Profile → Address`, todo el código que navegaba esa estructura directamente puede romperse. Si el acceso está encapsulado detrás de una operación del objeto, el cambio queda localizado.
+
+### El problema de los "train wrecks"
+
+Código como `a.getB().getC().getD().doSomething()` suele ser señal de demasiado conocimiento sobre estructura interna. Pero una cadena de llamadas no es automáticamente una violación de LoD: las _fluent APIs_ encadenan operaciones a propósito (`query.where(...).orderBy(...).limit(...)`) porque esas operaciones forman parte de una API diseñada para encadenarse.
+
+La pregunta relevante no es cuántas llamadas hay en una línea, sino:
+
+> **¿Este código necesita conocer la estructura interna de los objetos con los que interactúa?**
+
+### Ley de Demeter y encapsulamiento
+
+Un objeto debería exponer comportamiento relevante (`order.calculateShippingCost()`) en lugar de obligar a otros objetos a reconstruir ese comportamiento navegando su estado interno (`order.getCustomer().getAddress().getPostalCode().getRegion().getShippingRate()`). El segundo enfoque expone demasiado del modelo y hace que quienes llaman dependan de detalles estructurales.
+
+Estos seis principios se aplican sea cual sea el paradigma. [SOLID](/diseno/principios/solid/) reúne los cinco principios específicos del diseño orientado a objetos — que se apoyan en varias de estas mismas ideas, sobre todo en la separación de responsabilidades.

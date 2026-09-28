@@ -1,0 +1,44 @@
+---
+id: claude-code-plugins
+slug: plugins
+order: 9
+topic: ai-engineering
+subtopic: claude-code
+section: extension
+title: "Plugins: packaging and sharing extensions"
+description: "How to gather skills, subagents, hooks, and MCP integrations into a plugin so you can distribute and reuse a configuration."
+created: 2026-09-07
+lastUpdated: 2026-09-07
+---
+
+We've now seen four ways to specialize Claude Code: [Skills, subagents, and hooks](/en/ai-engineering/claude-code/skills-subagents-and-hooks/) on one side, [MCP](/en/ai-engineering/claude-code/mcp/) on the other. A plugin doesn't add a fifth: it's the **installable package** that groups any combination of those four — plus its own binaries and MCP/LSP servers — so you can share it with the team or install it on another machine in one go.
+
+```
+my-plugin/
+├── .claude-plugin/
+│   └── plugin.json      # ONLY the manifest lives here
+├── skills/               # everything else lives at the plugin ROOT
+├── agents/
+├── commands/
+├── hooks/
+│   └── hooks.json
+├── bin/                  # executables added to the plugin's PATH
+├── .mcp.json
+├── .lsp.json
+└── README.md
+```
+
+The rules almost everyone trips over the first time: **nothing** besides `plugin.json` goes inside `.claude-plugin/` — everything else goes at the plugin root. The binaries in `bin/` become available as system commands to the rest of the plugin's pieces while it's active. A plugin's `settings.json` only accepts the `agent` field (on purpose: a plugin shouldn't be able to override your global configuration).
+
+A plugin makes sense once you already have a coherent set of skills/subagents/hooks that get used together and you want to install them with a single command on any project or machine on the team.
+
+**Three examples of real plugins, each with a different focus:**
+
+- **`superpowers`** — a set of *process* skills (brainstorming, systematic debugging, TDD, writing plans) that call for a disciplined flow before touching code, instead of jumping straight into implementation. Whether Claude follows it depends on the skill being loaded; it isn't a guarantee.
+- **`frontend-design`** — visual direction skills for avoiding the generic default "look": typography, palette, layout, with intentional design judgment.
+- **`code-review`** — the subagent and the logic behind `/code-review`: it reviews a diff or PR at different effort levels (from quick to multi-agent in the cloud) and can apply the fixes it finds.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: the <a href="https://code.claude.com/docs/en/plugins" target="_blank" rel="noopener noreferrer">Plugins guide</a> to get started, and the{' '}
+  <a href="https://code.claude.com/docs/en/plugins-reference" target="_blank" rel="noopener noreferrer">complete technical reference</a> (plugin.json schema, marketplaces, distribution) once you have one running.
+</p>

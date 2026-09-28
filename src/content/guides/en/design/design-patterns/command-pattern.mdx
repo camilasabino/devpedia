@@ -1,0 +1,136 @@
+---
+id: command-pattern
+slug: command
+order: 18
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Command"
+description: "How to represent actions as objects so you can queue them, log them, or allow undoing them, separated from the code that invokes them."
+created: 2026-07-06
+lastUpdated: 2026-07-06
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Command** is a behavioral pattern that turns a request into a standalone object that can be stored, queued, logged, or undone.
+
+## The problem
+
+AndesShop's admin panel needs to be able to undo certain actions: applying a discount to an order, cancelling an order, manually restocking. If every button in the panel calls the corresponding method directly (`order.applyDiscount(10)`, `order.cancel()`), there's nowhere to record what was done or how to reverse it — the "undo" would have to be rebuilt by hand for every different action.
+
+## The solution
+
+Command wraps each action in an object of its own, with an `execute()` method that runs it and, optionally, an `undo()` method that reverses it. The panel's buttons stop calling business methods directly and start executing `Command` objects — which can be stored in a history for undoing, queued for later execution, or logged for auditing.
+
+<ClassDiagram
+  caption="The structure of Command: each command holds the receiver and the state needed to reverse the action; the invoker only knows the interface."
+  diagram={`    class Command {
+        <<interface>>
+        +execute() void
+        +undo() void
+    }
+    class ApplyDiscountCommand {
+        -order Order
+        -discount Money
+        -previousTotal Money
+        +execute() void
+        +undo() void
+    }
+    class CancelOrderCommand {
+        -order Order
+        -previousStatus OrderStatus
+        +execute() void
+        +undo() void
+    }
+    class CommandHistory {
+        <<invoker>>
+        -history Deque~Command~
+        +run(Command) void
+        +undoLast() void
+    }
+    class Order {
+        <<receiver>>
+    }
+    Command <|.. ApplyDiscountCommand
+    Command <|.. CancelOrderCommand
+    CommandHistory o-- "0..*" Command : history
+    ApplyDiscountCommand --> "1" Order : receiver
+    CancelOrderCommand --> "1" Order : receiver`}
+/>
+
+## Example in Java
+
+```java
+interface Command {
+    void execute();
+    void undo();
+}
+
+class ApplyDiscountCommand implements Command {
+    private final Order order;
+    private final double discountPercent;
+    private double previousPrice;
+
+    public ApplyDiscountCommand(Order order, double discountPercent) {
+        this.order = order;
+        this.discountPercent = discountPercent;
+    }
+
+    public void execute() {
+        previousPrice = order.getPrice();
+        order.applyDiscount(discountPercent);
+    }
+
+    public void undo() {
+        order.setPrice(previousPrice);
+    }
+}
+
+// The invoker: it doesn't know what each Command does, only how to run and store it
+class CommandHistory {
+    private final Deque<Command> history = new ArrayDeque<>();
+
+    public void run(Command command) {
+        command.execute();
+        history.push(command);
+    }
+
+    public void undoLast() {
+        if (!history.isEmpty()) {
+            history.pop().undo();
+        }
+    }
+}
+```
+
+```java
+// Client code
+CommandHistory history = new CommandHistory();
+history.run(new ApplyDiscountCommand(order, 10));
+// ...
+history.undoLast(); // reverses the discount, without CommandHistory knowing what it was
+```
+
+## When to use it
+
+- When you need to be able to undo or redo actions.
+- When you want to queue, schedule, or log requests to run them later or in another process.
+- When an object has to receive *what to do* — not the raw data of that action — in order to run it later.
+
+## When to avoid it
+
+If the actions are simple and you don't need to undo, queue, or log them, wrapping them in Command objects adds a layer nobody takes advantage of.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Whoever triggers the action doesn't need to know how to run it or how to reverse it|Adds one new class per distinct kind of action|
+|The `execute()` / `undo()` history falls out naturally: each command knows how to undo itself|It can be overkill for simple actions that never need reversing|
+|Actions can be serialized, queued, retried, or logged like any other object||
+
+## Relationship with other patterns
+
+- **[Memento](/en/design/patterns/memento/)** is often used alongside Command to implement `undo()` by storing a snapshot of the previous state, instead of reversing field by field.
+- **[Chain of Responsibility](/en/design/patterns/chain-of-responsibility/)** and Command are combined when a request travels down a chain of handlers, encapsulated as a Command.

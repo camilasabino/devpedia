@@ -1,0 +1,16 @@
+---
+import GuidePage from './GuidePage.astro';
+import HubPage from './HubPage.astro';
+import type { Lang } from '../i18n';
+import type { RouteKind } from '../lib/content-model';
+
+interface Props {
+  lang: Lang;
+  kind: RouteKind;
+  id: string;
+}
+
+const { lang, kind, id } = Astro.props;
+---
+
+{kind === 'guide' ? <GuidePage lang={lang} id={id} /> : <HubPage lang={lang} kind={kind} id={id} />}

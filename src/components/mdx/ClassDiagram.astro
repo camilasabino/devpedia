@@ -1,0 +1,14 @@
+---
+import MermaidDiagram from './MermaidDiagram.astro';
+
+interface Props {
+  // Raw Mermaid `classDiagram` body (everything after the `classDiagram` line).
+  diagram: string;
+  /** Describes what the diagram shows; becomes the caption and the accessible name. */
+  caption: string;
+}
+
+const { diagram, caption } = Astro.props;
+---
+
+<MermaidDiagram code={`classDiagram\n${diagram}`} caption={caption} />

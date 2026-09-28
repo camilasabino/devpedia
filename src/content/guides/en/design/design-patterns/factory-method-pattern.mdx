@@ -1,0 +1,186 @@
+---
+id: factory-method-pattern
+slug: factory-method
+order: 5
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Factory Method"
+description: "How to delegate the choice of which object gets created to subclasses, without coupling the calling code to a concrete class."
+created: 2026-06-10
+lastUpdated: 2026-06-10
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**Factory Method** is a creational pattern that defines a method for creating objects, but leaves the decision of which concrete class to instantiate to the subclasses.
+
+## The problem
+
+AndesShop started out shipping every order with a single in-house carrier, `AndesExpress`. The code that generates the shipment when a purchase is confirmed creates the object directly:
+
+```java
+Shipment shipment = new AndesExpressShipment(order);
+```
+
+That line — or one very much like it — ends up appearing in checkout, in the admin panel, and in the nightly job that generates labels. It works fine until AndesShop signs a deal with a second carrier, `PatagoniaEnvíos`, to reach areas `AndesExpress` doesn't serve. Now, in every one of those places, you have to decide which class to instantiate based on the order's destination — and that `if` will end up repeated everywhere a `new` used to be.
+
+The underlying problem isn't that there are two carriers: it's that the code that _processes_ an order (calculates the cost, generates the label, notifies the customer) shouldn't have to know anything about _how a shipment gets created_. Those are two different responsibilities mixed into the same place.
+
+## The solution
+
+Factory Method proposes replacing the direct constructor call with a call to a method — the _factory method_ — that a subclass is responsible for implementing. The code that processes the order now depends only on a common interface (`Shipment`), never on a concrete class.
+
+<ClassDiagram
+  caption="The structure of Factory Method: the abstract Creator declares the Factory Method and each concrete Creator decides which Product to instantiate."
+  diagram={`    class OrderProcessor {
+        <<abstract>>
+        +dispatch() void
+        #createShipment(Order) Shipment*
+    }
+    class AndesExpressOrderProcessor {
+        #createShipment(Order) Shipment
+    }
+    class PatagoniaEnviosOrderProcessor {
+        #createShipment(Order) Shipment
+    }
+    class Shipment {
+        <<interface>>
+        +generateLabel() String
+    }
+    class AndesExpressShipment {
+        +generateLabel() String
+    }
+    class PatagoniaEnviosShipment {
+        +generateLabel() String
+    }
+
+    OrderProcessor <|-- AndesExpressOrderProcessor
+    OrderProcessor <|-- PatagoniaEnviosOrderProcessor
+    Shipment <|.. AndesExpressShipment
+    Shipment <|.. PatagoniaEnviosShipment
+    OrderProcessor ..> Shipment : «create»
+    AndesExpressOrderProcessor ..> AndesExpressShipment : «create»
+    PatagoniaEnviosOrderProcessor ..> PatagoniaEnviosShipment : «create»`}
+/>
+
+## Example in Java
+
+```java
+// The "Product": the interface the client code expects
+interface Shipment {
+    String generateLabel();
+}
+
+// Concrete products: one per carrier
+class AndesExpressShipment implements Shipment {
+    private final Order order;
+
+    AndesExpressShipment(Order order) {
+        this.order = order;
+    }
+
+    @Override
+    public String generateLabel() {
+        return "AndesExpress · " + order.id() + " · " + order.destination();
+    }
+}
+
+class PatagoniaEnviosShipment implements Shipment {
+    private final Order order;
+
+    PatagoniaEnviosShipment(Order order) {
+        this.order = order;
+    }
+
+    @Override
+    public String generateLabel() {
+        return "PatagoniaEnvios · " + order.id() + " · extended zone";
+    }
+}
+
+// The "Creator": declares the factory method and defines what happens around it
+abstract class OrderProcessor {
+    // The factory method. Protected: it's an extension point, not part of the public API.
+    protected abstract Shipment createShipment(Order order);
+
+    // The rest of the process doesn't know (or care) which carrier was used
+    public final DispatchResult dispatch(Order order) {
+        Shipment shipment = createShipment(order);
+        String label = shipment.generateLabel();
+        auditLog.record(order.id(), label);
+        return new DispatchResult(order.id(), label);
+    }
+}
+
+// Concrete creators: each one decides which concrete Product to create
+class AndesExpressOrderProcessor extends OrderProcessor {
+    @Override
+    protected Shipment createShipment(Order order) {
+        return new AndesExpressShipment(order);
+    }
+}
+
+class PatagoniaEnviosOrderProcessor extends OrderProcessor {
+    @Override
+    protected Shipment createShipment(Order order) {
+        return new PatagoniaEnviosShipment(order);
+    }
+}
+```
+
+<Callout variant="warning" title="Where the conditional ends up">
+Factory Method **doesn't make** the decision of which carrier to use **disappear**: it takes it out of the dispatching code and leaves it in one place. If that decision still shows up as an `if` repeated everywhere a shipment gets created, the pattern didn't solve anything.
+
+Concretely, the `if` goes in exactly once, at the edge of the application:
+
+```java
+// A single place in the whole system decides which Creator applies
+class OrderProcessorRegistry {
+    private final Map<Carrier, OrderProcessor> processors = Map.of(
+        Carrier.ANDES_EXPRESS, new AndesExpressOrderProcessor(),
+        Carrier.PATAGONIA, new PatagoniaEnviosOrderProcessor()
+    );
+
+    OrderProcessor forDestination(Destination destination) {
+        return processors.get(destination.carrier());
+    }
+}
+```
+
+```java
+// Checkout, admin panel, and nightly job: all three do the same thing,
+// and none of them mentions a concrete Shipment class
+OrderProcessor processor = registry.forDestination(order.destination());
+DispatchResult result = processor.dispatch(order);
+```
+
+In an application with dependency injection, that registry is usually the container itself. The difference from an [Abstract Factory](/en/design/patterns/abstract-factory/) is that here the factory produces **one** product and the focus is on the subclass that implements it.
+</Callout>
+
+Adding a third carrier means adding two classes and one entry in the registry — without touching `dispatch()` or the places that call it.
+
+## When to use it
+
+- When your code can't know in advance exactly which concrete classes it will have to work with.
+- When you want whoever extends your code to be able to add new product variants without modifying the logic that already exists.
+- When you notice the same object creation logic duplicated in several places in the code, and those places also share what they do _after_ creating the object.
+
+## When to avoid it
+
+If you only have (and will only ever have) a single kind of product, Factory Method adds a class hierarchy and a layer of indirection that isn't solving any real problem yet. A direct `new` is perfectly reasonable until a second concrete variant shows up.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The dispatching code depends on `Shipment`, not on each carrier's concrete classes|It may require introducing a new subclass hierarchy (one per concrete Creator)|
+|It separates dispatching from creation: each one has its own reason to change (single responsibility)|If there's only one product variant, the indirection adds nothing|
+|It follows the open/closed principle: adding a new variant doesn't force you to touch existing code||
+
+## Relationship with other patterns
+
+- **[Abstract Factory](/en/design/patterns/abstract-factory/)** is usually implemented as a set of related Factory Methods.
+- Many designs start with Factory Method — simpler — and evolve toward **[Abstract Factory](/en/design/patterns/abstract-factory/)**, **[Prototype](/en/design/patterns/prototype/)**, or **[Builder](/en/design/patterns/builder/)** as the need for flexibility grows.
+- **[Template Method](/en/design/patterns/template-method/)** usually leans on one or more Factory Methods as part of the algorithm steps it defines.

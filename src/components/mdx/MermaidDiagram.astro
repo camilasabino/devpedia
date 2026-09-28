@@ -1,0 +1,279 @@
+---
+import DiagramZoom from './DiagramZoom.astro';
+import { langFromPath, ui } from '../../i18n';
+
+interface Props {
+  // Full raw Mermaid source, including the diagram-type declaration line
+  // (e.g. "classDiagram", "flowchart TD", "sequenceDiagram").
+  code: string;
+  /**
+   * Short description of what the diagram shows. Rendered as a <figcaption> and used
+   * as the SVG's accessible name — a diagram with no text alternative is either
+   * silent or read out as a flat pile of node labels. When omitted, the SVG still
+   * gets a generic accessible name derived from the diagram type, but no caption:
+   * prefer writing one.
+   */
+  caption?: string;
+}
+
+const { code, caption } = Astro.props;
+
+// Diagrams are written inside MDX, which cannot pass a `lang` prop down, so the
+// generated labels come from the language of the page being rendered.
+const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
+
+const DIAGRAM_KIND: Record<string, string> = {
+  classDiagram: diagramCopy.kinds.classDiagram,
+  sequenceDiagram: diagramCopy.kinds.sequenceDiagram,
+  stateDiagram: diagramCopy.kinds.stateDiagram,
+  'stateDiagram-v2': diagramCopy.kinds.stateDiagram,
+  erDiagram: diagramCopy.kinds.erDiagram,
+  C4Context: diagramCopy.kinds.c4Context,
+  C4Container: diagramCopy.kinds.c4Container,
+  C4Component: diagramCopy.kinds.c4Component,
+  flowchart: diagramCopy.kinds.flowchart,
+  graph: diagramCopy.kinds.flowchart,
+};
+const declaration = code.trim().split(/\s|\n/)[0];
+const accessibleName = caption ?? DIAGRAM_KIND[declaration] ?? diagramCopy.fallbackName;
+
+// Deterministic id derived from the source, so the same diagram produces the same
+// markup on every build instead of a fresh random id each time.
+let hash = 0;
+for (let i = 0; i < code.length; i += 1) {
+  hash = (hash * 31 + code.charCodeAt(i)) | 0;
+}
+const id = `mermaid-${(hash >>> 0).toString(36)}`;
+---
+
+<figure class="diagram-figure">
+  <div class="diagram-frame">
+    <pre class="mermaid-source" data-diagram-id={id} hidden>{code}</pre>
+    <div
+      class="diagram-canvas"
+      data-diagram-target={id}
+      data-diagram-caption={accessibleName}
+      data-diagram-error={diagramCopy.renderError}
+    >
+      <div class="diagram-placeholder" aria-hidden="true"></div>
+    </div>
+  </div>
+  <DiagramZoom caption={accessibleName} />
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .diagram-figure {
+    margin-block: 2em;
+  }
+
+  .diagram-frame {
+    border-radius: 1rem;
+    border: 1px solid var(--border-subtle);
+    background: var(--diagram-surface);
+    padding: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .diagram-frame {
+      padding: 1.5rem;
+    }
+  }
+
+  /* Mermaid scales the SVG down to the column width, so the whole diagram stays in
+     view; when that makes it noticeably smaller than its natural size, DiagramZoom
+     offers an enlarged, scrollable view. */
+  .diagram-canvas {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .diagram-canvas :global(svg) {
+    display: block;
+    margin-inline: auto;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Safety net: if a label is ever measured wider than its box, show the overflow
+     instead of clipping the text. */
+  .diagram-canvas :global(foreignObject) {
+    overflow: visible;
+  }
+
+  /* Reserves roughly the height the rendered diagram will take, so swapping the
+     placeholder for the SVG doesn't shove the rest of the article down. */
+  .diagram-placeholder {
+    min-height: 9rem;
+    border-radius: 0.5rem;
+    background: var(--overlay-subtle);
+    animation: diagram-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes diagram-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .diagram-placeholder {
+      animation: none;
+    }
+  }
+
+  .diagram-canvas[data-failed='true'] {
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  figcaption {
+    margin-top: 0.75rem;
+  }
+</style>
+
+<script>
+  // Mermaid is ~164 KB before the per-diagram-type chunk, so it is imported only
+  // when a diagram is about to enter the viewport. Pages with no diagram never pay
+  // for it, and pages with one pay for it after the article is already readable.
+  const sources = document.querySelectorAll<HTMLPreElement>('.mermaid-source');
+
+  if (sources.length > 0) {
+    let mermaidPromise: Promise<typeof import('mermaid').default> | null = null;
+
+    const isLight = () => document.documentElement.getAttribute('data-theme') === 'light';
+
+    const themeVariables = () =>
+      isLight()
+        ? {
+            fontFamily: 'var(--font-mono)',
+            fontSize: '13px',
+            primaryColor: '#ffffff',
+            primaryTextColor: '#18181b',
+            primaryBorderColor: '#a1a1aa',
+            lineColor: '#71717a',
+            classText: '#18181b',
+            background: 'transparent',
+            mainBkg: '#ffffff',
+            secondaryColor: '#f4f4f5',
+            tertiaryColor: '#f4f4f5',
+            edgeLabelBackground: '#f4f4f5',
+          }
+        : {
+            fontFamily: 'var(--font-mono)',
+            fontSize: '13px',
+            primaryColor: 'rgba(255,255,255,0.04)',
+            primaryTextColor: '#fafafa',
+            primaryBorderColor: 'rgba(255,255,255,0.22)',
+            lineColor: '#a1a1aa',
+            classText: '#fafafa',
+            background: 'transparent',
+            mainBkg: 'rgba(255,255,255,0.04)',
+            secondaryColor: 'rgba(255,255,255,0.04)',
+            tertiaryColor: 'rgba(255,255,255,0.04)',
+            edgeLabelBackground: '#101215',
+          };
+
+    // Mermaid sizes each node box by measuring its label at render time. The webfont
+    // loads lazily, so measuring before it arrives sizes boxes for the fallback font
+    // and the real glyphs then overflow and get clipped. Wait for it first (bounded,
+    // so a blocked font request cannot leave the diagram unrendered).
+    function monoFontReady() {
+      if (!document.fonts) return Promise.resolve();
+      const loaded = Promise.all([
+        document.fonts.load('400 13px "JetBrains Mono"'),
+        document.fonts.load('600 13px "JetBrains Mono"'),
+      ]).then(() => undefined);
+      const timeout = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+      return Promise.race([loaded, timeout]);
+    }
+
+    async function loadMermaid() {
+      if (!mermaidPromise) {
+        mermaidPromise = import('mermaid').then(({ default: mermaid }) => {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            securityLevel: 'strict',
+            htmlLabels: false,
+            flowchart: { htmlLabels: false },
+            themeVariables: themeVariables(),
+            c4: {
+              c4ShapeMargin: 60,
+              diagramMarginY: 30,
+            },
+          });
+          return mermaid;
+        });
+      }
+      return mermaidPromise;
+    }
+
+    async function renderDiagram(source: HTMLPreElement) {
+      const id = source.dataset.diagramId;
+      const target = document.querySelector<HTMLDivElement>(`[data-diagram-target="${id}"]`);
+      if (!id || !target || target.dataset.rendered === 'true') return;
+      target.dataset.rendered = 'true';
+
+      try {
+        const [mermaid] = await Promise.all([loadMermaid(), monoFontReady()]);
+        const { svg } = await mermaid.render(`${id}-svg`, source.textContent ?? '');
+        target.innerHTML = svg;
+
+        const el = target.querySelector('svg');
+        if (el) {
+          // Give the diagram a real accessible name instead of letting a screen
+          // reader walk every node label with no structure.
+          el.setAttribute('role', 'img');
+          el.setAttribute('aria-label', target.dataset.diagramCaption ?? '');
+        }
+        target.dispatchEvent(new CustomEvent('diagram:rendered', { bubbles: true }));
+      } catch {
+        // A syntax error used to leave the loading placeholder pulsing forever.
+        target.dataset.failed = 'true';
+        target.textContent = target.dataset.diagramError ?? '';
+      }
+    }
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            const source = entry.target.querySelector<HTMLPreElement>('.mermaid-source');
+            observer.unobserve(entry.target);
+            if (source) void renderDiagram(source);
+          }
+        },
+        { rootMargin: '400px 0px' }
+      );
+
+      for (const source of sources) {
+        const frame = source.closest('.diagram-frame');
+        if (frame) observer.observe(frame);
+      }
+    } else {
+      for (const source of sources) void renderDiagram(source);
+    }
+
+    // Re-render on theme change: Mermaid bakes colors into the SVG, so a diagram
+    // rendered in dark mode stays dark on a light page.
+    new MutationObserver(() => {
+      mermaidPromise = null;
+      for (const source of sources) {
+        const target = document.querySelector<HTMLDivElement>(`[data-diagram-target="${source.dataset.diagramId}"]`);
+        if (target?.dataset.rendered === 'true') {
+          delete target.dataset.rendered;
+          void renderDiagram(source);
+        }
+      }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+</script>

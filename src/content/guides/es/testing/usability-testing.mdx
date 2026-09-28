@@ -1,0 +1,62 @@
+---
+id: usability-testing
+slug: testing-de-usabilidad
+order: 12
+topic: testing
+section: non-functional
+title: "Testing de usabilidad y su relación con UX"
+description: "Cómo evaluar si las personas pueden entender y usar el sistema, y en qué se diferencia de otras actividades de investigación de UX."
+created: 2026-08-18
+lastUpdated: 2026-08-18
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+## Qué es
+
+El testing de usabilidad evalúa qué tan fácil les resulta a los usuarios entender, aprender y usar correctamente el sistema. Una aplicación puede ser funcionalmente correcta, técnicamente confiable y segura, y aun así ofrecer una experiencia deficiente.
+
+## Qué observar
+
+Algunos aspectos relevantes: facilidad de aprendizaje, descubribilidad, accesibilidad, navegación, carga cognitiva, recuperación ante errores, consistencia y feedback. La diferencia entre un mensaje técnicamente correcto y uno realmente útil es enorme:
+
+| Técnicamente correcto | Útil para el usuario |
+|---|---|
+| "Payment failed." | "No pudimos procesar la seña de tu reserva. No se realizó ningún cargo. Probá de nuevo o usá otro medio de pago." |
+
+## Cómo se ejecuta
+
+A diferencia del resto de este tema, acá no hay una suite que corra en CI. El método más usado es la **prueba moderada con tareas**: se le da a una persona representativa un objetivo concreto ("reservá una mesa para cuatro el viernes a las nueve"), se la observa intentarlo sin ayudarla, y se registra dónde duda, dónde se equivoca y dónde abandona.
+
+Lo que se mide suele ser:
+
+| Métrica | Qué indica |
+|---|---|
+| Tasa de éxito | Qué porcentaje completó la tarea sin ayuda |
+| Tiempo hasta completarla | Cuánta fricción tiene el flujo principal |
+| Errores por tarea | Dónde el sistema induce a equivocarse |
+| Puntos de abandono | En qué paso se cae la gente |
+
+Con entre cinco y ocho participantes suelen aparecer los problemas graves de usabilidad: no hace falta una muestra estadísticamente representativa para detectar que nadie encuentra el botón de cancelar.
+
+## Testing de usabilidad vs. UX research
+
+No son lo mismo, y confundirlos lleva a responder la pregunta equivocada.
+
+| | Pregunta | Cuándo se hace |
+|---|---|---|
+| **Testing de usabilidad** | ¿Puede la gente usar *esto* que construimos? | Sobre algo ya construido o prototipado |
+| **UX research** | ¿Qué necesita realmente la gente? | Antes de decidir qué construir |
+
+Testing de usabilidad evalúa una solución; UX research investiga el problema. Un producto puede pasar el testing de usabilidad con nota perfecta y seguir siendo el producto equivocado — es la misma distinción entre [verificación y validación](/testing/que-es-el-testing/#verificación-vs-validación), aplicada a la experiencia.
+
+## Usabilidad no es accesibilidad
+
+Se los agrupa seguido y conviene separarlos, porque tienen criterios distintos.
+
+- **Usabilidad** pregunta si el sistema es fácil de entender y usar. Se evalúa observando personas, y sus resultados son en buena medida cualitativos.
+- **Accesibilidad** pregunta si el sistema es *utilizable* por personas con discapacidad. Tiene un estándar verificable —las [WCAG](https://www.w3.org/WAI/standards-guidelines/wcag/) del W3C—, criterios de conformidad con niveles A, AA y AAA, y buena parte se puede automatizar: contraste de color, jerarquía de headings, texto alternativo, foco visible, navegación por teclado.
+
+Un sistema puede ser muy usable para quien ve y usa un mouse, y completamente inutilizable con un lector de pantalla. Por eso accesibilidad no es un subconjunto de usabilidad: es un requisito propio, con su propia forma de verificarse, y una parte importante puede entrar en la suite automatizada.
+
+Usabilidad y accesibilidad miran a la persona frente al producto. [Testing de compatibilidad](/testing/testing-de-compatibilidad/) pregunta algo más prosaico e igual de costoso: si el mismo producto se comporta en Safari, en un Android viejo y en la API que un partner todavía consume.

@@ -1,0 +1,118 @@
+---
+id: what-is-testing
+slug: what-is-testing
+order: 1
+topic: testing
+section: fundamentals
+title: "What is testing?"
+description: "What tests can tell us about a system, what their limits are, and how they help evaluate its quality."
+created: 2026-07-27
+lastUpdated: 2026-07-27
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+Testing is the systematic process of evaluating a system's behavior against defined expectations, in order to find defects, reduce uncertainty, and produce evidence of what was observed.
+
+A definition that's more useful to a software engineer than the usual textbook line:
+
+> Testing isn't about confirming that "the code works", it's about producing evidence as to whether a system behaves the way we expect under certain conditions.
+
+That definition carries several concepts with it. A test almost always defines:
+
+- an **input** or set of initial conditions,
+- an **action** or execution,
+- an **expected result**,
+- and a mechanism for deciding whether what we observe meets that expectation.
+
+### The example system
+
+Every example in this topic uses the same fictional system: **ReservaResto**, a restaurant table booking platform built with Node.js, Express, TypeScript, and PostgreSQL. Its relevant pieces:
+
+| Component | Responsibility |
+|---|---|
+| `ReservationService` | Creates, confirms, and cancels reservations |
+| `TableAvailabilityService` | Determines which tables are free in a time slot |
+| `PricingService` | Calculates the deposit and the cancellation penalties |
+| `PaymentService` | Charges and refunds the deposit through an external provider |
+| `NotificationService` | Notifies the diner and the restaurant |
+
+In ReservaResto, a simple case looks like this:
+
+```text
+Given: party size = 4, a table available for 4 people
+When: the reservation is requested
+Then: reservation.status = CONFIRMED
+```
+
+The problem is that serious testing doesn't stop at the happy path. Uncomfortable questions show up fast:
+
+```text
+What if two users book the last available table at the same time?
+What if the deposit payment provider hangs mid-transaction?
+What if the reservation request gets retried and duplicated?
+What if the payment provider returns a status we don't recognize?
+What if the database is unavailable for an instant?
+```
+
+That's why testing is so tightly tied to requirements, architecture, failure modes, and quality attributes: it isn't an isolated stage at the end of development, it's a way of thinking about the system.
+
+## Verification vs. validation
+
+A classic distinction, and one worth establishing from the start, because it explains something you've almost certainly lived through.
+
+**Verification** — Are we building the system right? It aims to determine whether the software meets specifications, contracts, and rules that have already been defined.
+
+**Validation** — Are we building the right system? It aims to determine whether the system actually solves the user's or the business's need.
+
+This distinction explains why ReservaResto can pass hundreds of automated tests — the reservation is created, the deposit is charged, the table is held, all exactly as specified — and still be wrong: if the cancellation policy we implemented doesn't match how the restaurant actually wants to operate, we have a verified system that hasn't been validated.
+
+## Functional vs. non-functional testing
+
+This is the first big classification, and it answers **which property of the system we're evaluating**.
+
+**Functional testing** evaluates whether the system does what it's supposed to do: create a reservation, cancel it, apply a discount to a frequent customer, charge the right deposit for the table size. The central question is:
+
+> Does the system do what it's supposed to do?
+
+**Non-functional testing** evaluates how the system behaves beyond any one piece of functionality: how long the availability search takes to respond, how many simultaneous reservations it holds up on a Friday night, whether a vulnerability is exploitable, whether the app works the same in Safari as in Chrome. The question becomes:
+
+> How well does the system carry out its functions under the conditions that matter?
+
+One detail worth underlining: ReservaResto's availability endpoint can return exactly the right result and still be a deficient system, if it takes ten seconds to respond or falls over with five hundred concurrent users looking for a table on the same Friday at nine at night.
+
+## Manual vs. automated testing
+
+The second classification is independent of the first, and it answers **how** the verification is carried out.
+
+**Manual testing**: a person runs the scenario and evaluates the result. It's especially useful for exploratory testing, usability testing, user acceptance testing (UAT) and, in general, for cases where visual or contextual behavior is hard to automate (does ReservaResto's confirmation email look right in a real mail client?). Its main problems are repeatability and scale.
+
+**Automated testing**: software runs the tests and decides whether they pass or fail. Its advantages are well known — repeatability, speed, CI/CD integration, automatic regression, and the ability to run large suites — but automating isn't the same as testing better. A low-quality automated test just verifies the wrong things, automatically and constantly. The right question isn't "should we automate it?", it's:
+
+> **What should we automate, at what level, and why?**
+
+## Where each test belongs: the pyramid
+
+The three distinctions above say *what* is evaluated and *how* it runs. The one that organizes the rest of this topic is **at what scope** each thing is best verified.
+
+The best-known formulation is the **test pyramid**, proposed by Mike Cohn in *Succeeding with Agile* (2009) and later spread by Martin Fowler. The idea is simple: many small-scope tests, fewer mid-scope ones, few full-scope ones.
+
+```text
+        /\        Few      · System / E2E · slow, brittle, expensive to diagnose
+       /  \
+      /----\      Some     · Integration  · real components against each other
+     /      \
+    /--------\    Many     · Unit         · milliseconds, obvious cause of failure
+```
+
+The reason isn't dogmatic, it's economic. As scope grows, so does execution time, the infrastructure you need and — above all — the cost of figuring out *why* a test failed. A red unit test points at a function; a red end-to-end test can mean anything, from a business bug to a container that never came up.
+
+<Callout variant="note" title="The pyramid is a heuristic, not a law">
+It's a default recommendation, not a universal rule, and there are well-founded criticisms. A system whose real complexity lives in the integration between services — not inside each one — may need considerably more integration tests than the pyramid's shape suggests. Google popularized a looser version with a 70/20/10 split, and plenty of teams work with shapes closer to a diamond.
+
+What does hold in every variant is the asymmetry of costs: a large-scope test costs more to write, more to run, and far more to diagnose. The useful question isn't "am I respecting the pyramid?", it's **"what's the cheapest test that can catch this defect?"**.
+</Callout>
+
+The **anti-pattern** the pyramid warns about is the "ice cream cone": few unit tests, many end-to-end ones, and a suite that takes forty minutes, fails intermittently, and that nobody runs before merging.
+
+The base of that pyramid is [what a unit test is](/en/testing/what-is-a-unit-test/): writing a good one takes considerably more than calling a method and adding assertions.

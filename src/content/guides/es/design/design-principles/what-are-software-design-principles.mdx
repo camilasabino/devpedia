@@ -1,0 +1,81 @@
+---
+id: what-are-software-design-principles
+slug: que-son-los-principios-de-diseno
+order: 1
+topic: design
+subtopic: design-principles
+title: "¿Qué son los principios de diseño de software?"
+description: "Cómo usar principios como KISS, DRY y SOLID para tomar decisiones de diseño, entendiendo qué problemas abordan y cuándo aplicarlos."
+created: 2026-05-25
+lastUpdated: 2026-05-25
+---
+
+import Icon from '../../../../../../../src/components/Icon.astro';
+
+Un principio de diseño de software no es una regla que haya que cumplir siempre. Es una heurística: una forma de razonar sobre complejidad, duplicación y acoplamiento que suele producir mejores resultados, según el contexto.
+
+KISS, DRY, SOLID y el resto de los nombres de este tema no son leyes. Son criterios para tomar decisiones de diseño. Aplicarlos de forma mecánica, sin pensar en el problema concreto, puede producir un diseño peor que no aplicarlos.
+
+## Por qué vale la pena conocerlos
+
+- **Dan vocabulario común.** Decir "esto viola Single Responsibility" o "esto es una violación de DRY" comunica en pocas palabras un diagnóstico de diseño a otro developer que conozca los principios.
+- **Explican por qué un cambio pequeño termina exigiendo mucho trabajo.** Cuando modificar una sola regla de negocio obliga a tocar diez archivos, o agregar un proveedor nuevo obliga a reescribir un `if` gigante, el síntoma suele apuntar a un principio concreto. Nombrarlo no resuelve el problema, pero acota dónde buscar.
+- **Dan un criterio para decidir cuánto abstraer.** La pregunta al diseñar no es "¿qué patrón le meto acá?" sino "¿qué problema concreto tengo, y qué principio lo describe mejor?". El patrón, si hace falta, aparece después.
+
+## Los principios no son reglas absolutas
+
+Aplicar un principio donde no hace falta puede agregar indirección, capas y abstracciones que después alguien tiene que entender y mantener. Aplicar SOLID a rajatabla en un proyecto pequeño puede producir complejidad accidental tan real como no aplicarlo donde sí hace falta. Cada principio de este tema incluye la contracara — qué significa aplicarlo mal, o cuándo directamente no conviene — porque esa es la parte que más se suele pasar por alto.
+
+## Cómo se organiza este tema
+
+<div className="grid gap-4 sm:grid-cols-3">
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-violet-400">
+      <Icon name="layers" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">Principios generales</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">Complejidad, duplicación, features prematuras, responsabilidades y acoplamiento.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>KISS</li>
+      <li>DRY</li>
+      <li>YAGNI</li>
+      <li>Separación de responsabilidades</li>
+      <li>Composición sobre herencia</li>
+      <li>Ley de Demeter</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-sky-400">
+      <Icon name="shield" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">SOLID</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">Los cinco principios del diseño orientado a objetos.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Single Responsibility</li>
+      <li>Open/closed</li>
+      <li>Liskov Substitution</li>
+      <li>Interface Segregation</li>
+      <li>Dependency Inversion</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-fuchsia-400">
+      <Icon name="radar" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">Cómo revisar un diseño</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">Las preguntas concretas para aplicar todo lo anterior al revisar un diseño.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Complejidad</li>
+      <li>Duplicación</li>
+      <li>Responsabilidades</li>
+      <li>Acoplamiento</li>
+      <li>Contratos e interfaces</li>
+    </ul>
+  </div>
+</div>
+
+- **[Principios generales de diseño](/diseno/principios/principios-generales-de-diseno/)** — las seis heurísticas que aparecen antes que nada, sea cual sea el paradigma: cuándo algo es innecesariamente complejo, cuándo duplicar es peor que abstraer (y al revés), y cuánto necesita saber un objeto sobre otro.
+- **[SOLID](/diseno/principios/solid/)** — los cinco principios específicos del diseño orientado a objetos, con el criterio para no aplicarlos donde no aportan valor.
+- **[Cómo revisar un diseño de software](/diseno/principios/como-revisar-un-diseno-de-software/)** — el checklist de preguntas para usar al diseñar o revisar un componente.
+
+Los ejemplos de este tema están en Java. Varios giran alrededor de `OrderService`, `Order` y `PaymentProcessor`, en un dominio de e-commerce que se repite a lo largo de las entradas.

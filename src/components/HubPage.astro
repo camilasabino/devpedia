@@ -1,0 +1,88 @@
+---
+// Provisional topic / subtopic page: lists the subtopics and the guides grouped by
+// section, in pedagogical order. The knowledge-hub design comes in a later milestone.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from './Breadcrumb.astro';
+import { SITE_NAME } from '../config';
+import { plural, ui, type Lang } from '../i18n';
+import { getContent } from '../lib/content';
+import type { GuideData, TopicData } from '../lib/content-model';
+
+interface Props {
+  lang: Lang;
+  kind: 'topic' | 'subtopic';
+  id: string;
+}
+
+const { lang, kind, id } = Astro.props;
+const copy = ui[lang];
+const { index } = await getContent();
+
+const subtopic = kind === 'subtopic' ? index.subtopic(lang, id)! : undefined;
+const topic = index.topic(lang, subtopic ? subtopic.topic : id)!;
+const node: TopicData = subtopic ?? topic;
+
+const subtopics = subtopic ? [] : index.subtopicsOf(lang, topic.id);
+const guides = index.guidesOf(lang, topic.id, subtopic?.id);
+const guideCount = subtopic ? guides.length : index.guideCount(lang, topic.id);
+
+// Guides without a section come first, as an unlabeled group.
+const groups: { title?: string; guides: GuideData[] }[] = [
+  { guides: guides.filter((guide) => !guide.section) },
+  ...(node.sections ?? []).map((section) => ({
+    title: section.title,
+    guides: guides.filter((guide) => guide.section === section.id),
+  })),
+].filter((group) => group.guides.length > 0);
+
+const crumbs = subtopic ? [{ label: topic.title, href: index.pathOf(lang, 'topic', topic.id)! }] : [];
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${node.title} | ${SITE_NAME}`}
+  description={node.description}
+  alternates={index.alternatesOf(kind, id)}
+>
+  <Breadcrumb lang={lang} crumbs={crumbs} />
+  <h1 class="mt-6 font-display text-4xl font-bold text-neutral-50 light:text-neutral-900">{node.title}</h1>
+  <p class="mt-3 max-w-2xl text-neutral-400 light:text-neutral-600">{node.description}</p>
+  <p class="mt-2 font-mono text-xs text-neutral-500">{plural(copy.hub.guidesCount, guideCount)}</p>
+
+  {
+    subtopics.length > 0 && (
+      <section class="mt-10">
+        <h2 class="font-display text-xl font-semibold text-neutral-100 light:text-neutral-900">{copy.hub.subtopicsHeading}</h2>
+        <ul class="mt-3 space-y-2">
+          {subtopics.map((child) => (
+            <li>
+              <a href={index.pathOf(lang, 'subtopic', child.id)} class="text-accent-400 light:text-accent-700 hover:underline">
+                {child.title}
+              </a>
+              <span class="text-neutral-500"> — {child.description}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    groups.map((group) => (
+      <section class="mt-10">
+        {group.title && (
+          <h2 class="font-display text-xl font-semibold text-neutral-100 light:text-neutral-900">{group.title}</h2>
+        )}
+        <ol class="mt-3 space-y-2">
+          {group.guides.map((guide) => (
+            <li>
+              <a href={index.pathOf(lang, 'guide', guide.id)} class="text-accent-400 light:text-accent-700 hover:underline">
+                {guide.title}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))
+  }
+</BaseLayout>

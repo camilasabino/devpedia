@@ -1,0 +1,43 @@
+---
+id: compatibility-testing
+slug: compatibility-testing
+order: 13
+topic: testing
+section: non-functional
+title: "Compatibility testing"
+description: "How to verify that software works in the environments you support, and that its changes keep the backward compatibility you need."
+created: 2026-08-19
+lastUpdated: 2026-08-19
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+## What it is
+
+Compatibility testing verifies that the software works correctly in the environments you support: operating systems, browsers, devices, screen sizes, database versions, runtime versions, cloud environments, network conditions. The booking widget ReservaResto embeds in each restaurant's site could work perfectly in Chrome on macOS and break in Safari on iOS — on the date picker, for instance.
+
+## The compatibility matrix
+
+A simple but effective tool: state explicitly what you support, **with versions and with support levels**. A matrix where every row says "yes" isn't a specification: it's the same vagueness as "it has to work everywhere", written in a table.
+
+| Environment | Supported versions | Level | How it's verified |
+|---|---|---|---|
+| Chrome / Edge | Last 2 stable | Full | E2E suite on every release |
+| Firefox | Last 2 stable | Full | E2E suite on every release |
+| Safari macOS | 16+ | Full | E2E suite on every release |
+| Safari iOS | 16+ | Full | E2E suite + manual date picker check |
+| Chrome Android | Last 2 stable | Full | E2E suite |
+| Safari iOS | 15 | Degraded | Smoke test: booking has to work |
+| Internet Explorer | — | Not supported | A notice is shown and it isn't tested |
+
+Every row answers three questions a "yes" doesn't: **up to which version**, **what supporting it means** (does everything work, or only the critical path?), and **who verifies it**. That last one is what makes the matrix actionable: without it, the matrix is an intention.
+
+<Callout variant="note" title="The 'degraded' level is the one most worth declaring">
+Stating explicitly that only the main flow is guaranteed on an old environment avoids the two bad exits: promising full support everywhere (impossible to sustain) or cutting it off abruptly (losing real users). It also gives the team a clear triage rule: a visual bug in Safari 15 doesn't block a release; one that prevents booking does.
+</Callout>
+
+## Backward compatibility
+
+There's another kind of compatibility that shows up in systems and APIs: if ReservaResto exposes a public API for hotel partners to integrate reservations, a seemingly innocent change to the API contract can break the integrations of partners still on the previous version (`v1` of a booking endpoint against clients that already moved to `v2`, for instance). That's why compatibility testing is particularly relevant for public APIs, distributed systems, event-driven architectures, shared libraries, and database migrations.
+
+From the isolated unit to the complete system, and from the functional to quality attributes, each level answers a different question. The most useful test is still the cheapest one that can catch the defect you care about.

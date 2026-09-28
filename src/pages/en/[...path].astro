@@ -1,0 +1,11 @@
+---
+// Every English topic, subtopic and guide: /en/<topic>/[<subtopic>/][<guide>/].
+import NodePage from '../../components/NodePage.astro';
+import { getStaticPathsFor } from '../../lib/content';
+
+export const getStaticPaths = () => getStaticPathsFor('en');
+
+const { lang, kind, id } = Astro.props;
+---
+
+<NodePage lang={lang} kind={kind} id={id} />

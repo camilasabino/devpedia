@@ -1,0 +1,71 @@
+---
+id: what-is-claude-code
+slug: what-is-claude-code
+order: 1
+topic: ai-engineering
+subtopic: claude-code
+section: getting-started
+title: "What is Claude Code?"
+description: "What Anthropic's AI development tool is, how it works on your project, and what tasks it can help you with."
+created: 2026-08-21
+lastUpdated: 2026-08-21
+---
+
+import StepFlow from '../../../../../components/mdx/StepFlow.astro';
+
+## An agent, not an autocomplete
+
+AI tools for programming fall into two clearly different families:
+
+<div className="grid gap-4 sm:grid-cols-2">
+  <div className="card-surface p-5">
+    <p className="font-mono text-xs uppercase tracking-wide text-sky-400">Autocomplete assistants</p>
+    <p className="mt-2 text-sm leading-relaxed text-neutral-300 light:text-neutral-600">
+      Copilot in its classic mode, for instance: they suggest the next line or the next block while you type. You're still the one deciding what to do, all the time.
+    </p>
+  </div>
+  <div className="card-surface p-5 hover:border-accent-400/40">
+    <p className="font-mono text-xs uppercase tracking-wide text-accent-400">Agents (Claude Code)</p>
+    <p className="mt-2 text-sm leading-relaxed text-neutral-300 light:text-neutral-600">
+      You give them a goal in natural language and they decide the plan, which files to read, which tools to use (search the code, run tests, edit files, run shell commands), and when the work is done.
+    </p>
+  </div>
+</div>
+
+An autocomplete follows your keyboard; an agent follows a goal and picks how to get there. With an agent, the quality of the result depends less on your typing speed and more on the quality of your instructions, the memory you gave it about the project, and the limits you set. The rest of this topic is organized around those three axes.
+
+## The agent loop
+
+On every turn, Claude Code repeats a simple cycle (the *agent loop*):
+
+<StepFlow
+  steps={[
+    { label: 'Reads your instruction' },
+    { label: 'Decides the next action' },
+    { label: 'Uses a tool', detail: 'Read / Bash / Edit / Grep / MCP' },
+    { label: 'Observes the result' },
+    { label: 'Considers the task complete' },
+    { label: 'Responds / ends the turn' },
+  ]}
+  loopLabel="From step 4 it goes back to 2 until it considers the task complete"
+/>
+
+Every turn of that cycle goes through the permission system ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)) before it runs. That's what lets you give it autonomy without losing control.
+
+## What sets it apart from a conversational assistant
+
+- **It lives in your terminal (or your IDE, or the web/desktop app)**, with real access to your project's filesystem and shell — not an isolated sandbox with no context.
+- **It has persistent memory of the project** through `CLAUDE.md`, so you don't have to re-explain the stack and the conventions every session ([Memory and context](/en/ai-engineering/claude-code/memory-and-context/)).
+- **It's extensible**: you can give it new capabilities with Skills, delegate work to specialized subagents, force deterministic behavior with Hooks ([Skills, subagents, and hooks](/en/ai-engineering/claude-code/skills-subagents-and-hooks/)), connect it to external tools through [MCP](/en/ai-engineering/claude-code/mcp/), and package all of it into a [plugin](/en/ai-engineering/claude-code/plugins/) to share.
+- **The level of autonomy is configurable**, from "ask me before touching any file" to "run without asking inside this isolated container" ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)).
+
+## When it's worth using (and when it isn't)
+
+Claude Code performs best on tasks with a verifiable outcome: implementing a feature with concrete requirements, debugging a reproducible bug, writing tests, exploring an unfamiliar codebase, refactoring with a safety net of existing tests. It performs worse when the task is ambiguous ("improve the code"), too large to review in a reasonable diff, or when the success criterion is purely subjective. [How to write good prompts for Claude Code](/en/ai-engineering/claude-code/how-to-write-good-prompts/) gives you the framework for turning ambiguous requests into verifiable instructions.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: <a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener noreferrer">official overview</a> and{' '}
+  <a href="https://code.claude.com/docs/en/how-claude-code-works" target="_blank" rel="noopener noreferrer">how the agent loop works</a>.
+</p>
+
+One consequence worth anticipating: an agent writes code much faster than a team can review it, so the bottleneck moves from typing to judgment. Knowing [what makes a design good](/en/design/principles/) and [what a test actually protects](/en/testing/what-is-testing/) becomes more important, not less.

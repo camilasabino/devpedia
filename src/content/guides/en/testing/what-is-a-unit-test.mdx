@@ -1,0 +1,84 @@
+---
+id: what-is-a-unit-test
+slug: what-is-a-unit-test
+order: 2
+topic: testing
+section: unit-testing
+title: "What is a unit test?"
+description: "What characterizes a unit test, what isolating a unit means, and how to keep the test from depending too much on the implementation."
+created: 2026-07-29
+lastUpdated: 2026-07-29
+---
+
+Unit testing gives fast feedback on the behavior of small pieces of code and catches defects close to where they're produced. But writing unit tests isn't simply a matter of calling a method and adding assertions. The quality of a unit test depends on how well it isolates the behavior it wants to verify, how clearly it expresses its intent, and how stable it stays as the code evolves.
+
+A unit test verifies the behavior of a relatively small, isolated unit of software. Depending on the language and the architecture, that unit can be a function, a method, a class, or a small domain component.
+
+In ReservaResto, one candidate unit is the calculation of the late cancellation penalty:
+
+```typescript
+function calculateCancellationFee(
+  deposit: Money,
+  hoursBeforeReservation: number
+): Money {
+  if (hoursBeforeReservation >= 24) return Money.zero();
+  return deposit.multiply(0.5);
+}
+```
+
+And the corresponding test:
+
+```text
+Given: deposit = $2000, hoursBeforeReservation = 3
+Then: fee = $1000
+
+Given: deposit = $2000, hoursBeforeReservation = 30
+Then: fee = $0
+```
+
+The important characteristic isn't simply that the test is small. A good unit test should offer:
+
+- fast feedback;
+- deterministic results;
+- isolation from irrelevant dependencies;
+- a cause of failure that's easy to identify;
+- a clear description of the expected behavior.
+
+## Isolation
+
+`ReservationService` in ReservaResto depends on `PricingService`, `TableAvailabilityService`, and `PaymentService`. A unit test of `ReservationService` shouldn't need a real database, a real payments API, or any other remote service: those dependencies are replaced with test doubles where appropriate.
+
+```text
+ReservationService  ← the unit under test
+├── PricingService            ← replaced
+├── TableAvailabilityService  ← replaced
+└── PaymentService            ← replaced
+```
+
+What each one is replaced with isn't a property of the dependency, it's a property of what that particular test wants to verify: the same `PaymentService` can be replaced in three different ways across three different tests. That's what the [article on test doubles](/en/testing/test-doubles/) covers.
+
+## What they should cover
+
+Unit tests should cover, above all, business rules, edge cases, branching logic, invariants, and error handling. They shouldn't be used to chase an arbitrary code coverage percentage:
+
+```text
+100% coverage ≠ 100% correctness
+```
+
+Code coverage tells you which code was executed, not whether it was correctly verified. A test can execute `calculateCancellationFee` and verify nothing relevant about its result.
+
+## When it stops being useful
+
+A test can get too coupled to the implementation:
+
+```text
+assert that PaymentService.charge() was called before TableService.block()
+assert on an internal implementation detail
+assert on the exact structure of an internal object
+```
+
+That produces tests that fail when the implementation changes, even though the observable behavior is still correct. The idea to hold on to:
+
+> Test behavior, not accidental implementation.
+
+[F.I.R.S.T.](/en/testing/first-principles-for-unit-tests/) adds the criteria for checking whether that unit test is well thought out: fast, independent, repeatable, with a clear result, and written at the right time.

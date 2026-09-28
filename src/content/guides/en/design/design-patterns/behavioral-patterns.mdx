@@ -1,0 +1,42 @@
+---
+id: behavioral-patterns
+slug: behavioral-patterns
+order: 4
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Behavioral patterns"
+description: "How to distribute responsibilities and coordinate objects without making their interactions hard to maintain."
+created: 2026-06-08
+lastUpdated: 2026-06-08
+---
+
+Behavioral patterns solve **how responsibilities are divided among objects and how they communicate with each other**, without that communication turning into a tangle of cross-references that's hard to follow.
+
+Signs the problem falls into this category:
+
+- A request has to pass through a chain of possible handlers without the sender knowing which one will resolve it.
+- You need to treat an action (and its possible undo) as an object you can store, queue, or log.
+- You have to evaluate the rules of a small language — configurable business conditions, filters — that combine in ways you can't enumerate.
+- You need to traverse a collection without exposing how it's structured internally.
+- A group of objects all communicate directly with each other, forming a web of dependencies that's hard to maintain.
+- You need to save and restore an object's internal state without breaking its encapsulation.
+- Many objects need to find out when something happens to another one, subscribing to its events without the emitter knowing them one by one.
+- An object's behavior has to change according to its internal state, and that's being solved with conditionals that keep growing.
+- You need to be able to swap one algorithm for another at runtime.
+- Several classes share the same algorithm skeleton but differ in a few specific steps.
+- You need to add new operations to a class hierarchy without modifying those classes.
+
+The eleven patterns in this category:
+
+- **[Chain of Responsibility](/en/design/patterns/chain-of-responsibility/)** — passes a request along a chain of handlers until one of them resolves it.
+- **[Command](/en/design/patterns/command/)** — turns a request into a standalone object that can be stored, queued, or undone.
+- **[Interpreter](/en/design/patterns/interpreter/)** — represents the grammar of a small language as a class hierarchy that knows how to evaluate itself.
+- **[Iterator](/en/design/patterns/iterator/)** — traverses a collection without exposing its internal representation.
+- **[Mediator](/en/design/patterns/mediator/)** — reduces chaotic dependencies between objects by centralizing communication in a mediator.
+- **[Memento](/en/design/patterns/memento/)** — saves and restores an object's previous state without exposing its implementation details.
+- **[Observer](/en/design/patterns/observer/)** — automatically notifies several objects about events happening to the object they watch, without it knowing them one by one.
+- **[State](/en/design/patterns/state/)** — lets an object change its behavior when its internal state changes.
+- **[Strategy](/en/design/patterns/strategy/)** — encapsulates interchangeable algorithms behind a single interface.
+- **[Template Method](/en/design/patterns/template-method/)** — defines an algorithm's skeleton in a base class, letting subclasses redefine specific steps.
+- **[Visitor](/en/design/patterns/visitor/)** — separates an algorithm from the objects it operates on, so you can add new operations without modifying those classes.

@@ -1,0 +1,156 @@
+---
+id: bridge-pattern
+slug: bridge
+order: 11
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Bridge"
+description: "How to separate an abstraction from its implementation so both can evolve without creating a subclass for every combination."
+created: 2026-06-22
+lastUpdated: 2026-06-22
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Bridge** is a structural pattern that separates an abstraction from its implementation — here, the kind of notification and the delivery channel — so both can evolve separately.
+
+## The problem
+
+AndesShop sends different kinds of notification — purchase confirmation, dispatch notice, promotional offer — and each one can be delivered through different channels — email, SMS, WhatsApp. Modeling this with direct inheritance (`OrderConfirmationEmail`, `OrderConfirmationSms`, `ShippingUpdateEmail`, `ShippingUpdateSms`, `ShippingUpdateWhatsapp`...) grows combinatorially: every new kind of notification is multiplied by every existing channel, and every new channel by every existing kind of notification.
+
+## The solution
+
+Bridge separates the two dimensions that vary — the _kind_ of notification and the delivery _channel_ — into two independent class hierarchies, connected by a reference (the "bridge"). The notification hierarchy delegates the actual sending to a channel object, instead of implementing the sending itself.
+
+<ClassDiagram
+  caption="The structure of Bridge: two independent hierarchies joined by a reference. Adding a channel doesn't touch the notifications, and vice versa."
+  diagram={`    class Notification {
+        <<abstract>>
+        #channel DeliveryChannel
+        +send() void*
+    }
+    class OrderConfirmation {
+        -orderId String
+        +send() void
+    }
+    class ShippingUpdate {
+        -trackingCode String
+        +send() void
+    }
+    class DeliveryChannel {
+        <<interface>>
+        +deliver(String) void
+    }
+    class EmailChannel {
+        +deliver(String) void
+    }
+    class SmsChannel {
+        +deliver(String) void
+    }
+    class WhatsappChannel {
+        +deliver(String) void
+    }
+
+    Notification <|-- OrderConfirmation
+    Notification <|-- ShippingUpdate
+    Notification --> "1" DeliveryChannel : channel (the bridge)
+    DeliveryChannel <|.. EmailChannel
+    DeliveryChannel <|.. SmsChannel
+    DeliveryChannel <|.. WhatsappChannel`}
+/>
+
+## Example in Java
+
+```java
+// The implementation: the different delivery channels
+interface DeliveryChannel {
+    void deliver(String message);
+}
+
+class EmailChannel implements DeliveryChannel {
+    public void deliver(String message) {
+        System.out.println("Email: " + message);
+    }
+}
+
+class SmsChannel implements DeliveryChannel {
+    public void deliver(String message) {
+        System.out.println("SMS: " + message);
+    }
+}
+
+class WhatsappChannel implements DeliveryChannel {
+    public void deliver(String message) {
+        System.out.println("WhatsApp: " + message);
+    }
+}
+
+// The abstraction: the kinds of notification, which delegate sending to the channel
+abstract class Notification {
+    protected final DeliveryChannel channel;
+
+    protected Notification(DeliveryChannel channel) {
+        this.channel = channel;
+    }
+
+    public abstract void send();
+}
+
+class OrderConfirmation extends Notification {
+    private final String orderId;
+
+    public OrderConfirmation(DeliveryChannel channel, String orderId) {
+        super(channel);
+        this.orderId = orderId;
+    }
+
+    @Override
+    public void send() {
+        channel.deliver("Your order " + orderId + " has been confirmed");
+    }
+}
+
+class ShippingUpdate extends Notification {
+    private final String trackingCode;
+
+    public ShippingUpdate(DeliveryChannel channel, String trackingCode) {
+        super(channel);
+        this.trackingCode = trackingCode;
+    }
+
+    @Override
+    public void send() {
+        channel.deliver("Your order is on its way. Tracking: " + trackingCode);
+    }
+}
+```
+
+```java
+// Any kind of notification with any channel, without multiplying classes:
+// 2 kinds x 3 channels is 5 classes, not 6. With 5 kinds and 4 channels it'd be 9, not 20.
+new OrderConfirmation(new SmsChannel(), "AND-1042").send();
+new ShippingUpdate(new WhatsappChannel(), "TRK-88192").send();
+```
+
+## When to use it
+
+- When you have two independent dimensions that vary (kind and channel, shape and platform, content and output format) and you notice direct inheritance producing a class hierarchy that grows multiplicatively.
+- When you want to be able to change the implementation at runtime without recompiling or touching the abstraction.
+
+## When to avoid it
+
+A single dimension that varies (notifications always by email, say, with no other channels planned) doesn't justify Bridge: you never get to take advantage of the indirection it adds.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Lets abstraction and implementation evolve separately|Introduces an extra layer of indirection that can make the code harder to read|
+|Avoids combinatorial subclass growth: channel and kind live in separate hierarchies, joined by a reference|It can be unnecessary complexity if there's only one real implementation|
+|Makes it easy to change the implementation at runtime||
+
+## Relationship with other patterns
+
+- It's usually designed up front, unlike **[Adapter](/en/design/patterns/adapter/)**, which is applied afterwards, over interfaces that already existed separately.
+- It can be combined with **[Abstract Factory](/en/design/patterns/abstract-factory/)**: the factory decides which concrete implementation to connect to the bridge.

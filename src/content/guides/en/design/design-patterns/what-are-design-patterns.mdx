@@ -1,0 +1,101 @@
+---
+id: what-are-design-patterns
+slug: what-are-design-patterns
+order: 1
+topic: design
+subtopic: design-patterns
+title: "What are design patterns?"
+description: "What makes a solution a design pattern, how the classic catalog is organized, and why every pattern has to be adapted to the problem."
+created: 2026-06-02
+lastUpdated: 2026-06-02
+---
+
+import Icon from '../../../../../../../src/components/Icon.astro';
+
+A design pattern is a reusable solution to a problem that comes up again and again when designing software. It isn't an algorithm (an exact recipe of steps) or a library (code you import and use as-is), but something in between: a way of structuring classes and objects that solves a recurring problem, and that you have to adapt to each concrete case. Nobody "installs" the Observer pattern; you implement it, with names and details specific to each project, following a general shape that's already known to work.
+
+That general shape didn't come out of nowhere: in 1994, four authors — known ever since as the "Gang of Four" (GoF) — published a catalog of 23 patterns they'd seen recur in well-designed object-oriented systems. That catalog, with slight variations, is still the standard reference.
+
+## Why they're worth knowing
+
+- **They're proven solutions.** When you use a known pattern, you aren't inventing a new solution to a design problem — you're applying something that has been validated across thousands of different projects. That reduces the margin for error in decisions that, made badly, are expensive to reverse later.
+- **They give you shared vocabulary.** Saying "this needs a Strategy" communicates a complete design intent in three words to another developer who knows the catalog. Without that vocabulary, the same idea means explaining the whole structure every time.
+- **They make a future change possible without touching code that already works.** Most patterns exist so that one kind of change (adding a new type of product, a new export format, a new business rule) gets resolved by adding new code, not by modifying code that already works and has already been tested.
+
+## Not every problem needs a pattern
+
+Patterns aren't a goal in themselves. Dropping a pattern in where it isn't needed adds indirection, files, and layers that someone later has to understand — sometimes the simplest solution is to use no pattern at all. The useful question isn't "can I use a pattern here?" but "has someone already solved this specific problem in a recognizable way?". Each pattern's article includes a section on when it's worth it and when it isn't, exactly for that.
+
+## The three categories
+
+The catalog is organized into three groups, by the kind of problem they solve:
+
+<div className="grid gap-4 sm:grid-cols-3">
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-violet-400">
+      <Icon name="layers" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">Creational</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">How objects get created.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Factory Method</li>
+      <li>Abstract Factory</li>
+      <li>Builder</li>
+      <li>Prototype</li>
+      <li>Singleton</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-sky-400">
+      <Icon name="layout" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">Structural</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">How objects are assembled into larger structures.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Adapter</li>
+      <li>Bridge</li>
+      <li>Composite</li>
+      <li>Decorator</li>
+      <li>Facade</li>
+      <li>Flyweight</li>
+      <li>Proxy</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-fuchsia-400">
+      <Icon name="radar" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">Behavioral</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">How responsibilities are divided and objects communicate.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Chain of Responsibility</li>
+      <li>Command</li>
+      <li>Interpreter</li>
+      <li>Iterator</li>
+      <li>Mediator</li>
+      <li>Memento</li>
+      <li>Observer</li>
+      <li>State</li>
+      <li>Strategy</li>
+      <li>Template Method</li>
+      <li>Visitor</li>
+    </ul>
+  </div>
+</div>
+
+- **[Creational patterns](/en/design/patterns/creational-patterns/)** — about _how_ objects get created, so the code isn't tied to concrete classes.
+- **[Structural patterns](/en/design/patterns/structural-patterns/)** — about how classes and objects combine into larger structures while staying flexible and efficient.
+- **[Behavioral patterns](/en/design/patterns/behavioral-patterns/)** — about how responsibilities are divided among objects and how they communicate with each other.
+- **[Design patterns that are often confused](/en/design/patterns/commonly-confused-patterns/)** — some patterns have similar structures but solve different problems: what sets them apart and how to recognize when to use each.
+
+## The domain of the examples
+
+The code examples in this topic are in Java, and almost all of them share one fictional case: **AndesShop**, an e-commerce store selling clothing and trekking gear that keeps growing and runs into different design problems as it adds features.
+
+AndesShop is the same business whose payments module the [software architecture topic](/en/architecture/) uses as its example: there it's viewed from the outside, deciding the boundaries between services, what data each one shares, and how they communicate; here it's viewed from inside a class. That's deliberate: design patterns and architecture decisions operate on the same system, at different scales.
+
+## Relationship with design principles
+
+A pattern isn't an alternative to the [design principles](/en/design/principles/), it's a concrete application of several of them at once. Strategy is [Open/Closed](/en/design/principles/solid/#o--openclosed-principle) made structural; Decorator is [composition over inheritance](/en/design/principles/general-design-principles/#composition-over-inheritance) taken to its limit; almost all of them push the dependency toward an abstraction, which is [dependency inversion](/en/design/principles/solid/#d--dependency-inversion-principle).
+
+That's why it's worth reading the principles before the catalog: patterns make a lot more sense once you know which design tension they're resolving.

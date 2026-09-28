@@ -1,0 +1,34 @@
+---
+id: structural-patterns
+slug: structural-patterns
+order: 3
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Structural patterns"
+description: "How to combine classes and objects to adapt interfaces, extend behavior, and simplify the use of complex components."
+created: 2026-06-05
+lastUpdated: 2026-06-05
+---
+
+Structural patterns solve **how to assemble classes and objects into larger structures**, keeping those structures flexible and efficient even as the individual pieces change.
+
+Signs the problem falls into this category:
+
+- You need two incompatible interfaces to work together without modifying either one.
+- An abstraction and its implementation are mixed into the same class hierarchy, and changing one forces you to touch the other.
+- You need to treat an individual object and a composition of those objects uniformly (a file and a folder containing files, for instance).
+- You need to add responsibilities to one specific object without an explosion of subclasses for every possible combination.
+- A subsystem has so many pieces and internal dependencies that the code using it becomes hard to follow.
+- You have an enormous number of very similar objects, and that's consuming too much memory.
+- You need to control or intercept access to an object without the code using it noticing.
+
+The seven patterns in this category:
+
+- **[Adapter](/en/design/patterns/adapter/)** — lets two incompatible interfaces work together by translating calls from one to the other.
+- **[Bridge](/en/design/patterns/bridge/)** — separates an abstraction from its implementation so both can evolve separately.
+- **[Composite](/en/design/patterns/composite/)** — composes objects into tree structures and treats them uniformly, whether they're leaves or compositions.
+- **[Decorator](/en/design/patterns/decorator/)** — adds responsibilities to an object at runtime by wrapping it in another compatible object.
+- **[Facade](/en/design/patterns/facade/)** — exposes a simple interface over a complex subsystem.
+- **[Flyweight](/en/design/patterns/flyweight/)** — shares common state across many similar objects to save memory.
+- **[Proxy](/en/design/patterns/proxy/)** — places a stand-in in front of an object to control access to it.

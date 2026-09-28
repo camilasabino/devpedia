@@ -9,10 +9,41 @@
 
 :root {
   --surface-bg: #050607;
+  /* Provisional: copied from the portfolio's global.css so the migrated guides and
+     their MDX components render. The shared token extraction is planned for M3. */
+  --guide-measure: 64ch;
+  --surface-card-from: #16181c;
+  --surface-card-to: #101215;
+  --surface-card-hover-from: #191b20;
+  --surface-card-hover-to: #121417;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-faint: rgba(255, 255, 255, 0.06);
+  --overlay-faint: rgba(255, 255, 255, 0.02);
+  --overlay-subtle: rgba(255, 255, 255, 0.05);
+  --overlay-inset: rgba(255, 255, 255, 0.04);
+  --text-body: var(--color-neutral-300);
+  --text-heading: var(--color-neutral-50);
+  --text-muted: var(--color-neutral-300);
+  --text-accent: var(--color-accent-400);
+  --diagram-surface: #0f1114;
 }
 
 :root[data-theme="light"] {
   --surface-bg: #fafafa;
+  --surface-card-from: #ffffff;
+  --surface-card-to: #f4f4f5;
+  --surface-card-hover-from: #ffffff;
+  --surface-card-hover-to: #eceef0;
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-faint: rgba(0, 0, 0, 0.06);
+  --overlay-faint: rgba(0, 0, 0, 0.02);
+  --overlay-subtle: rgba(0, 0, 0, 0.04);
+  --overlay-inset: rgba(0, 0, 0, 0.04);
+  --text-body: var(--color-neutral-700);
+  --text-heading: var(--color-neutral-900);
+  --text-muted: var(--color-neutral-600);
+  --text-accent: var(--color-accent-700);
+  --diagram-surface: #ffffff;
 }
 
 body {
@@ -28,4 +59,365 @@ body {
 
 :root[data-theme="light"] :focus-visible {
   outline-color: var(--color-accent-700);
+}
+
+.card-surface {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to));
+  box-shadow: 0 1px 0 var(--overlay-inset) inset;
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+}
+
+.card-surface:hover {
+  transform: translateY(-3px);
+  border-color: rgba(45, 212, 191, 0.4);
+  box-shadow: 0 20px 40px -20px rgba(20, 184, 166, 0.3);
+  background: linear-gradient(180deg, var(--surface-card-hover-from), var(--surface-card-hover-to));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-surface:hover {
+    transform: none;
+  }
+}
+
+.prose-guide {
+  font-size: clamp(1rem, 0.96rem + 0.15vw, 1.0625rem);
+  line-height: 1.7;
+  color: var(--text-body);
+}
+
+/* Running text is capped at a comfortable measure and left-aligned with the rest of
+   the column. Everything else (code, tables, diagrams, cards) keeps the full width of
+   the main column, so wide technical content never needs to break out of it and
+   never runs under the table of contents. */
+.prose-guide > :is(p, h2, h3, h4, h5, h6, ul, ol, dl, blockquote, hr, .callout) {
+  max-width: var(--guide-measure);
+}
+
+.prose-guide > * + * {
+  margin-top: 1.5em;
+}
+
+.prose-guide h2 {
+  margin-top: 2.25em;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1.3rem + 0.9vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--text-heading);
+}
+
+.prose-guide h3 {
+  margin-top: 2em;
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-heading);
+}
+
+.prose-guide h4 {
+  margin-top: 1.75em;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-heading);
+}
+
+/* A heading sits closer to the content it introduces than to the section before it,
+   so each section reads as one block without needing a rule or a card around it. */
+.prose-guide > :is(h2, h3, h4) + * {
+  margin-top: 0.75em;
+}
+
+.prose-guide > h2 + :is(h3, h4) {
+  margin-top: 1.25em;
+}
+
+/* Heading anchors: the link is invisible until the heading is hovered or the link
+   itself is focused, so keyboard users can still reach it. */
+.prose-guide :is(h2, h3, h4) {
+  scroll-margin-top: 5.5rem;
+}
+
+.prose-guide .heading-anchor {
+  margin-left: 0.4em;
+  color: var(--text-accent);
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  font-weight: 400;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.prose-guide :is(h2, h3, h4):hover .heading-anchor,
+.prose-guide .heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+.prose-guide hr {
+  margin-block: 2.5em;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.prose-guide figure {
+  margin-block: 2em;
+}
+
+.prose-guide figcaption {
+  margin-top: 0.75em;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.prose-guide img {
+  border-radius: 0.75rem;
+}
+
+.prose-guide a {
+  color: var(--text-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(45, 212, 191, 0.4);
+}
+
+.prose-guide a:hover {
+  text-decoration-color: var(--color-accent-400);
+}
+
+.prose-guide ul,
+.prose-guide ol {
+  padding-left: 1.25em;
+}
+
+.prose-guide ul {
+  list-style: disc;
+}
+
+.prose-guide ol {
+  list-style: decimal;
+}
+
+.prose-guide li + li {
+  margin-top: 0.5em;
+}
+
+.prose-guide code {
+  border-radius: 0.25rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--overlay-subtle);
+  padding: 0.15em 0.4em;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--text-accent);
+}
+
+.prose-guide pre {
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to));
+  padding: 1.25em;
+}
+
+/* A long inline identifier (a chained call, a path) breaks inside the line instead
+   of pushing the whole page into horizontal scroll on narrow screens. */
+.prose-guide :not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
+.prose-guide pre code {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Callouts. A plain `>` blockquote is a neutral quote; a callout with a variant is
+   authored with the <Callout> component. Previously every blockquote rendered with
+   a "!" badge, so notes, definitions and quotes all read as warnings. */
+.prose-guide blockquote {
+  border-left: 3px solid var(--color-accent-500);
+  padding: 0.25em 0 0.25em 1.25em;
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+.prose-guide blockquote p {
+  margin: 0;
+}
+
+.prose-guide blockquote p + p {
+  margin-top: 0.75em;
+}
+
+.callout {
+  display: flex;
+  gap: 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--callout-border);
+  background: var(--callout-bg);
+  padding: 1em 1.25em;
+  color: var(--text-body);
+}
+
+.callout-icon {
+  flex-shrink: 0;
+  margin-top: 0.15em;
+  color: var(--callout-accent);
+}
+
+/* Without this, a <pre> or a table inside a callout refuses to shrink below its
+   content width (flex items default to `min-width: auto`) and pushes the whole
+   page into horizontal scroll on narrow screens. */
+.callout-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.callout-body > :first-child {
+  margin-top: 0;
+}
+
+.callout-body > * + * {
+  margin-top: 0.75em;
+}
+
+.callout-title {
+  display: block;
+  margin-bottom: 0.35em;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--callout-accent);
+}
+
+.callout-note {
+  --callout-border: rgba(45, 212, 191, 0.28);
+  --callout-bg: rgba(45, 212, 191, 0.06);
+  --callout-accent: var(--color-accent-400);
+}
+
+.callout-warning {
+  --callout-border: rgba(251, 191, 36, 0.3);
+  --callout-bg: rgba(251, 191, 36, 0.07);
+  --callout-accent: var(--color-amber-400);
+}
+
+.callout-key {
+  --callout-border: rgba(167, 139, 250, 0.3);
+  --callout-bg: rgba(167, 139, 250, 0.07);
+  --callout-accent: var(--color-violet-400);
+}
+
+:root[data-theme="light"] .callout-note {
+  --callout-border: rgba(13, 148, 136, 0.3);
+  --callout-bg: rgba(13, 148, 136, 0.07);
+  --callout-accent: var(--color-accent-700);
+}
+
+:root[data-theme="light"] .callout-warning {
+  --callout-border: rgba(180, 83, 9, 0.3);
+  --callout-bg: rgba(217, 119, 6, 0.09);
+  --callout-accent: var(--color-amber-700);
+}
+
+:root[data-theme="light"] .callout-key {
+  --callout-border: rgba(109, 40, 217, 0.3);
+  --callout-bg: rgba(139, 92, 246, 0.09);
+  --callout-accent: var(--color-violet-700);
+}
+
+/* The scroll container is the wrapper, not the table. Setting `display: block` on a
+   <table> strips its table role in several screen readers, which loses the row and
+   column association the data depends on. The wrapper is focusable so a
+   keyboard-only user can scroll it (WCAG 2.1.1). */
+.table-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll:focus-visible {
+  outline-offset: -2px;
+}
+
+.prose-guide table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.prose-guide thead {
+  background: var(--overlay-subtle);
+}
+
+.prose-guide th {
+  padding: 0.75em 1em;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-accent);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.prose-guide td {
+  padding: 0.85em 1em;
+  border-bottom: 1px solid var(--border-faint);
+  vertical-align: top;
+  color: var(--text-muted);
+}
+
+.prose-guide tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.prose-guide tbody tr:nth-child(even) {
+  background: var(--overlay-faint);
+}
+
+.prose-guide td code,
+.prose-guide th code {
+  white-space: nowrap;
+}
+
+/* Code block token colors come from the dual Shiki themes in src/lib/shiki-theme.ts.
+   Dark is the default (inline color); light is stored as --shiki-light and applied
+   when the site theme toggle sets data-theme="light". Font style is always a CSS
+   variable (even for the default theme), so comments stay italic in both modes.
+   Shiki's own background stays transparent so the card gradient below can follow
+   the page theme. */
+.prose-guide pre.astro-code {
+  background: linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to)) !important;
+}
+
+.prose-guide pre.astro-code span {
+  font-style: var(--shiki-dark-font-style, inherit);
+}
+
+:root[data-theme="light"] .prose-guide pre.astro-code,
+:root[data-theme="light"] .prose-guide pre.astro-code span {
+  color: var(--shiki-light) !important;
+  font-style: var(--shiki-light-font-style, inherit);
 }

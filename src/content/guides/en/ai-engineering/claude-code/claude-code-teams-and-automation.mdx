@@ -1,0 +1,61 @@
+---
+id: claude-code-teams-and-automation
+slug: teams-and-automation
+order: 10
+topic: ai-engineering
+subtopic: claude-code
+section: teams-and-workflows
+title: "Claude Code in teams and automation"
+description: "Five scenarios for integrating Claude Code into team processes and automation beyond an individual session."
+created: 2026-09-08
+lastUpdated: 2026-09-08
+---
+
+Everything so far assumes a developer working alone. When Claude Code is exposed as an **MCP server**, it stops being a personal tool and becomes infrastructure: something that runs on a server, that several users consume, and that integrates with the rest of the stack. These are five scenarios where that jump starts to justify the investment.
+
+## 1. A shared development server for the team
+
+**The problem:** each developer's environment drifts (Python versions, package managers, Docker configuration), and once an agent enters the picture those differences multiply — it needs access to staging databases, internal credentials, proprietary tools.
+
+**The architecture:** Claude Code runs on a dedicated server with the monorepo cloned, access to development databases, and credentials managed by a vault (HashiCorp Vault, AWS Secrets Manager). Each developer connects from their usual MCP client (Claude Desktop, an IDE plugin, a Slack bot).
+
+**The concrete benefit:** a new developer can connect to an environment that's already set up in minutes, instead of spending days installing versions, credentials, and tools by hand — provided the shared server is well maintained. Credentials never leave the server, and heavy builds use its resources instead of each person's laptop. A good candidate for packaging as a [plugin](/en/ai-engineering/claude-code/plugins/): that way each new developer connects with the same skills, subagents, and hooks already configured, without copying them by hand.
+
+## 2. Multi-agent orchestration across several repos
+
+**The problem:** in microservices, a product task rarely lives in a single repo. A single Claude Code instance holding all the code doesn't scale — the context becomes unmanageable.
+
+**The architecture:** one Claude Code instance per domain (auth, profiles, frontend), each exposed as its own MCP server with that repo's conventions. An orchestrator (another Claude Code, or Claude Desktop) delegates each part of the task to the corresponding server and consolidates the result.
+
+**The concrete benefit:** each agent works with bounded context; you can parallelize; adding a new microservice is simply a matter of deploying one more MCP and registering it.
+
+## 3. Integration into CI/CD pipelines
+
+**The problem:** there are repetitive engineering tasks too contextual for a static linter rule, but too frequent for a human to do: reviewing a PR against internal conventions, updating docs when an endpoint changes, investigating why a test turned flaky.
+
+**The architecture:** CI jobs that, instead of running a fixed script, open an MCP connection with a structured instruction ("review this PR following the conventions in `docs/CONTRIBUTING.md`"). The agent works with the real code and returns the result as a PR comment, a commit on a branch, or an issue in the tracker.
+
+**Key consideration:** you have to bound the _blast radius_ — broad read access, writes limited to feature branches and comments, never a direct merge to `main` or access to production. Also define a token/time budget per task.
+
+## 4. A self-service platform for non-technical roles
+
+**The problem:** the permanent queue of "small requests" (a field on a form, some email copy, a _feature flag_) consumes a non-trivial share of the engineering team's time and generates frustration on both sides.
+
+**The architecture:** an interface built for the non-technical role (a Slack bot, a dashboard with forms, an embedded chat) translates the request into an instruction for Claude Code, which opens a PR and returns the link so a developer can validate it before the merge.
+
+**The concrete benefit:** the developer moves from "running small tasks" to "validating small changes" — far faster — without losing control.
+
+## 5. Regulated or air-gapped environments
+
+**The problem:** in banking, healthcare, defense, or any sector with critical intellectual property, the code can't leave a controlled infrastructure.
+
+**The architecture:** Claude Code runs inside the perimeter (on-premise, an isolated VPC, or an air-gapped environment connected to a private deployment of the model). Developers get in over VPN or a bastion host; only the conversation travels to the client side, while files, diffs, and commands stay server-side, with full auditing.
+
+**The concrete benefit:** compatible with strict security policies, instant access revocation (you disable server access rather than recovering code from a laptop), and far easier to defend in an audit (ISO 27001, SOC 2) than "every developer has the code and an AI on their laptop". It's also the scenario where everything in [Security when working with Claude Code](/en/ai-engineering/claude-code/security/) pays off most: sandbox, `deny` rules, and `/security-review` running server-side instead of on each developer's machine.
+
+> The five scenarios share one premise: Claude Code running as a team resource, governable and auditable, rather than an individual installation. On a small team, scenario 1 (a shared development server) is probably the only one worth evaluating for now — the other four earn their keep as the team or the level of regulation grows.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: <a href="https://code.claude.com/docs/en/admin-setup" target="_blank" rel="noopener noreferrer">Set up Claude Code for your organization</a> is the official starting point for administrators (managed settings, API providers, policies), and{' '}
+  <a href="https://code.claude.com/docs/en/sandbox-environments" target="_blank" rel="noopener noreferrer">Choose a sandbox environment</a> compares the isolation options — sandboxed bash, dev containers, Docker, VM — relevant above all to scenario 5.
+</p>

@@ -1,0 +1,134 @@
+---
+id: decorator-pattern
+slug: decorator
+order: 13
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Decorator"
+description: "How to add behavior to an object through composition and combine extensions without creating a subclass for every variant."
+created: 2026-06-25
+lastUpdated: 2026-06-25
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+_Also known as: Wrapper_
+
+**Decorator** is a structural pattern that lets you add new responsibilities to an object at runtime, by wrapping it in decorator objects compatible with its same interface.
+
+## The problem
+
+A product's final price in AndesShop is assembled by combining several adjustments: it can add a gift wrapping fee, it can add an express shipping fee, it can subtract a coupon discount, and it always adds tax. Any combination of these adjustments is valid at the same time. Solving it with subclasses (`GiftWrappedExpressDiscountedPrice`, `ExpressDiscountedPrice`, `GiftWrappedPrice`...) would require one subclass per possible combination — and every new adjustment added doubles that number.
+
+## The solution
+
+Decorator solves this by wrapping the base object in a chain of decorators, each implementing the same interface as the original object and adding its own adjustment before or after delegating to the object it wraps. Any combination of adjustments is simply a different combination of wrappers, with no need for a class per mix.
+
+<ClassDiagram
+  caption="The structure of Decorator: the decorator implements the same interface it decorates, which is why it can be stacked on another decorator."
+  diagram={`    class PricedItem {
+        <<interface>>
+        +getPrice() Money
+        +describe() String
+    }
+    class BaseProduct {
+        -price Money
+        +getPrice() Money
+    }
+    class PriceDecorator {
+        <<abstract>>
+        #wrapped PricedItem
+        +getPrice() Money
+    }
+    class GiftWrapDecorator {
+        +getPrice() Money
+    }
+    class ExpressShippingDecorator {
+        +getPrice() Money
+    }
+    PricedItem <|.. BaseProduct
+    PricedItem <|.. PriceDecorator
+    PriceDecorator <|-- GiftWrapDecorator
+    PriceDecorator <|-- ExpressShippingDecorator
+    PriceDecorator --> "1" PricedItem : wrapped`}
+/>
+
+## Example in Java
+
+```java
+interface PricedItem {
+    double getPrice();
+}
+
+class BaseProduct implements PricedItem {
+    private final double basePrice;
+
+    public BaseProduct(double basePrice) {
+        this.basePrice = basePrice;
+    }
+
+    public double getPrice() {
+        return basePrice;
+    }
+}
+
+// Base decorator: wraps a PricedItem and delegates to it
+abstract class PriceDecorator implements PricedItem {
+    protected final PricedItem wrapped;
+
+    protected PriceDecorator(PricedItem wrapped) {
+        this.wrapped = wrapped;
+    }
+}
+
+class GiftWrapDecorator extends PriceDecorator {
+    public GiftWrapDecorator(PricedItem wrapped) { super(wrapped); }
+
+    public double getPrice() {
+        return wrapped.getPrice() + 5.0; // flat gift wrapping fee
+    }
+}
+
+class ExpressShippingDecorator extends PriceDecorator {
+    public ExpressShippingDecorator(PricedItem wrapped) { super(wrapped); }
+
+    public double getPrice() {
+        return wrapped.getPrice() + 12.0; // flat express shipping fee
+    }
+}
+```
+
+```java
+// Client code: any combination is just nesting decorators
+PricedItem item = new ExpressShippingDecorator(
+    new GiftWrapDecorator(
+        new BaseProduct(89.90)
+    )
+);
+
+System.out.println(item.getPrice()); // 89.90 + 5.0 + 12.0
+```
+
+## When to use it
+
+- When you need to add or remove responsibilities on individual objects at runtime, without affecting other objects of the same class.
+- When extending by inheritance would produce an explosion of subclasses to cover every possible combination.
+
+## When to avoid it
+
+With few, stable combinations, a small explicit set of classes can be easier to read than a chain of nested decorators.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Lets you combine responsibilities by wrapping the object, without a subclass per mix|It can be hard to read once the decorator chain grows long|
+|Respects the single responsibility principle: each decorator does one thing|The order the decorators are applied in can matter, and it isn't always obvious|
+|Follows the open/closed principle: new decorators are added without touching the existing ones|Removing one specific decorator from the middle of the chain isn't straightforward|
+
+## Relationship with other patterns
+
+- It differs from **[Adapter](/en/design/patterns/adapter/)** in purpose: Adapter changes an object's interface; Decorator keeps the same interface and only adds behavior.
+- It differs from **[Composite](/en/design/patterns/composite/)** in shape: Composite branches into several children; Decorator always wraps a single object.
+- **[Proxy](/en/design/patterns/proxy/)** also wraps an object behind the same interface, but to control access to it, not to add behavior.

@@ -1,0 +1,118 @@
+---
+id: what-is-testing
+slug: que-es-el-testing
+order: 1
+topic: testing
+section: fundamentals
+title: "¿Qué es el testing?"
+description: "Qué podemos conocer sobre un sistema a través de las pruebas, qué límites tienen y cómo ayudan a evaluar su calidad."
+created: 2026-07-27
+lastUpdated: 2026-07-27
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+El testing es el proceso sistemático de evaluar el comportamiento de un sistema frente a expectativas definidas, para detectar defectos, reducir incertidumbre y producir evidencia de lo observado.
+
+Una definición más útil para un Software Engineer que la típica frase de manual:
+
+> Testing no consiste en comprobar que "el código funciona", sino en producir evidencia sobre si un sistema se comporta como esperamos bajo determinadas condiciones.
+
+Esa definición trae varios conceptos implícitos. Un test define, casi siempre:
+
+- una **entrada** o conjunto de condiciones iniciales,
+- una **acción** o ejecución,
+- un **resultado esperado**,
+- y un mecanismo para determinar si lo que observamos cumple esa expectativa.
+
+### El sistema de ejemplo
+
+Todos los ejemplos de este tema usan el mismo sistema ficticio: **ReservaResto**, una plataforma de reservas de mesas para restaurantes, construida con Node.js, Express, TypeScript y PostgreSQL. Sus piezas relevantes:
+
+| Componente | Responsabilidad |
+|---|---|
+| `ReservationService` | Crea, confirma y cancela reservas |
+| `TableAvailabilityService` | Determina qué mesas hay libres en una franja horaria |
+| `PricingService` | Calcula la seña y las penalidades por cancelación |
+| `PaymentService` | Cobra y reintegra la seña a través de un proveedor externo |
+| `NotificationService` | Avisa al comensal y al restaurante |
+
+En ReservaResto, un caso simple se ve así:
+
+```text
+Given: party size = 4, mesa disponible para 4 personas
+When: se solicita la reserva
+Then: reservation.status = CONFIRMED
+```
+
+El problema es que el testing serio no se queda en el flujo principal (*happy path*). Rápidamente aparecen preguntas incómodas:
+
+```text
+¿Qué pasa si dos usuarios reservan la última mesa disponible al mismo tiempo?
+¿Qué pasa si el proveedor de pagos de la seña se cuelga a mitad de la transacción?
+¿Qué pasa si el request de reserva se reintenta y se duplica?
+¿Qué pasa si el proveedor de pagos devuelve un status que no reconocemos?
+¿Qué pasa si la base de datos no está disponible por un instante?
+```
+
+Por eso el testing está tan ligado a los requisitos, la arquitectura, los modos de fallo y los atributos de calidad: no es una etapa aislada al final del desarrollo, sino una forma de pensar el sistema.
+
+## Verificación vs. validación
+
+Una distinción clásica, y que vale la pena instalar desde el arranque, porque explica un fenómeno que seguramente viviste.
+
+**Verificación** — ¿Estamos construyendo el sistema correctamente? Busca determinar si el software cumple con especificaciones, contratos y reglas ya definidas.
+
+**Validación** — ¿Estamos construyendo el sistema correcto? Busca determinar si el sistema realmente resuelve la necesidad del usuario o del negocio.
+
+Esta distinción explica por qué ReservaResto puede pasar cientos de tests automatizados —la reserva se crea, la seña se cobra, la mesa se bloquea, todo según lo especificado— y aun así estar equivocada: si la política de cancelación que implementamos no coincide con cómo el restaurante realmente quiere operar, tenemos un sistema verificado pero no validado.
+
+## Testing funcional vs. no funcional
+
+Esta es la primera gran clasificación, y responde a **qué propiedad del sistema estamos evaluando**.
+
+**Testing funcional** evalúa si el sistema hace lo que tiene que hacer: crear una reserva, cancelarla, aplicar un descuento a un cliente frecuente, cobrar la seña correcta según el tamaño de la mesa. La pregunta central es:
+
+> ¿El sistema hace lo que se supone que debe hacer?
+
+**Testing no funcional** evalúa cómo se comporta el sistema más allá de una funcionalidad puntual: cuánto tarda en responder la búsqueda de disponibilidad, cuántas reservas simultáneas soporta un viernes a la noche, si una vulnerabilidad es explotable, si la app funciona igual en Safari que en Chrome. La pregunta pasa a ser:
+
+> ¿Qué tan bien cumple el sistema sus funciones bajo las condiciones que importan?
+
+Un detalle que conviene remarcar: el endpoint de disponibilidad de ReservaResto puede devolver exactamente el resultado correcto y aun así ser un sistema deficiente, si tarda diez segundos en responder o se cae con quinientos usuarios concurrentes buscando mesa el mismo viernes a las nueve de la noche.
+
+## Testing manual vs. automatizado
+
+La segunda clasificación es independiente de la anterior, y responde a **cómo se ejecuta** la verificación.
+
+**Testing manual**: una persona ejecuta el escenario y evalúa el resultado. Es especialmente útil para testing exploratorio, testing de usabilidad, pruebas de aceptación (UAT) y, en general, para casos donde el comportamiento visual o contextual es difícil de automatizar (¿el mail de confirmación de ReservaResto se ve bien en un cliente de correo real?). Sus principales problemas son la repetibilidad y la escala.
+
+**Testing automatizado**: un software ejecuta los tests y determina si pasan o fallan. Sus ventajas son conocidas —repetibilidad, velocidad, integración con CI/CD, regresión automática y posibilidad de ejecutar suites grandes—, pero automatizar no es sinónimo de hacer mejor testing. Un test automatizado de baja calidad se limita a verificar, de forma automática y constante, las cosas equivocadas. La pregunta correcta no es “¿lo automatizamos?”, sino:
+
+> **¿Qué deberíamos automatizar, en qué nivel y por qué?**
+
+## Dónde va cada test: la pirámide
+
+Las tres distinciones anteriores dicen *qué* se evalúa y *cómo* se ejecuta. La que ordena el resto de este tema es **a qué nivel de alcance** conviene verificar cada cosa.
+
+La formulación más conocida es la **pirámide de tests** (*test pyramid*), propuesta por Mike Cohn en *Succeeding with Agile* (2009) y difundida después por Martin Fowler. La idea es simple: muchos tests de alcance chico, menos de alcance medio, pocos de alcance completo.
+
+```text
+        /\        Pocos    · System / E2E · lentos, frágiles, caros de diagnosticar
+       /  \
+      /----\      Algunos  · Integration  · componentes reales entre sí
+     /      \
+    /--------\    Muchos   · Unit         · milisegundos, causa de fallo evidente
+```
+
+La razón no es dogmática, es económica. A medida que crece el alcance, crecen el tiempo de ejecución, la infraestructura necesaria y —sobre todo— el costo de averiguar *por qué* falló un test. Un unit test rojo señala una función; un test end-to-end rojo puede significar cualquier cosa, desde un bug de negocio hasta un contenedor que no levantó.
+
+<Callout variant="note" title="La pirámide es una heurística, no una ley">
+Es una recomendación por defecto, no una regla universal, y hay críticas fundadas. Un sistema cuya complejidad real está en la integración entre servicios —y no dentro de cada uno— puede necesitar bastante más tests de integración de los que sugiere la forma de la pirámide. Google popularizó una versión más laxa con la proporción 70/20/10, y varios equipos trabajan con formas más parecidas a un rombo.
+
+Lo que sí se sostiene en cualquier variante es la asimetría de costos: un test de alcance grande cuesta más de escribir, más de correr y mucho más de diagnosticar. La pregunta útil no es "¿respeto la pirámide?", sino **"¿cuál es el test más barato que puede detectar este defecto?"**.
+</Callout>
+
+El **anti-patrón** del que advierte la pirámide es el "cono de helado": pocos unit tests, muchos end-to-end, y una suite que tarda cuarenta minutos, falla de forma intermitente y que nadie corre antes de mergear.
+
+La base de esa pirámide está en [qué es un test unitario](/testing/que-es-un-test-unitario/): escribir uno bueno implica bastante más que invocar un método y agregar assertions.

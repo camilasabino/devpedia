@@ -1,0 +1,122 @@
+---
+id: composite-pattern
+slug: composite
+order: 12
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Composite"
+description: "How to work with individual objects and groups of objects through one interface, simplifying how hierarchical structures are handled."
+created: 2026-06-23
+lastUpdated: 2026-06-23
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Composite** is a structural pattern that lets you compose objects into tree structures and treat an individual object exactly like a composition of those objects.
+
+## The problem
+
+AndesShop's catalog is organized into categories: "Trekking" contains "Footwear" and "Apparel"; "Footwear" contains "Boots" and "Sneakers"; and inside each leaf category there are concrete products. Calculating the total inventory value of "Trekking" means summing the value of every product, no matter how many levels of subcategories sit in between. If the calculation code has to explicitly distinguish between "this is a product" and "this is a category with subcategories", it ends up with hand-written recursive traversals duplicated everywhere the tree needs walking.
+
+## The solution
+
+Composite defines a common interface (`CatalogNode`) for both leaf nodes (products) and composite nodes (categories), with an operation like `getTotalValue()`. A product simply returns its own value; a category forwards the question to each of its children and sums the results — without the client code ever needing to know whether it's standing on a leaf or on a branch of the tree.
+
+<ClassDiagram
+  caption="The structure of Composite: leaf and composite share the same interface, and a composite contains zero or more nodes, which can themselves be composites."
+  diagram={`    class CatalogNode {
+        <<interface>>
+        +getTotalValue() Money
+        +name() String
+    }
+    class Product {
+        -price Money
+        -stock int
+        +getTotalValue() Money
+    }
+    class Category {
+        -children List~CatalogNode~
+        +add(CatalogNode) void
+        +remove(CatalogNode) void
+        +getTotalValue() Money
+    }
+    CatalogNode <|.. Product
+    CatalogNode <|.. Category
+    Category *-- "0..*" CatalogNode : children`}
+/>
+
+## Example in Java
+
+```java
+interface CatalogNode {
+    double getTotalValue();
+}
+
+// Leaf: a concrete product
+class Product implements CatalogNode {
+    private final double price;
+    private final int stock;
+
+    public Product(double price, int stock) {
+        this.price = price;
+        this.stock = stock;
+    }
+
+    public double getTotalValue() {
+        return price * stock;
+    }
+}
+
+// Composite: a category, which can hold products or other categories
+class Category implements CatalogNode {
+    private final List<CatalogNode> children = new ArrayList<>();
+
+    public void add(CatalogNode node) {
+        children.add(node);
+    }
+
+    public double getTotalValue() {
+        double total = 0;
+        for (CatalogNode child : children) {
+            total += child.getTotalValue(); // it doesn't care whether it's a Product or a Category
+        }
+        return total;
+    }
+}
+```
+
+```java
+Category footwear = new Category();
+footwear.add(new Product(120.0, 30));  // boots
+footwear.add(new Product(80.0, 50));   // sneakers
+
+Category trekking = new Category();
+trekking.add(footwear);
+trekking.add(new Product(200.0, 15)); // a jacket, directly under Trekking
+
+System.out.println(trekking.getTotalValue()); // sums the whole tree, without distinguishing levels
+```
+
+## When to use it
+
+- When your domain naturally has a tree structure (categories and products, folders and files, nested visual components).
+- When you want the client code to treat individual objects and compositions of objects in exactly the same way.
+
+## When to avoid it
+
+If your model isn't genuinely hierarchical, forcing a tree structure where there isn't one adds complexity for nothing.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The client code works with leaves and compositions identically, because both implement `CatalogNode`|It can be hard to restrict which child types are valid in each branch of the tree|
+|Follows the open/closed principle: adding a new node type doesn't break existing code|The common interface sometimes ends up too generic|
+|Simplifies the client code, which no longer needs conditionals by node type||
+
+## Relationship with other patterns
+
+- **[Decorator](/en/design/patterns/decorator/)** shares with Composite the idea of wrapping objects recursively, but Decorator always wraps a single object, without branching into several children.
+- **[Iterator](/en/design/patterns/iterator/)** combines naturally with Composite to traverse the tree without exposing its structure.
+- **[Visitor](/en/design/patterns/visitor/)** is often used alongside Composite to apply operations to the whole tree without cluttering the `Product` and `Category` classes with every new operation.

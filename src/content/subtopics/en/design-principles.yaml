@@ -1,0 +1,9 @@
+id: design-principles
+slug: principles
+order: 1
+topic: design
+title: Design principles
+description: >-
+  Principles and heuristics for designing software that is simpler,
+  more maintainable, and easier to adapt.
+icon: check

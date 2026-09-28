@@ -1,0 +1,223 @@
+---
+id: application-architecture
+slug: arquitectura-de-la-aplicacion
+order: 5
+topic: architecture
+section: domain-and-structure
+title: "Arquitectura de la aplicación"
+description: "Cómo organizar el código y separar la lógica de negocio de los detalles técnicos, como el acceso a datos y la comunicación con otros sistemas."
+created: 2026-05-12
+lastUpdated: 2026-05-12
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Una vez definida la estructura del sistema, todavía queda una pregunta:
+
+> **¿Cómo organizamos el código dentro de cada aplicación o módulo?**
+
+Aquí aparecen dos ideas diferentes: **estrategias de división** y **arquitecturas centradas en el dominio**.
+
+## Estrategias de división
+
+Una estrategia de división decide cómo partir el código: de forma **horizontal** o **vertical**.
+
+### Por capa — división horizontal
+
+Organiza el código según responsabilidades técnicas:
+
+```text
+payments/
+├── controllers/
+├── services/
+├── repositories/
+├── entities/
+└── dto/
+```
+
+El flujo típico de una request es:
+
+<MermaidDiagram code={`flowchart TD
+    H["HTTP"] --> C["Controller"] --> S["Service"] --> R["Repository"] --> DB[("Database")]`} />
+
+Supongamos que necesitamos agregar `Refund Payment`. Probablemente terminemos modificando `RefundController`, `PaymentService`, `PaymentRepository`, `PaymentEntity` y `RefundDTO`. El cambio de esa feature queda partido en varias capas, no junto en un mismo lugar.
+
+**Ventaja**
+
+Es simple de entender y puede funcionar muy bien en aplicaciones pequeñas.
+
+**Problema**
+
+A medida que crecen las features, disminuye la _feature locality_:
+
+<MermaidDiagram code={`flowchart TD
+    F["Feature de Payment"] --> C["controllers"]
+    F --> S["services"]
+    F --> R["repositories"]
+    F --> E["entities"]
+    F --> D["dto"]`} />
+
+Un cambio de negocio obliga a recorrer muchas partes de la estructura.
+
+### Por feature — división vertical
+
+La división vertical reorganiza el código en torno a features o casos de uso:
+
+```text
+payments/
+│
+├── authorize-payment/
+│   ├── endpoint
+│   ├── validator
+│   ├── handler
+│   └── repository
+│
+├── capture-payment/
+│   ├── endpoint
+│   ├── validator
+│   ├── handler
+│   └── repository
+│
+└── refund-payment/
+    ├── endpoint
+    ├── validator
+    ├── handler
+    └── repository
+```
+
+Una feature puede atravesar todas las capas necesarias:
+
+<MermaidDiagram code={`flowchart LR
+    RP["Refund Payment"] --> H["HTTP"]
+    RP --> V["Validación"]
+    RP --> AL["Lógica de aplicación"]
+    RP --> DL["Lógica de dominio"]
+    RP --> P["Persistencia"]`} />
+
+La ventaja principal es la **localidad del cambio**: cuando cambia Refund Payment, gran parte del trabajo queda concentrada en un mismo lugar.
+
+**La división vertical no es CQRS**
+
+Pueden combinarse división vertical, CQRS y DDD, pero son conceptos diferentes. La división vertical describe principalmente **cómo organizamos el código**. CQRS separa responsabilidades de _commands_ y _queries_.
+
+**Tampoco reemplaza la inversión de dependencias**
+
+Una aplicación puede combinar división vertical con Hexagonal Architecture:
+
+```text
+refund-payment/
+├── RefundPaymentHandler
+├── RefundPaymentValidator
+├── RefundPaymentController
+└── RefundPaymentPort
+```
+
+mientras los adapters concretos quedan en infrastructure.
+
+**Referencia principal**
+
+Jimmy Bogard popularizó el término **Vertical Slice Architecture** para referirse a organizar las aplicaciones en torno a features en lugar de capas técnicas. [Vertical Slice Architecture — Jimmy Bogard](https://www.jimmybogard.com/vertical-slice-architecture/).
+
+## Arquitecturas centradas en el dominio
+
+Las estrategias de división responden "¿cómo organizamos el código?". Hexagonal, Onion y Clean ponen el énfasis en otra pregunta:
+
+> **¿Cómo evitamos que las reglas del negocio queden acopladas a los detalles de infraestructura?**
+
+<MermaidDiagram code={`flowchart TD
+    I["Infrastructure"] --> A["Application"] --> D["Domain"]`} />
+
+El objetivo es que el core sea relativamente independiente de Database, HTTP, Framework, Message Broker, Cloud Provider y External APIs.
+
+### Hexagonal Architecture
+
+Las arquitecturas centradas en el dominio son, en el fondo, el [principio de inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle) aplicado a la escala de una aplicación entera: el dominio define los puertos y la infraestructura los implementa, de modo que la flecha de dependencia apunta siempre hacia adentro.
+
+También llamada **puertos y adaptadores**.
+
+<MermaidDiagram code={`flowchart TD
+    HTTP["HTTP"] --> AD["Adapter"] --> IP["Input Port"] --> App["Application"] --> Dom["Domain"] --> OP["Output Port"]
+    OP --> PG["PostgreSQL Adapter"]
+    OP --> PP["Payment Provider Adapter"]`} />
+
+El core define puertos; los adapters implementan esos puertos:
+
+```text
+PaymentRepository
+        ▲
+        │ implements
+        │
+PostgresPaymentRepository
+```
+
+Esto evita que el dominio conozca PostgreSQL.
+
+**Ejemplo**
+
+```text
+Domain
+  └── PaymentRepository
+
+Infrastructure
+  └── PostgresPaymentRepository
+```
+
+La aplicación puede reemplazar PostgreSQL por otro almacenamiento sin modificar las reglas principales del dominio.
+
+### Onion Architecture
+
+La idea fundamental es que las dependencias apunten hacia el centro:
+
+<MermaidDiagram code={`flowchart TD
+    subgraph Infra["Infrastructure"]
+        subgraph App["Application"]
+            subgraph Dom["Domain"]
+                Core["Núcleo del dominio"]
+            end
+        end
+    end`} />
+
+El domain es el núcleo.
+
+### Clean Architecture
+
+Clean Architecture propone un enfoque similar:
+
+<MermaidDiagram code={`flowchart TD
+    FD["Frameworks & Drivers"] --> IA["Interface Adapters"] --> UC["Application / Use Cases"] --> BR["Business Rules"]`} />
+
+Su regla fundamental es:
+
+> **Las dependencias deben apuntar hacia adentro.**
+
+El dominio no debería depender de Spring, Hibernate, PostgreSQL, Kafka, AWS o HTTP. Esas tecnologías pueden depender de las abstracciones definidas por el core.
+
+## Hexagonal vs. Onion vs. Clean
+
+Son conceptualmente cercanas:
+
+|Estilo|Idea central|
+|---|---|
+|Hexagonal|Puertos y adaptadores|
+|Onion|Las dependencias apuntan hacia adentro|
+|Clean|Regla de dependencia + casos de uso + límites|
+
+No conviene tratarlas como tres soluciones completamente diferentes. En una aplicación real pueden incluso combinarse ideas de las tres.
+
+**Cuándo usar arquitecturas centradas en el dominio**
+
+Tiene mucho sentido cuando:
+
+- el dominio tiene reglas complejas;
+- el sistema debe sobrevivir a cambios de infraestructura;
+- se quiere testear la lógica de negocio de forma aislada;
+- existen múltiples adaptadores;
+- la aplicación tendrá una vida larga.
+
+**Cuándo evitarla**
+
+Para una aplicación muy sencilla (`GET /products`, `POST /products`), introducir cinco capas, múltiples puertos y una estructura empresarial puede agregar complejidad sin beneficio suficiente.
+
+**Tecnologías habituales**
+
+Este enfoque aparece frecuentemente en Spring Boot, .NET, NestJS, Kotlin, Java y TypeScript. El framework no determina la arquitectura.

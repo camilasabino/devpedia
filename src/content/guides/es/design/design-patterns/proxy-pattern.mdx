@@ -1,0 +1,125 @@
+---
+id: proxy-pattern
+slug: proxy
+order: 16
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Proxy"
+description: "Cómo controlar el acceso a un objeto mediante un intermediario con la misma interfaz y en qué casos resulta útil."
+created: 2026-07-01
+lastUpdated: 2026-07-01
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Proxy** es un patrón estructural que pone un objeto sustituto delante de otro para controlar el acceso.
+
+## El problema
+
+Cada producto de AndesShop tiene varias fotos en alta resolución. Cargarlas desde el almacenamiento en la nube es relativamente lento, y la mayoría de las veces ni siquiera hace falta: en una lista de resultados de búsqueda se muestran cientos de productos, pero el usuario solo llega a ver en pantalla una fracción de ellos antes de hacer scroll. Cargar las imágenes de todos por adelantado, "por las dudas", desperdicia tiempo y ancho de banda.
+
+## La solución
+
+Proxy introduce un objeto que implementa la misma interfaz que el objeto real (`ProductImage`), pero que pospone el trabajo costoso hasta el momento en que realmente hace falta. El código cliente interactúa siempre con la misma interfaz, sin necesidad de saber si del otro lado está la imagen real o un sustituto que todavía no la cargó.
+
+<ClassDiagram
+  caption="Estructura de Proxy: el proxy comparte la interfaz del objeto real y controla cuándo se lo crea. El cliente no nota la diferencia."
+  diagram={`    class ProductImage {
+        <<interface>>
+        +display() String
+    }
+    class RealProductImage {
+        -url String
+        -bytes byte[]
+        +display() String
+    }
+    class LazyProductImageProxy {
+        -url String
+        -real RealProductImage
+        +display() String
+    }
+    class ProductPage {
+        -image ProductImage
+    }
+    ProductImage <|.. RealProductImage
+    ProductImage <|.. LazyProductImageProxy
+    LazyProductImageProxy --> "0..1" RealProductImage : subject
+    LazyProductImageProxy ..> RealProductImage : «create» en el primer display()
+    ProductPage --> "1" ProductImage : no distingue proxy de real`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface ProductImage {
+    String display();
+}
+
+// El objeto real: cargarlo es costoso
+class RealProductImage implements ProductImage {
+    private final String url;
+
+    public RealProductImage(String url) {
+        this.url = url;
+        loadFromCloudStorage(); // trabajo costoso, ocurre al construir el objeto
+    }
+
+    private void loadFromCloudStorage() {
+        System.out.println("Loading image from " + url + "...");
+    }
+
+    public String display() {
+        return "Displaying image: " + url;
+    }
+}
+
+// El Proxy: pospone la carga hasta el primer uso real
+class LazyProductImageProxy implements ProductImage {
+    private final String url;
+    private RealProductImage real;
+
+    public LazyProductImageProxy(String url) {
+        this.url = url; // liviano: no carga nada todavía
+    }
+
+    public String display() {
+        if (real == null) {
+            real = new RealProductImage(url); // recién acá se paga el costo
+        }
+        return real.display();
+    }
+}
+```
+
+```java
+// Client code: crear el proxy es barato, sin importar cuántos productos haya en la lista
+List<ProductImage> searchResults = skus.stream()
+    .map(sku -> new LazyProductImageProxy(imageUrlFor(sku)))
+    .toList();
+
+// La imagen real recién se carga cuando el usuario efectivamente la ve
+searchResults.get(0).display();
+```
+
+## Cuándo usarlo
+
+- Cuando necesitás posponer la creación de un objeto costoso hasta el momento en que realmente se necesita (_virtual proxy_).
+- Cuando necesitás controlar el acceso a un objeto: verificar permisos antes de dejar pasar la llamada (_protection proxy_), cachear un resultado costoso, o hablar con un objeto que vive en otro proceso (_remote proxy_).
+
+## Cuándo evitarlo
+
+Si el objeto no es costoso de crear ni necesita control de acceso, un Proxy solo agrega una capa de indirección sin ningún beneficio real.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|El cliente sigue hablando con la misma interfaz: carga diferida, caché o permisos quedan detrás del proxy|Agrega una capa de indirección que puede complicar el seguimiento del código|
+|Pospone trabajo costoso hasta el primer uso real|La respuesta puede llegar con latencia extra la primera vez que se resuelve el objeto real|
+|Sirve también cuando el objeto real todavía no existe o vive en otro proceso||
+
+## Relación con otros patrones
+
+- Comparte estructura con **[Decorator](/diseno/patrones/decorator/)** (ambos envuelven un objeto detrás de su misma interfaz), pero con intención distinta: Decorator suma comportamiento, Proxy controla acceso.
+- Se diferencia de **[Adapter](/diseno/patrones/adapter/)** en que Proxy mantiene la misma interfaz que el objeto que envuelve; Adapter la cambia.

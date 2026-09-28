@@ -1,0 +1,172 @@
+---
+id: infrastructure-and-cloud-architecture
+slug: infrastructure-and-cloud-architecture
+order: 9
+topic: architecture
+section: operations
+title: "Infrastructure and cloud architecture"
+description: "How to choose where a system runs, how to scale and deploy it, and how to bring the service back after an infrastructure failure."
+created: 2026-05-19
+lastUpdated: 2026-05-19
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Cloud architecture answers one question:
+
+> **Where and how does the system run, and how is it operated at scale?**
+
+A typical architecture:
+
+<MermaidDiagram code={`flowchart TD
+    I["Internet"] --> D["DNS / CDN"] --> LB["Load Balancer"] --> App["Application"]
+    App --> DB[("Database")]
+    App --> Ca[("Cache")]
+    App --> MB["Message Broker"]
+    App --> OS[("Object Storage")]`} />
+
+Designing the cloud architecture means deciding where the system runs, how it connects, how it scales, how it ships, and how it recovers when a zone fails — and at what operational cost. Picking a provider doesn't substitute for any of those decisions.
+
+## Compute
+
+The main options are **VMs**, **containers**, **orchestration**, and **serverless**.
+
+**VMs**
+
+A virtual machine gives you more control over the operating system and the runtime. In exchange, the team takes on patching, sizing, and operating it.
+
+**Containers**
+
+They package the application, the runtime, and the dependencies. Common technology: Docker.
+
+**Orchestration**
+
+Kubernetes provides mechanisms for scheduling, service discovery, health checks, rolling deployments, scaling, and desired-state management. Kubernetes isn't an architecture by itself: it's a platform for operating certain architectures.
+
+**Serverless**
+
+Examples: AWS Lambda, Azure Functions, Google Cloud Functions.
+
+Benefits: managed infrastructure, elastic scaling, and pay-per-use. In exchange: execution limits, _cold starts_ in certain scenarios, harder observability and debugging, and _vendor lock-in_.
+
+## Networking
+
+A common cloud architecture separates a public zone from a private one:
+
+<MermaidDiagram code={`flowchart TD
+    subgraph Public["Public"]
+        CDN["CDN"]
+        LB["Load Balancer"]
+        GW["API Gateway"]
+    end
+    subgraph Private["Private"]
+        App["Application"]
+        DB[("Database")]
+        Ca[("Cache")]
+        MB["Message Broker"]
+    end
+    GW --> App`} />
+
+**DNS**
+
+Resolves names:
+
+<MermaidDiagram code={`flowchart LR
+    N["api.example.com"] --> LB["Load Balancer"]`} />
+
+**CDN**
+
+Brings content closer to users. Especially useful for static assets, images, video, and responses that can be cached.
+
+**Load balancer**
+
+Distributes traffic and can run health checks:
+
+<MermaidDiagram code={`flowchart TD
+    LB["Load Balancer"] --> A1["App"]
+    LB --> A2["App"]
+    LB --> A3["App"]`} />
+
+**API gateway**
+
+Can centralize authentication, rate limiting, routing, request policies, and observability. But it shouldn't turn into the place where all the business logic lives.
+
+## Regions / availability zones
+
+A region contains multiple availability zones:
+
+<MermaidDiagram code={`flowchart TD
+    R["Region"] --> A["AZ A"]
+    R --> B["AZ B"]
+    R --> C["AZ C"]`} />
+
+We can spread application instances across the three AZs to reduce the impact of one AZ going down.
+
+**Multi-region**
+
+<MermaidDiagram code={`flowchart LR
+    RA["Region A"] <--> RB["Region B"]`} />
+
+It can improve resilience against regional failures, but it brings replication, consistency, routing, failover, data residency, cost, and operational complexity. It shouldn't be used just because "more regions is more robust".
+
+## Storage
+
+The cloud offers several types: relational databases, NoSQL databases, object storage, block storage, file storage, and caching. On AWS, for instance: RDS/Aurora, DynamoDB, S3, EBS, ElastiCache. The name of the service matters less than the workload: first comes what you're going to store, how you're going to query it, and with what consistency; then, which product implements it.
+
+## Autoscaling
+
+You don't always have to scale on CPU. You can scale on CPU, memory, requests/sec, latency, queue depth, or custom metrics. For a worker processing asynchronous payments:
+
+<MermaidDiagram code={`flowchart LR
+    Q["Queue depth"] --> S["Scale workers"]`} />
+
+can be a far better signal than CPU.
+
+## IAM, secrets, and encryption
+
+Cloud architecture has to account for identity, access control, secrets, encryption, key management, and auditing. A general rule:
+
+> **Principle of least privilege**
+
+A service should only have the permissions it needs.
+
+## CI/CD
+
+<MermaidDiagram code={`flowchart TD
+    Dev["Developer"] --> Git["Git"] --> CI["CI"]
+    CI --> B["Build"]
+    CI --> T["Test"]
+    CI --> S["Security checks"]
+    CI --> Art["Artifact"] --> CD["CD"] --> Prod["Production"]`} />
+
+## Deployment strategies
+
+**Rolling**: updates instances gradually.
+
+**Blue/green**: `Blue` is the current version and `Green` the new one; traffic is switched once `Green` has been validated.
+
+**Canary**: version 2 is exposed to a small share of traffic (say, 95% / 5%), errors, latency, and business metrics are monitored, and the share is increased gradually.
+
+## Infrastructure as code (IaC)
+
+Tools: Terraform, OpenTofu, CloudFormation, Pulumi. Infrastructure becomes code:
+
+<MermaidDiagram code={`flowchart LR
+    C["Code"] --> V["Version control"] --> R["Review"] --> CD["CI/CD"] --> I["Infrastructure"]`} />
+
+That brings reproducibility, reviewability, versioning, and automation.
+
+## Disaster recovery
+
+Two fundamental concepts:
+
+| **Concept** | **What it means** | **Example** |
+|---|---|---|
+| **RPO** (*Recovery Point Objective*) | How much data we're willing to lose | 5 minutes |
+| **RTO** (*Recovery Time Objective*) | How long we can take to restore the service | 30 minutes |
+
+These targets shape backups, replication, failover, standby infrastructure, and recovery procedures.
+
+**Reference**
+
+- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/) — groups these aspects into six pillars: operational excellence, security, reliability, performance efficiency, cost optimization, and sustainability.

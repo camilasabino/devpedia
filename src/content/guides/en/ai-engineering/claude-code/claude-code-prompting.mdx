@@ -1,0 +1,223 @@
+---
+id: claude-code-prompting
+slug: how-to-write-good-prompts
+order: 2
+topic: ai-engineering
+subtopic: claude-code
+section: getting-started
+title: "How to write good prompts for Claude Code"
+description: "How to phrase clear requests, supply the context that's needed, and define criteria for judging the result."
+created: 2026-08-24
+lastUpdated: 2026-08-24
+---
+
+import StepFlow from '../../../../../components/mdx/StepFlow.astro';
+
+## The five-piece structure
+
+Claude Code makes better decisions the better defined the problem is. Almost every professional prompt is assembled from up to five pieces:
+
+| Piece | Answers | Always needed? |
+|---|---|---|
+| **Context** | What does Claude need to know about the situation? | No — a trivial fix may not need it |
+| **Task** | What exactly does it have to do? | Yes, always |
+| **Constraints** | What must it not touch, and what limits does it have? | Recommended for anything non-trivial |
+| **Format** | How do you want the result? | When the default doesn't work for you |
+| **Verification** | How do you confirm it came out right? | Yes, almost always — it's the piece most often forgotten |
+
+<StepFlow
+  steps={[
+    { label: 'Context' },
+    { label: 'Task' },
+    { label: 'Constraints' },
+    { label: 'Format' },
+    { label: 'Verification' },
+    { label: 'Ready for the next step' },
+  ]}
+  loopLabel="If Verification doesn't pass, it goes back to Context"
+/>
+
+When a result isn't what you expected, in the vast majority of cases one of these five pieces is missing — what's missing isn't "more AI".
+
+## Seven patterns for everyday work
+
+The examples use the same fictional project: **ReservaResto**, a restaurant table booking platform, with Node.js + Express + TypeScript + PostgreSQL.
+
+### 1. Implement a feature
+
+```
+Context: ReservaResto is a restaurant table booking platform
+(Express + TS + PostgreSQL). Restaurant signup and reservation
+creation already work.
+
+Task: Implement a waitlist. When a restaurant is full for a time
+slot, a person can put their name down. When a reservation is
+cancelled, automatically offer the spot to the next person on the
+list for that slot. Add an endpoint for the restaurant owner to see
+how many people are waiting, by time slot.
+
+Constraints:
+- Confirming a reservation must not get slower (process the
+  waitlist after responding to the user).
+- Follow the existing module structure.
+- Don't change the interface of the current reservation endpoints.
+
+Verification: Write tests for joining the list and for the
+automatic promotion when a spot is cancelled. Run the whole suite
+when you're done.
+```
+
+The context keeps it from inventing an architecture of its own; the constraints protect what already works; the verification makes Claude run the tests (or some other criterion) and treat a failure as part of the task, instead of handing you code you then have to start debugging.
+
+### 2. Debug a problem
+
+The most common mistake when reporting a bug is saying "it doesn't work" and expecting it to guess. A good bug report for an agent looks like the one you'd give a teammate: exact error, where it happens, what you were doing.
+
+```
+Context: I'm testing concurrent reservations in ReservaResto.
+
+Task: If two people book the last available table at the same
+restaurant for the same time slot within the same minute, both
+reservations end up confirmed — one table too many is committed and
+neither one raises an error.
+
+Format: Before fixing anything:
+1. Identify the root cause, not the symptom
+2. Explain why it happens
+3. Propose the fix and justify it
+4. What else could be affected?
+
+Verification: A test that simulates two concurrent reservations for
+the same time slot and confirms only one is accepted.
+```
+
+Asking it to think before touching code produces more precise fixes, and asking about side effects keeps one fix from creating two new problems.
+
+### 3. Refactor
+
+This is the pattern where it's easiest to overrun: with no clear constraints, "refactor this module" can end in a rewrite that breaks half the application. The key is defining **what must not change**.
+
+```
+Context: In ReservaResto, validation is scattered: the reservation
+service validates time slots, the restaurant service validates
+table capacity, the user service validates party size. I want to
+centralize it.
+
+Task: Extract all validation into a dedicated module the other
+services import.
+
+Constraints:
+- The endpoints must return exactly the same errors.
+- The existing tests pass without modifying them.
+- The new module follows the current naming and export convention.
+
+Format: Before touching code, show me what you'd change, which
+files it affects, and what risks you see.
+
+Verification: Run the whole suite without touching it. If something
+fails, the refactor broke something.
+```
+
+"The tests pass without changing them" is the most powerful safety net you can give it: it turns a potentially destructive change into something objectively verifiable.
+
+### 4. Explore a project
+
+This pattern doesn't produce code, it produces understanding — and it's the step most people skip before a big change.
+
+```
+Task: Analyze ReservaResto and answer:
+1. What pattern separates routes from business logic?
+2. How is the database initialized and accessed?
+3. What naming conventions do the files and functions use?
+4. If I add a "reviews" module (so diners can rate a restaurant),
+   which files do I need in order to follow the same pattern?
+
+Format: A short summary per question + an ASCII diagram of the
+relevant folder structure.
+
+Constraints: Don't modify anything. Read-only.
+```
+
+When it explores before implementing, it anchors its decisions in the real code instead of in generic assumptions — and the code it generates afterwards will be consistent with what already exists.
+
+### 5. Write tests
+
+Asking for tests "for X" with no further detail produces tests that only confirm the function doesn't blow up. Specifying the three categories with concrete examples changes everything:
+
+```
+Context: booking.service.ts has createReservation and
+cancelReservation. It integrates with an external payment gateway
+for the deposit.
+
+Task: Generate tests for each public function:
+- Happy path: a successful reservation returns a confirmation code;
+  a successful cancellation releases the table.
+- Edge cases: booking the last available table, cancelling right at
+  the edge of the free-cancellation window, last-minute booking
+  (same day).
+- Errors: booking with no tables available, cancelling an already
+  cancelled reservation, booking without required fields.
+
+Constraints: Jest with describe/it. Tests independent of each other.
+
+Verification: Run the tests and then `jest --coverage`. Show me the
+coverage for booking.service.ts.
+```
+
+### 6. Document
+
+The simplest pattern in structure, but the one that benefits most from your telling it the format. Defining **who** is going to read the documentation changes the result radically — "for developer onboarding" produces something very different from "for the QA team".
+
+```
+Context: New developers need a reference for the ReservaResto API
+to get started.
+
+Task: Generate docs/API.md with: a project description,
+installation/running/tests, each endpoint (method, path, auth,
+parameters, response, possible errors), and a curl example.
+
+Format: Markdown with sections per module (Restaurants,
+Reservations, Waitlist).
+
+Verification: Compare against the routes registered in the code. If
+an endpoint is missing, add it.
+```
+
+### 7. Ask for a rationale
+
+This isn't an implementation pattern, it's a review one. You use it after Claude has done something, to understand the why and spot better alternatives — something it doesn't usually explain unless you ask.
+
+```
+About the waitlist implementation:
+1. What alternatives did you consider for not blocking the
+   reservation confirmation?
+2. If the write fails while promoting the next person on the list,
+   is that lost silently?
+3. If ten reservations at the same restaurant are cancelled at the
+   same time, which part of the system fails first?
+4. If you had to scale this to thousands of restaurants at once,
+   what would you change about the architecture?
+```
+
+## Chaining patterns
+
+A complex task isn't one giant prompt, it's a sequence where each instruction uses a different pattern and produces something verifiable before you launch the next step:
+
+```
+Explore     → "Analyze how module X works"
+Implement   → "Following that pattern, add Y"
+Tests       → "Generate tests for what you implemented"
+Rationale   → "What alternatives did you consider?"
+Document    → "Update the documentation with the changes"
+```
+
+If at any link in the chain you can't check the result, that step is too big or it's missing the verification component — go back and split it.
+
+With practice, structuring your requests this way becomes second nature, and you no longer need to refer to the table.
+
+When the chain of prompts stays long even though it's well split, or the team needs to agree on the scope of a change before touching code, it's worth adding a layer above loose prompts: see [Spec-Driven Development](/en/ai-engineering/claude-code/spec-driven-development/).
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview" target="_blank" rel="noopener noreferrer">official prompt engineering guide</a> and{' '}
+  <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer">Best practices for Claude Code</a>.
+</p>

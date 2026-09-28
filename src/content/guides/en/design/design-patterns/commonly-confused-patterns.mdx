@@ -1,0 +1,105 @@
+---
+id: commonly-confused-patterns
+slug: commonly-confused-patterns
+order: 28
+topic: design
+subtopic: design-patterns
+section: reference
+title: "Design patterns that are often confused"
+description: "Some patterns have similar structures but solve different problems. What sets them apart and how to recognize when to use each."
+created: 2026-07-24
+lastUpdated: 2026-07-24
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+A good part of the GoF catalog shares structure. Adapter, Decorator, and Proxy wrap an object and delegate; Factory Method and Abstract Factory create objects behind an abstraction; Strategy and State delegate behavior to an interchangeable object. Looking at the class diagram alone, several of them are indistinguishable.
+
+What separates them isn't the structure but the **intent**: which problem they were solving. This article walks through the five groups where that confusion shows up most, and, for each one, the question that disambiguates them.
+
+<Callout variant="key" title="Why the right name matters">
+A pattern's main value is shared vocabulary. Saying "this is a Proxy" when it's really a Decorator makes whoever reads the code expect access control and find added behavior instead. The wrong name communicates worse than no name.
+</Callout>
+
+Each pattern's own article develops the problem, the code, and when to use it. The focus here is different: naming something that's already written correctly, or understanding what whoever wrote it had in mind.
+
+## Wrappers: Adapter, Decorator, Proxy — and Facade
+
+[Adapter](/en/design/patterns/adapter/) and [Decorator](/en/design/patterns/decorator/) are also called _Wrapper_. [Proxy](/en/design/patterns/proxy/) belongs in the same group: all three take an object, hold a reference, and delegate. [Facade](/en/design/patterns/facade/) sneaks into the comparison because it also sits in front of other code, but it doesn't wrap an object: it offers a simple way into a *subsystem*.
+
+The difference between the three wrappers is in **what they change while delegating**.
+
+| Pattern | Does it change the interface? | Does it change the behavior? | How many objects? | Intent |
+|---|---|---|---|---|
+| [Adapter](/en/design/patterns/adapter/) | Yes | No | One | Make compatible what wasn't |
+| [Decorator](/en/design/patterns/decorator/) | No | Yes, it adds | One | Add responsibilities without inheriting |
+| [Proxy](/en/design/patterns/proxy/) | No | No: it controls access | One | Decide *whether* and *when* the real object is reached |
+| [Facade](/en/design/patterns/facade/) | Yes, it simplifies it | No | Several | Give a simple way into a subsystem |
+
+The question that organizes the group:
+
+- **Is the outgoing interface different from the incoming one?** If it wraps an object to translate it, it's Adapter. If it pulls several together to simplify, it's Facade.
+- **Is the interface the same?** Then it's Decorator or Proxy. If the wrapper **adds** observable behavior — an extra fee, a log, a validation — it's Decorator. If the result is the same and what it decides is **access** — deferring the load, caching, checking permissions, talking to a remote object — it's Proxy.
+
+<Callout variant="note" title="The borderline case">
+A caching proxy looks like it adds behavior. The test: from the client's point of view, is the result different? A cache returns exactly the same thing, just faster — that's Proxy. A Decorator that adds an extra fee returns a different price — that's Decorator.
+
+And the most useful practical difference: a Decorator is meant to be **stacked** (wrapping another Decorator, many times over, in any order). A Proxy almost never stacks.
+</Callout>
+
+## Factories: Factory Method, Abstract Factory, and Simple Factory
+
+This is the group where the name gets confused most, partly because the third one isn't a GoF pattern.
+
+| | What it produces | How the variant is chosen | Is it GoF? |
+|---|---|---|---|
+| **Simple Factory** | One product | A `switch` or `if` inside a static method | No: it's a common technique |
+| [Factory Method](/en/design/patterns/factory-method/) | One product | By choosing the Creator subclass | Yes |
+| [Abstract Factory](/en/design/patterns/abstract-factory/) | A family of compatible products | By choosing the concrete factory | Yes |
+
+A static method with a `switch` returning `new PdfExporter()` or `new CsvExporter()` is useful and legitimate, but it **isn't Factory Method**. In Factory Method the decision lives in the hierarchy: each creator subclass knows which product is its own, and there's no conditional to update when a variant is added.
+
+The question that organizes the group:
+
+- **How many related products get created together?** If it's just one, look at Factory Method. If it's several that have to be compatible with each other, it's Abstract Factory: one factory per product doesn't guarantee families won't get mixed.
+- **Is the variant chosen by extending a class or with a conditional?** If it's a conditional in one place and it isn't bothering anyone, it's a Simple Factory and that's fine. Call it that.
+
+## Delegating behavior: Strategy, State, and Template Method
+
+[Strategy](/en/design/patterns/strategy/) and [State](/en/design/patterns/state/) have practically identical class diagrams: a context with a reference to an interface, and several implementations. What tells them apart is **who decides which one gets used**.
+
+| Pattern | Who chooses the implementation | Do the implementations know each other? | When it changes |
+|---|---|---|---|
+| [Strategy](/en/design/patterns/strategy/) | The client code | No: they're independent | When the client decides |
+| [State](/en/design/patterns/state/) | The states themselves | Yes: each knows which it transitions to | As a consequence of an operation |
+| [Template Method](/en/design/patterns/template-method/) | Fixed by choosing the subclass | Irrelevant | It doesn't change at runtime |
+
+The decisive question: **can an implementation replace itself with another?** If the current state decides the next one, it's State. If the client chooses the algorithm and the implementations don't know each other, it's Strategy.
+
+The other distinction, against [Template Method](/en/design/patterns/template-method/), is composition versus inheritance. Strategy and State change at runtime because they're referenced objects. Template Method stays fixed: the base class fixes the sequence and subclasses only fill in the steps that vary.
+
+## Communicating changes: Observer and Mediator
+
+Both reduce coupling between objects that need to react to each other. The difference is **what the object in the middle knows**.
+
+- In [Observer](/en/design/patterns/observer/) the flow is **one-way and anonymous**: the subject announces that something happened and doesn't know who's listening. The observers don't know each other and coordinate nothing. Adding an observer doesn't change the subject.
+- In [Mediator](/en/design/patterns/mediator/) the flow is **two-way and coordinated**: the mediator knows the components and holds the rules for how they affect each other. A change in one can recalculate another or disable a third, and that logic lives in the mediator, not scattered across cross-references.
+
+The question: **does the central object have rules?** If it just passes the notice along, it's Observer. If it decides what to do based on who notified it, it's Mediator. A mediator often uses Observer internally to find out about changes; they're complementary rather than alternatives.
+
+## Saving and undoing: Command and Memento
+
+They get confused because both show up when someone asks for "undo".
+
+- [Command](/en/design/patterns/command/) stores **the operation**: what was done and with which arguments. Undoing means applying the inverse operation. It's lighter on memory and it also lets you queue, retry, and log.
+- [Memento](/en/design/patterns/memento/) stores **the state**: a snapshot of how the object was before, without exposing its private fields. Undoing means restoring the snapshot. It's simpler to get right, and more expensive if the state is large.
+
+The question: **are you storing the operation or the state?** If undoing means applying the inverse — and you also want to queue or log — it's Command. If undoing means restoring a snapshot, it's Memento.
+
+In practice they combine: a Command stores a Memento of the previous state when working out the inverse operation is hard or impossible.
+
+## How to use this comparison
+
+None of these questions helps you decide *which pattern to apply* to a new problem. They're for the opposite: correctly naming something you've already written, or understanding what whoever wrote the code you're reading had in mind.
+
+For choosing, the path is still the one in the [introductory article](/en/design/patterns/what-are-design-patterns/): start from the concrete problem, not from the catalog.

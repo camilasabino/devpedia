@@ -1,0 +1,129 @@
+---
+id: memento-pattern
+slug: memento
+order: 22
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Memento"
+description: "How to save and restore an object's state without exposing its internal details."
+created: 2026-07-14
+lastUpdated: 2026-07-14
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+_Also known as: Snapshot_
+
+**Memento** is a behavioral pattern that lets you save and restore an object's previous state without exposing its implementation details.
+
+## The problem
+
+In the admin panel, an order in draft status can be edited several times before being confirmed: adding or removing products, changing the address, adjusting quantities. The support team wants to be able to undo those edits and go back to an earlier version of the draft. Saving the state by accessing `Order`'s private fields from outside breaks its encapsulation — and any future change to `Order`'s internal structure would force an update to the code that saves and restores it too.
+
+## The solution
+
+Memento leaves capturing the state to the object that owns it: `Order` is the one that knows how to create a snapshot of itself (`OrderMemento`) and how to restore itself from an earlier snapshot. The draft history stores those snapshots, but never looks at or modifies their contents — it only passes them back and forth when an undo is needed.
+
+<ClassDiagram
+  caption="The structure of Memento: the originator creates and reads the memento; the caretaker only stores and returns it, with no way to inspect it."
+  diagram={`    class Order {
+        <<originator>>
+        -items List~Item~
+        -address String
+        +save() OrderMemento
+        +restore(OrderMemento) void
+    }
+    class OrderMemento {
+        <<memento>>
+        -items List~Item~
+        -address String
+    }
+    class OrderHistory {
+        <<caretaker>>
+        -snapshots Deque~OrderMemento~
+        +push(OrderMemento) void
+        +pop() OrderMemento
+    }
+    Order ..> OrderMemento : «create»
+    OrderHistory o-- "0..*" OrderMemento : snapshots
+    note for OrderMemento "Wide interface for Order, narrow for OrderHistory:\nthe caretaker stores the memento but can't read its state."`}
+/>
+
+## Example in Java
+
+```java
+// The Memento: immutable, only Order knows how to interpret it
+class OrderMemento {
+    private final List<Item> items;
+    private final String address;
+
+    OrderMemento(List<Item> items, String address) {
+        this.items = List.copyOf(items);
+        this.address = address;
+    }
+}
+
+class Order {
+    private List<Item> items = new ArrayList<>();
+    private String address;
+
+    public OrderMemento save() {
+        return new OrderMemento(items, address);
+    }
+
+    public void restore(OrderMemento memento) {
+        this.items = new ArrayList<>(memento.items);
+        this.address = memento.address;
+    }
+
+    public void addItem(Item item) { items.add(item); }
+    public void setAddress(String address) { this.address = address; }
+}
+
+// The Caretaker: it stores mementos, without ever looking at their contents
+class OrderHistory {
+    private final Deque<OrderMemento> snapshots = new ArrayDeque<>();
+
+    public void push(OrderMemento memento) {
+        snapshots.push(memento);
+    }
+
+    public OrderMemento pop() {
+        return snapshots.pop();
+    }
+}
+```
+
+```java
+Order draft = new Order();
+OrderHistory history = new OrderHistory();
+
+draft.addItem(jacket);
+history.push(draft.save()); // stores the starting point
+
+draft.setAddress("wrong address");
+// ...if an undo is needed:
+draft.restore(history.pop());
+```
+
+## When to use it
+
+- When you need to be able to undo changes on an object without exposing its internal details to the code managing the history.
+- When capturing the state directly from outside would break the object's encapsulation.
+
+## When to avoid it
+
+Storing mementos of very large or frequently changing objects can consume a lot of memory — you have to weigh how many snapshots will pile up.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Lets you undo changes without breaking the original object's encapsulation|Storing many mementos of large objects can consume a lot of memory|
+|The history doesn't need to know the internal structure of the object it backs up|You have to decide explicitly when to take each snapshot: one per keystroke is expensive; one per "save" can be too late||
+
+## Relationship with other patterns
+
+- It's often used alongside **[Command](/en/design/patterns/command/)** to implement `undo()`: the Command stores a Memento before running, and uses it to revert.
+- It differs from **[Prototype](/en/design/patterns/prototype/)** in that Memento captures state to restore it _onto the same object_ later, while Prototype creates a _new and independent_ object from an existing one.

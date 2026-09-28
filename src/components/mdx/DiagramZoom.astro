@@ -1,0 +1,244 @@
+---
+import Icon from '../../../../src/components/Icon.astro';
+import { format, langFromPath, ui } from '../../i18n';
+
+interface Props {
+  /** Diagram caption, used to name the button and the enlarged view. */
+  caption: string;
+  /**
+   * Scale applied to the diagram's viewBox in the enlarged view. Hand-authored UML
+   * uses smaller type than Mermaid, so it opens slightly larger than 1:1.
+   */
+  scale?: number;
+}
+
+const { caption, scale = 1 } = Astro.props;
+
+// Rendered from inside MDX, so the language comes from the page's own path.
+const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
+---
+
+<button
+  type="button"
+  class="diagram-zoom"
+  data-diagram-zoom
+  data-zoom-scale={scale}
+  data-caption={caption}
+  data-close-label={diagramCopy.closeLabel}
+  data-scroll-label={diagramCopy.scrollRegionLabel}
+  data-fallback-name={diagramCopy.fallbackName}
+  hidden
+>
+  <Icon name="expand" class="h-3.5 w-3.5" decorative />
+  <span>{diagramCopy.zoomLabel}<span class="sr-only">{format(diagramCopy.zoomSrSuffix, { caption })}</span></span>
+</button>
+
+<style>
+  .diagram-zoom {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin: 0.75rem auto 0;
+    border-radius: 9999px;
+    border: 1px solid var(--border-subtle);
+    background: var(--overlay-subtle);
+    padding: 0.4rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .diagram-zoom[hidden] {
+    display: none;
+  }
+
+  .diagram-zoom:hover {
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+  }
+
+  :global(.diagram-dialog) {
+    width: min(100vw - 2rem, 90rem);
+    max-width: none;
+    height: auto;
+    max-height: min(100dvh - 2rem, 60rem);
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid var(--border-subtle);
+    background: var(--diagram-surface);
+    color: var(--text-body);
+  }
+
+  :global(.diagram-dialog[open]) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  :global(.diagram-dialog::backdrop) {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  @media (max-width: 639px) {
+    :global(.diagram-dialog) {
+      width: 100vw;
+      height: 100dvh;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+    }
+  }
+
+  :global(.diagram-dialog-header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0.75rem 1rem;
+  }
+
+  :global(.diagram-dialog-title) {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  :global(.diagram-dialog-close) {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-heading);
+    cursor: pointer;
+  }
+
+  :global(.diagram-dialog-close:hover) {
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+  }
+
+  /* Scrolls on both axes at the diagram's natural size, so wide diagrams stay
+     legible instead of being scaled down to the screen width. */
+  :global(.diagram-dialog-body) {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 1.5rem;
+  }
+
+  :global(.diagram-dialog-body:focus-visible) {
+    outline-offset: -2px;
+  }
+
+  :global(.diagram-dialog-body svg) {
+    display: block;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto;
+    margin: auto;
+  }
+
+  :global(html:has(.diagram-dialog[open])) {
+    overflow: hidden;
+  }
+</style>
+
+<script>
+  // One shared dialog for every diagram on the page. The button only appears when
+  // the inline diagram is drawn noticeably smaller than its natural size; the
+  // enlarged view shows a copy of the same SVG, so content and relations are kept.
+  const MIN_INLINE_SCALE = 0.9;
+  let dialog: HTMLDialogElement | null = null;
+  let opener: HTMLButtonElement | null = null;
+
+  const viewBoxWidth = (svg: SVGSVGElement) => svg.viewBox.baseVal?.width || 0;
+
+  function getDialog(source: HTMLButtonElement) {
+    if (dialog) return dialog;
+    const closeLabel = source.dataset.closeLabel ?? '';
+    const scrollLabel = source.dataset.scrollLabel ?? '';
+    dialog = document.createElement('dialog');
+    dialog.className = 'diagram-dialog';
+    dialog.setAttribute('aria-labelledby', 'diagram-dialog-title');
+    dialog.innerHTML = `
+      <div class="diagram-dialog-header">
+        <p class="diagram-dialog-title" id="diagram-dialog-title"></p>
+        <button type="button" class="diagram-dialog-close" aria-label="${closeLabel}">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="diagram-dialog-body" tabindex="0" role="region" aria-label="${scrollLabel}"></div>`;
+    dialog.querySelector('.diagram-dialog-close')!.addEventListener('click', () => dialog!.close());
+    // A click on the backdrop lands on the dialog element itself.
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog!.close();
+    });
+    dialog.addEventListener('close', () => {
+      // The copy duplicates the inline SVG's ids; drop it once it is out of view.
+      dialog!.querySelector('.diagram-dialog-body')!.replaceChildren();
+      opener?.focus();
+      opener = null;
+    });
+    document.body.append(dialog);
+    return dialog;
+  }
+
+  function open(button: HTMLButtonElement) {
+    const svg = button.closest('figure')?.querySelector<SVGSVGElement>('.diagram-canvas svg');
+    const width = svg ? viewBoxWidth(svg) : 0;
+    if (!svg || !width) return;
+
+    const copy = svg.cloneNode(true) as SVGSVGElement;
+    copy.removeAttribute('width');
+    copy.style.width = `${Math.round(width * Number(button.dataset.zoomScale || 1))}px`;
+
+    const el = getDialog(button);
+    el.querySelector('.diagram-dialog-title')!.textContent =
+      button.dataset.caption ?? button.dataset.fallbackName ?? '';
+    el.querySelector('.diagram-dialog-body')!.replaceChildren(copy);
+    opener = button;
+    el.showModal();
+  }
+
+  function update(button: HTMLButtonElement) {
+    const svg = button.closest('figure')?.querySelector<SVGSVGElement>('.diagram-canvas svg');
+    const width = svg ? viewBoxWidth(svg) : 0;
+    const rendered = svg?.getBoundingClientRect().width ?? 0;
+    button.hidden = !width || rendered === 0 || rendered / width >= MIN_INLINE_SCALE;
+  }
+
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-diagram-zoom]')];
+  if (buttons.length > 0 && typeof HTMLDialogElement === 'function') {
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const button = entry.target.closest('figure')?.querySelector<HTMLButtonElement>('[data-diagram-zoom]');
+        if (button) update(button);
+      }
+    });
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => open(button));
+      const canvas = button.closest('figure')?.querySelector('.diagram-canvas');
+      if (canvas) resizeObserver.observe(canvas);
+      update(button);
+    }
+
+    // Mermaid renders lazily; it announces each finished render so the button can
+    // measure the real SVG.
+    document.addEventListener('diagram:rendered', (event) => {
+      const button = (event.target as Element).closest('figure')?.querySelector<HTMLButtonElement>('[data-diagram-zoom]');
+      if (button) update(button);
+    });
+  }
+</script>

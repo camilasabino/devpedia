@@ -1,0 +1,139 @@
+---
+id: communication-patterns
+slug: patrones-de-comunicacion
+order: 6
+topic: architecture
+section: communication-and-data
+title: "Patrones de comunicación"
+description: "Elegir entre comunicación síncrona y asíncrona cambia cómo responde un sistema y cómo enfrenta los fallos. Qué implica para la latencia, el acoplamiento y la consistencia."
+created: 2026-05-13
+lastUpdated: 2026-05-13
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+import Callout from '../../../../components/mdx/Callout.astro';
+
+Los componentes necesitan comunicarse. La primera decisión es **si la comunicación será síncrona o asíncrona**, y esto tiene consecuencias sobre la **latencia, el acoplamiento, la consistencia y la gestión de fallos**.
+
+## Síncrona
+
+El cliente envía una request y espera la respuesta:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant PS as Payment Service
+    participant PP as Payment Provider
+    PS->>PP: authorize()
+    PP-->>PS: response`} />
+
+El cliente obtiene la respuesta en el mismo intercambio, pero queda atado al tiempo y a la disponibilidad del otro servicio: si el proveedor está lento o caído, espera o falla.
+
+**REST**
+
+HTTP + API orientada a recursos:
+
+```http
+POST /payments
+GET /payments/{id}
+POST /payments/{id}/refund
+```
+
+Ventajas: familiar, interoperable, compatible con browsers, excelente para API públicas. Tecnologías: Spring Web, ASP.NET, Express, FastAPI, NestJS.
+
+**gRPC**
+
+RPC, normalmente basado en Protobuf:
+
+```text
+PaymentService
+   └── AuthorizePayment()
+```
+
+Ventajas: tipado fuerte, generación de código, eficiente, streaming, excelente para comunicación entre servicios. A cambio: es menos cómodo de consumir directamente desde browsers, introduce tooling específico y obliga a coordinar los contratos con el despliegue.
+
+**GraphQL**
+
+El cliente solicita exactamente la forma de los datos que necesita:
+
+```graphql
+query {
+  order {
+    id
+    total
+    payment {
+      status
+    }
+  }
+}
+```
+
+Es especialmente útil cuando existen múltiples clientes, las necesidades de datos varían mucho y se necesita una composición flexible. A cambio: el caching es más complejo, la autorización tiene que ser más granular, las queries pueden volverse costosas, hay riesgo de N+1 y hace falta observabilidad específica.
+
+## Asíncrona
+
+El productor envía un mensaje o evento y el procesamiento puede ocurrir más tarde:
+
+<MermaidDiagram code={`flowchart LR
+    PS["Payment Service"] --> MB["Message Broker"]
+    MB --> O["Orders"]
+    MB --> E["Email"]
+    MB --> A["Analytics"]`} />
+
+El productor no espera a los consumidores: puede seguir trabajando, absorber picos en una cola y avisar a varios servicios con el mismo evento. A cambio, el resultado no está listo en el mismo momento, y hay que diseñar qué pasa con duplicados, reintentos, el orden de los mensajes y los cambios de schema.
+
+**Cola (queue)**
+
+<MermaidDiagram code={`flowchart LR
+    P["Producer"] --> Q["Queue"] --> W["Worker"]`} />
+
+Útil para `SendEmail`, `GenerateInvoice`, `ResizeImage`, `ProcessPaymentNotification`. Normalmente cada mensaje lo procesa un consumer del grupo.
+
+**Pub/Sub**
+
+<MermaidDiagram code={`flowchart TD
+    T["Topic"] --> CA["Consumer A"]
+    T --> CB["Consumer B"]
+    T --> CC["Consumer C"]`} />
+
+El mismo evento puede llegar a múltiples consumers.
+
+**Command vs. event**
+
+Una distinción fundamental:
+
+|Concepto|Significa|
+|---|---|
+|Command|Intención (`CapturePayment`)|
+|Event|Hecho ocurrido (`PaymentCaptured`)|
+
+Un command suele tener un destinatario claro. Un event puede tener múltiples consumers.
+
+## Síncrona vs. asíncrona
+
+|Característica|Síncrona|Asíncrona|
+|---|---|---|
+|Respuesta|Inmediata|Diferida|
+|Acoplamiento temporal|Alto|Menor|
+|Consistencia|Puede ser inmediata|Frecuentemente eventual|
+|Modelo de fallos|Timeout|Entrega / reintentos|
+|Latencia|Visible para quien llama|Desacoplada|
+|Complejidad|Menor|Mayor|
+|Buen caso de uso|Query o command inmediato|Events o tareas en segundo plano|
+
+**Por dónde empezar**
+
+<MermaidDiagram code={`flowchart TD
+    Q["¿Necesito el resultado ahora?"] -->|Sí| S["Síncrona"]
+    Q -->|No| A["Asíncrona"]`} />
+
+Esa pregunta ordena la conversación, no cierra el diseño. Si vas por asíncrono, todavía hay que decidir consistencia, orden, reintentos, idempotencia, throughput y qué pasa cuando un mensaje falla.
+
+**Tecnologías conocidas**
+
+- Síncrona: REST/HTTP, gRPC, GraphQL.
+- Asíncrona: Apache Kafka, RabbitMQ, Amazon SQS, Amazon SNS, Google Pub/Sub, NATS.
+
+La tecnología debería surgir del patrón requerido, no al revés.
+
+<Callout variant="note" title="Observer ≠ pub/sub">
+    [Observer](/diseno/patrones/observer/) ocurre dentro de un mismo proceso, de forma síncrona y con referencias directas; pub/sub funciona entre procesos, de forma asíncrona y con un broker intermedio.
+</Callout>

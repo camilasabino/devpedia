@@ -1,0 +1,19 @@
+id: architecture
+slug: architecture
+order: 1
+title: Architecture
+description: >-
+  Designing and evolving systems, from their requirements and structure
+  through to running them in production.
+icon: server
+sections:
+  - id: fundamentals
+    title: Fundamentals
+  - id: domain-and-structure
+    title: Domain and structure
+  - id: communication-and-data
+    title: Communication and data
+  - id: operations
+    title: Operations
+  - id: decisions
+    title: Decisions

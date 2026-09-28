@@ -1,0 +1,131 @@
+---
+id: chain-of-responsibility-pattern
+slug: chain-of-responsibility
+order: 17
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Chain of Responsibility"
+description: "Cómo procesar una solicitud mediante una cadena de manejadores y desacoplar a quien la envía de quienes pueden atenderla."
+created: 2026-07-02
+lastUpdated: 2026-07-02
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Chain of Responsibility** es un patrón de comportamiento que pasa una solicitud a lo largo de una cadena de manejadores: cada uno puede rechazarla, resolverla o dejarla seguir.
+
+## El problema
+
+Antes de confirmar un pedido, AndesShop necesita pasarlo por varias validaciones: que haya stock suficiente, que el método de pago sea válido, que la dirección de envío exista, y que el pedido no dispare las alertas del sistema antifraude. Resolver esto con un único método `validate()` lleno de `if` anidados funciona al principio, pero cada validación nueva agranda ese método, y cambiar el orden de las validaciones —o saltear alguna según el tipo de cliente— obliga a reescribir la lógica entera.
+
+## La solución
+
+Chain of Responsibility convierte cada validación en un manejador independiente, con una referencia al siguiente de la cadena. Cada uno decide si rechaza el pedido o si lo deja pasar al siguiente. El código que dispara la validación solo conoce el primer eslabón — nunca los demás, ni cuántos son.
+
+<ClassDiagram
+  caption="Estructura de Chain of Responsibility: cada manejador conoce solo al siguiente, y el cliente solo conoce al primero."
+  diagram={`    class OrderValidator {
+        <<abstract>>
+        #next OrderValidator
+        +setNext(OrderValidator) OrderValidator
+        +validate(Order) void
+        #passToNext(Order) void
+    }
+    class StockValidator {
+        +validate(Order) void
+    }
+    class PaymentValidator {
+        +validate(Order) void
+    }
+    class FraudValidator {
+        +validate(Order) void
+    }
+    class Checkout {
+        -firstValidator OrderValidator
+    }
+    OrderValidator <|-- StockValidator
+    OrderValidator <|-- PaymentValidator
+    OrderValidator <|-- FraudValidator
+    OrderValidator --> "0..1" OrderValidator : next
+    Checkout --> "1" OrderValidator : primer eslabón`}
+/>
+
+## Ejemplo en Java
+
+```java
+abstract class OrderValidator {
+    private OrderValidator next;
+
+    public OrderValidator setNext(OrderValidator next) {
+        this.next = next;
+        return next; // permite encadenar: a.setNext(b).setNext(c)
+    }
+
+    public void validate(Order order) {
+        if (next != null) {
+            next.validate(order);
+        }
+    }
+}
+
+class StockValidator extends OrderValidator {
+    @Override
+    public void validate(Order order) {
+        if (!order.hasAvailableStock()) {
+            throw new OrderRejectedException("Insufficient stock");
+        }
+        super.validate(order); // pasa al siguiente eslabón
+    }
+}
+
+class PaymentValidator extends OrderValidator {
+    @Override
+    public void validate(Order order) {
+        if (!order.getPaymentMethod().isValid()) {
+            throw new OrderRejectedException("Invalid payment method");
+        }
+        super.validate(order);
+    }
+}
+
+class FraudValidator extends OrderValidator {
+    @Override
+    public void validate(Order order) {
+        if (order.matchesFraudPattern()) {
+            throw new OrderRejectedException("Flagged by fraud rules");
+        }
+        super.validate(order);
+    }
+}
+```
+
+```java
+// Client code: arma la cadena una vez, y la usa sin conocer sus eslabones internos
+OrderValidator chain = new StockValidator();
+chain.setNext(new PaymentValidator()).setNext(new FraudValidator());
+
+chain.validate(order);
+```
+
+## Cuándo usarlo
+
+- Cuando más de un objeto puede manejar una solicitud, y el manejador concreto no se conoce de antemano — se decide en tiempo de ejecución.
+- Cuando querés poder cambiar el orden de los manejadores, o agregar/quitar uno, sin tocar el código que dispara la cadena.
+
+## Cuándo evitarlo
+
+Un único manejador que siempre termina haciéndose cargo no necesita cadena: es indirección sin beneficio, un llamado directo alcanza.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Quien dispara la validación no conoce ni el orden ni la cantidad de eslabones|No hay garantía de que algún manejador de la cadena efectivamente se haga cargo|
+|Permite agregar o reordenar manejadores sin tocar el código cliente|Depurar implica rastrear toda la cadena para ver en qué eslabón se rechazó —o se dejó pasar— el pedido|
+|Cada manejador valida una sola cosa; sumar una regla nueva es sumar un eslabón, no agrandar un `if`||
+
+## Relación con otros patrones
+
+- Suele combinarse con **[Command](/diseno/patrones/command/)**: cada solicitud que viaja por la cadena puede estar encapsulada como un Command.
+- Comparte estructura con **[Decorator](/diseno/patrones/decorator/)** (ambos encadenan objetos), pero con intención distinta: Decorator siempre pasa por todos los wrappers; Chain of Responsibility puede cortar la cadena en cualquier eslabón.

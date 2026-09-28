@@ -1,0 +1,132 @@
+---
+id: visitor-pattern
+slug: visitor
+order: 27
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Visitor"
+description: "Cómo agregar operaciones sobre una estructura de objetos sin modificar sus clases cada vez y qué límites tiene este enfoque."
+created: 2026-07-23
+lastUpdated: 2026-07-23
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Visitor** es un patrón de comportamiento que permite separar un algoritmo de los objetos sobre los que opera, para poder agregar operaciones nuevas sin modificar esas clases.
+
+## El problema
+
+El catálogo de AndesShop tiene varios tipos de ítems — `PhysicalProduct`, `DigitalGiftCard`, `Bundle` (un combo de varios productos) — y con el tiempo necesita aplicarles operaciones que no tienen nada que ver entre sí: calcular el peso total para el envío, calcular el impuesto correspondiente, generar un XML para exportar a un marketplace externo. Agregar cada operación nueva directamente como un método en `PhysicalProduct`, `DigitalGiftCard` y `Bundle` va llenando esas clases de métodos que no tienen relación con lo que un producto _es_, solo con las distintas cosas que alguien quiere _hacer_ con él.
+
+## La solución
+
+Visitor mueve cada operación a una clase visitante aparte, con un método distinto para cada tipo concreto de ítem. Los ítems del catálogo solo necesitan un método, `accept(Visitor visitor)`, que le pasa el control al visitante — es el visitante quien decide, según el tipo real del ítem, qué hacer con él. Ese `accept` que llama a `visitor.visit(this)` es lo que hace posible el doble despacho: el `this` concreto elige el `visit` sobrecargado correcto. Agregar una operación nueva (por ejemplo, exportar a un nuevo marketplace) es crear un visitante nuevo, sin tocar ninguna clase del catálogo.
+
+<ClassDiagram
+  caption="Estructura de Visitor: una operación nueva es un visitor nuevo. Agregar TaxVisitor no toca ninguna clase del catálogo."
+  diagram={`    class CatalogItem {
+        <<interface · element>>
+        +accept(CatalogVisitor) void
+    }
+    class PhysicalProduct {
+        -weightGrams int
+        +accept(CatalogVisitor) void
+    }
+    class DigitalGiftCard {
+        -amount Money
+        +accept(CatalogVisitor) void
+    }
+    class CatalogVisitor {
+        <<interface>>
+        +visit(PhysicalProduct) void
+        +visit(DigitalGiftCard) void
+    }
+    class ShippingWeightVisitor {
+        +visit(PhysicalProduct) void
+        +visit(DigitalGiftCard) void
+    }
+    class TaxVisitor {
+        +visit(PhysicalProduct) void
+        +visit(DigitalGiftCard) void
+    }
+    class Cart {
+        <<object structure>>
+        -items List~CatalogItem~
+        +accept(CatalogVisitor) void
+    }
+    CatalogItem <|.. PhysicalProduct
+    CatalogItem <|.. DigitalGiftCard
+    CatalogVisitor <|.. ShippingWeightVisitor
+    CatalogVisitor <|.. TaxVisitor
+    Cart o-- "0..*" CatalogItem : items
+    CatalogItem ..> CatalogVisitor : accept(v) llama a v.visit(this)`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface CatalogItem {
+    void accept(CatalogVisitor visitor);
+}
+
+class PhysicalProduct implements CatalogItem {
+    double weightKg;
+    public void accept(CatalogVisitor visitor) { visitor.visit(this); }
+}
+
+class DigitalGiftCard implements CatalogItem {
+    public void accept(CatalogVisitor visitor) { visitor.visit(this); }
+}
+
+interface CatalogVisitor {
+    void visit(PhysicalProduct product);
+    void visit(DigitalGiftCard giftCard);
+}
+
+// Un visitante concreto: calcula el peso total a despachar
+class ShippingWeightVisitor implements CatalogVisitor {
+    private double totalWeight = 0;
+
+    public void visit(PhysicalProduct product) {
+        totalWeight += product.weightKg;
+    }
+
+    public void visit(DigitalGiftCard giftCard) {
+        // no pesa nada — pero el visitante decide eso, no la clase GiftCard
+    }
+
+    public double getTotalWeight() {
+        return totalWeight;
+    }
+}
+```
+
+```java
+ShippingWeightVisitor weightVisitor = new ShippingWeightVisitor();
+for (CatalogItem item : cart.getItems()) {
+    item.accept(weightVisitor); // cada ítem delega en el visitante según su propio tipo
+}
+System.out.println(weightVisitor.getTotalWeight());
+```
+
+## Cuándo usarlo
+
+- Cuando necesitás realizar operaciones distintas y no relacionadas entre sí sobre una jerarquía de clases ya definida, sin ensuciar esas clases con métodos ajenos a su responsabilidad.
+- Cuando la jerarquía de clases sobre la que operás es relativamente estable, pero las operaciones que se le aplican siguen creciendo.
+
+## Cuándo evitarlo
+
+Si la jerarquía de clases cambia con frecuencia (se agregan tipos nuevos seguido), Visitor se vuelve costoso de mantener: cada tipo nuevo obliga a agregar un método `visit()` en _todas_ las clases visitantes existentes.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Agregar una operación nueva (impuesto, XML, peso) es crear un visitante, sin tocar el catálogo|Agregar un tipo nuevo a la jerarquía obliga a actualizar todos los visitantes existentes|
+|El código de una misma operación queda junto, en vez de un método suelto en cada clase del catálogo|Puede romper el encapsulamiento si el visitante necesita acceder a demasiado estado interno de cada tipo|
+
+## Relación con otros patrones
+
+- Se combina naturalmente con **[Composite](/diseno/patrones/composite/)** para aplicar operaciones sobre toda una estructura de árbol.
+- **[Iterator](/diseno/patrones/iterator/)** se ocupa de recorrer una colección; Visitor se ocupa de qué hacer con cada elemento durante ese recorrido — suelen aparecer juntos.

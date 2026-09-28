@@ -1,0 +1,36 @@
+---
+id: user-acceptance-testing
+slug: user-acceptance-testing-uat
+order: 9
+topic: testing
+section: test-levels
+title: "User acceptance testing (UAT)"
+description: "Meeting a specification doesn't guarantee the system answers the business's needs. How to evaluate its acceptance, and who takes part."
+created: 2026-08-12
+lastUpdated: 2026-08-12
+---
+
+## What it is
+
+**User acceptance testing** (UAT) verifies that the system is acceptable to its users or business stakeholders. Its central question isn't "does the code work?", it's:
+
+> Does the system correctly solve the business need?
+
+This is exactly the [validation](/en/testing/what-is-testing/#verification-vs-validation) scenario: ReservaResto can create the reservation, charge the deposit, and hold the table in a technically impeccable way, and UAT can still find that the no-show policy we implemented — charging 50% of the deposit past 24 hours, say — doesn't reflect how the restaurant actually wants to handle a customer who repeatedly fails to show up.
+
+## Who runs it
+
+The usual participants are business stakeholders, product owners, domain experts and, in ReservaResto's case, the owners or managers of the restaurants who are going to use the product every day. As software engineers we can help by preparing the scenarios and the infrastructure they need, but the acceptance criteria should represent the real business need, not ours.
+
+## UAT vs. system testing
+
+| | Question |
+|---|---|
+| **System testing** | Does the complete system behave according to its specifications? |
+| **UAT** | Is that behavior acceptable to the users and the business? |
+
+Both can use very similar scenarios — the same reservation and cancellation flow — but they have different success criteria: one looks at the specification, the other looks at whether that specification was the right one.
+
+### From functional to non-functional testing
+
+Functional testing lets us verify that the system does what it should. But correct behavior isn't enough for the system to be adequate under real conditions of use. [Performance testing](/en/testing/performance-testing/) evaluates **how well it carries out those functions**.

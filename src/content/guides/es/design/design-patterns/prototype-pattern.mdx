@@ -1,0 +1,109 @@
+---
+id: prototype-pattern
+slug: prototype
+order: 8
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Prototype"
+description: "Crear objetos a partir de otros existentes puede simplificar su construcción. Cómo funciona la clonación y qué cuidados requiere."
+created: 2026-06-16
+lastUpdated: 2026-06-16
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Prototype** es un patrón creacional que permite copiar objetos existentes sin que el código dependa de sus clases concretas.
+
+## El problema
+
+El equipo de catálogo de AndesShop carga una campera de trekking con toda su información: descripción larga, especificaciones técnicas, tabla de talles, fotos procesadas, reglas de precio por temporada. Cuando llega la versión de la misma campera en un color nuevo, el 90% de esos datos es idéntico — solo cambian el color, el SKU y un par de fotos. Reconstruir el objeto entero desde cero, campo por campo, es lento, repite trabajo que ya estaba hecho y encima es fácil hacerlo mal por descuido (olvidarse de copiar un campo).
+
+## La solución
+
+Prototype delega la copia al propio objeto: en lugar de que el código cliente sepa cómo reconstruir un `Product` desde cero, le pide al objeto existente que se clone a sí mismo. El objeto conoce sus propios campos (incluidos los privados), así que puede copiarlos correctamente sin exponerlos.
+
+<ClassDiagram
+  caption="Estructura de Prototype: el cliente duplica a través de la interfaz, sin conocer la clase concreta ni cómo se copia su estado interno."
+  diagram={`    class Product {
+        <<interface>>
+        +clone() Product
+        +price() Money
+    }
+    class TrekkingJacket {
+        -sku String
+        -color String
+        -specs Map~String, String~
+        +clone() TrekkingJacket
+    }
+    class CatalogEditor {
+        +duplicate(Product) Product
+    }
+    Product <|.. TrekkingJacket
+    CatalogEditor ..> Product : clona sin conocer el tipo concreto
+    TrekkingJacket ..> TrekkingJacket : «create» copia profunda de specs`}
+/>
+
+## Ejemplo en Java
+
+```java
+// No extiende Cloneable a propósito: el clonado de Java (Object.clone())
+// tiene varias trampas conocidas — acá cada clase define su propia copia explícita.
+interface Product {
+    Product clone();
+}
+
+class TrekkingJacket implements Product {
+    private String sku;
+    private String color;
+    private String description;
+    private Map<String, String> specs;
+
+    public TrekkingJacket(String sku, String color, String description, Map<String, String> specs) {
+        this.sku = sku;
+        this.color = color;
+        this.description = description;
+        this.specs = specs;
+    }
+
+    @Override
+    public TrekkingJacket clone() {
+        // Copia profunda de lo que sea mutable, para no compartir estado con el original
+        return new TrekkingJacket(this.sku, this.color, this.description, new HashMap<>(this.specs));
+    }
+
+    public void setSku(String sku) { this.sku = sku; }
+    public void setColor(String color) { this.color = color; }
+}
+```
+
+```java
+// Client code: parte de un producto existente en vez de reconstruirlo
+TrekkingJacket blueJacket = catalog.findBySku("JKT-2024-BLUE");
+
+TrekkingJacket greenJacket = blueJacket.clone();
+greenJacket.setSku("JKT-2024-GREEN");
+greenJacket.setColor("green");
+// La descripción, las specs y todo lo demás ya vienen copiados
+```
+
+## Cuándo usarlo
+
+- Cuando crear un objeto desde cero es costoso (en tiempo, en llamadas a otros sistemas, o en cantidad de datos a reunir) y ya existe uno muy similar del cual partir.
+- Cuando querés reducir subclases que solo existen para producir variantes preconfiguradas de un objeto — un prototipo configurado una vez reemplaza a esas subclases.
+
+## Cuándo evitarlo
+
+Para objetos simples y baratos de construir, clonar no aporta nada frente a un constructor normal. Cuidado además con la clonación superficial (shallow copy): si el objeto tiene campos mutables compartidos (listas, mapas, objetos anidados), hay que clonarlos explícitamente o el original y la copia terminan compartiendo estado sin querer.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|El objeto copia sus propios campos, incluidos los privados, sin que el cliente los reconstruya uno por uno|Clonar objetos con referencias circulares o estructuras complejas puede ser complicado de hacer bien|
+|Reduce subclases dedicadas solo a producir variantes preconfiguradas|Obliga a tener cuidado con la copia profunda vs. la superficial|
+
+## Relación con otros patrones
+
+- **[Abstract Factory](/diseno/patrones/abstract-factory/)** a veces usa Prototype internamente: en vez de generar cada producto desde cero, el factory clona un prototipo registrado.
+- Se diferencia de **[Builder](/diseno/patrones/builder/)** en que Builder construye desde cero paso a paso, mientras que Prototype parte de un objeto ya existente.

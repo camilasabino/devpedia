@@ -1,0 +1,139 @@
+---
+id: communication-patterns
+slug: communication-patterns
+order: 6
+topic: architecture
+section: communication-and-data
+title: "Communication patterns"
+description: "Choosing between synchronous and asynchronous communication changes how a system responds and how it copes with failure. What it means for latency, coupling, and consistency."
+created: 2026-05-13
+lastUpdated: 2026-05-13
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+import Callout from '../../../../components/mdx/Callout.astro';
+
+Components need to communicate. The first decision is **whether that communication will be synchronous or asynchronous**, and it has consequences for **latency, coupling, consistency, and failure handling**.
+
+## Synchronous
+
+The client sends a request and waits for the response:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant PS as Payment Service
+    participant PP as Payment Provider
+    PS->>PP: authorize()
+    PP-->>PS: response`} />
+
+The client gets its answer in the same exchange, but it's tied to the other service's timing and availability: if the provider is slow or down, it waits or it fails.
+
+**REST**
+
+HTTP + a resource-oriented API:
+
+```http
+POST /payments
+GET /payments/{id}
+POST /payments/{id}/refund
+```
+
+Benefits: familiar, interoperable, browser-friendly, excellent for public APIs. Technologies: Spring Web, ASP.NET, Express, FastAPI, NestJS.
+
+**gRPC**
+
+RPC, normally based on Protobuf:
+
+```text
+PaymentService
+   └── AuthorizePayment()
+```
+
+Benefits: strong typing, code generation, efficient, streaming, excellent for service-to-service communication. In exchange: it's less convenient to consume straight from browsers, it brings its own tooling, and it forces you to coordinate contracts with deployment.
+
+**GraphQL**
+
+The client asks for exactly the shape of data it needs:
+
+```graphql
+query {
+  order {
+    id
+    total
+    payment {
+      status
+    }
+  }
+}
+```
+
+It's especially useful when there are multiple clients, data needs vary a lot, and you need flexible composition. In exchange: caching is more complex, authorization has to be more fine-grained, queries can get expensive, there's a risk of N+1, and you need observability built for it.
+
+## Asynchronous
+
+The producer sends a message or event and the processing can happen later:
+
+<MermaidDiagram code={`flowchart LR
+    PS["Payment Service"] --> MB["Message Broker"]
+    MB --> O["Orders"]
+    MB --> E["Email"]
+    MB --> A["Analytics"]`} />
+
+The producer doesn't wait for the consumers: it can keep working, absorb spikes in a queue, and notify several services with the same event. In exchange, the result isn't ready at that moment, and you have to design for duplicates, retries, message ordering, and schema changes.
+
+**Queue**
+
+<MermaidDiagram code={`flowchart LR
+    P["Producer"] --> Q["Queue"] --> W["Worker"]`} />
+
+Useful for `SendEmail`, `GenerateInvoice`, `ResizeImage`, `ProcessPaymentNotification`. Normally each message is processed by one consumer in the group.
+
+**Pub/sub**
+
+<MermaidDiagram code={`flowchart TD
+    T["Topic"] --> CA["Consumer A"]
+    T --> CB["Consumer B"]
+    T --> CC["Consumer C"]`} />
+
+The same event can reach multiple consumers.
+
+**Command vs. event**
+
+A fundamental distinction:
+
+|Concept|What it means|
+|---|---|
+|Command|An intent (`CapturePayment`)|
+|Event|Something that happened (`PaymentCaptured`)|
+
+A command usually has one clear recipient. An event can have multiple consumers.
+
+## Synchronous vs. asynchronous
+
+|Characteristic|Synchronous|Asynchronous|
+|---|---|---|
+|Response|Immediate|Deferred|
+|Temporal coupling|High|Lower|
+|Consistency|Can be immediate|Frequently eventual|
+|Failure model|Timeout|Delivery / retries|
+|Latency|Visible to the caller|Decoupled|
+|Complexity|Lower|Higher|
+|Good use case|An immediate query or command|Events or background work|
+
+**Where to start**
+
+<MermaidDiagram code={`flowchart TD
+    Q["Do I need the result now?"] -->|Yes| S["Synchronous"]
+    Q -->|No| A["Asynchronous"]`} />
+
+That question organizes the conversation; it doesn't close the design. If you go asynchronous, you still have to decide consistency, ordering, retries, idempotency, throughput, and what happens when a message fails.
+
+**Well-known technologies**
+
+- Synchronous: REST/HTTP, gRPC, GraphQL.
+- Asynchronous: Apache Kafka, RabbitMQ, Amazon SQS, Amazon SNS, Google Pub/Sub, NATS.
+
+The technology should follow from the pattern you need, not the other way around.
+
+<Callout variant="note" title="Observer ≠ pub/sub">
+    [Observer](/en/design/patterns/observer/) happens inside a single process, synchronously, with direct references; pub/sub works across processes, asynchronously, with a broker in between.
+</Callout>

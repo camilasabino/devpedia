@@ -1,0 +1,315 @@
+---
+id: how-to-communicate-architecture-decisions
+slug: como-comunicar-decisiones-de-arquitectura
+order: 11
+topic: architecture
+section: decisions
+title: "Cómo comunicar decisiones de arquitectura"
+description: "Cómo usar diagramas y registros de decisiones (ADR) para explicar la estructura de un sistema y las razones detrás de su diseño."
+created: 2026-05-22
+lastUpdated: 2026-05-22
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+import Callout from '../../../../components/mdx/Callout.astro';
+import UseCaseDiagram from '../../../../components/mdx/uml/UseCaseDiagram.astro';
+import ComponentDiagram from '../../../../components/mdx/uml/ComponentDiagram.astro';
+import DeploymentDiagram from '../../../../components/mdx/uml/DeploymentDiagram.astro';
+
+Una arquitectura que solo existe en la cabeza de una persona es difícil de revisar, mantener y evolucionar. La comunicación arquitectónica tiene dos objetivos que no son exactamente lo mismo: **explicar el sistema** y **explicar las decisiones**.
+
+Un diagrama puede mostrar `Payment Service → Kafka → Orders`, pero no explicar:
+
+> ¿Por qué elegimos Kafka? ¿Qué alternativas consideramos? ¿Qué trade-off aceptamos?
+
+Para eso necesitamos combinar **diagramas, documentos de decisión y contexto escrito**.
+
+## Registros de decisiones de arquitectura (ADR)
+
+Un **registro de decisión de arquitectura** (ADR, por sus siglas en inglés) es una técnica para registrar una única decisión relevante, su contexto y sus consecuencias.
+
+Martin Fowler destaca precisamente que un ADR debería ser breve y centrarse en una decisión concreta, con el contexto, la decisión y sus implicancias. También señala que escribir la decisión ayuda a hacer explícitas las diferencias de criterio y a mejorar el razonamiento del equipo.
+
+El término ADR fue acuñado por Michael Nygard en 2011.
+
+**Un template práctico**
+
+No es necesario adoptar un formato rígido. Un template útil puede ser:
+
+```markdown
+# ADR-001: Usar eventos asíncronos para notificaciones de pago
+
+## Estado
+Aceptada
+
+## Contexto
+Los proveedores de pago envían notificaciones sobre cambios de estado.
+El sistema necesita avisar a Orders, Analytics y Notifications
+sin acoplar el request del proveedor a cada consumidor posterior.
+
+## Decisión
+Los cambios de estado de un pago se publicarán como eventos de dominio
+a través de Kafka.
+
+## Alternativas consideradas
+1. Llamadas síncronas
+2. Procesamiento basado en colas
+3. Kafka
+
+## Trade-offs
+Ventajas:
+- Múltiples consumidores
+- Desacoplamiento temporal
+- Posibilidad de replay
+- Alto throughput
+
+Costos:
+- Consistencia eventual
+- Infraestructura adicional
+- Consumidores idempotentes
+- Evolución del schema de eventos
+
+## Consecuencias
+Orders puede observar los cambios de pago con un pequeño delay.
+Los consumidores deben ser idempotentes.
+Los eventos deben tener schemas versionados.
+
+## Revisar cuando
+Reconsiderar esta decisión si:
+- el volumen de eventos cambia de forma significativa;
+- la complejidad operativa se vuelve desproporcionada;
+- los consumidores ya no necesitan procesamiento independiente.
+```
+
+El objetivo es que una persona que no participó de la discusión pueda entender qué se decidió, por qué, qué alternativas se consideraron, qué trade-offs se aceptaron y qué consecuencias trajo.
+
+**Una decisión no es una implementación**
+
+Un ADR debería documentar "usar eventos asíncronos" y no necesariamente "crear el topic de Kafka `payment.events` con 3 particiones y replication factor 3...". Lo segundo corresponde más bien a un documento de despliegue o de configuración. La decisión arquitectónica debe conservarse en un nivel que siga siendo útil aunque algunos detalles de implementación cambien.
+
+## Diagramas de arquitectura
+
+Los diagramas cumplen otra función:
+
+> **Hacer visible la estructura del sistema.**
+
+No todos los diagramas sirven para responder las mismas preguntas. Una taxonomía práctica: **contexto, componentes, despliegue, runtime/secuencia y datos/dominio**.
+
+### UML
+
+UML 2.5.1 define un lenguaje estandarizado para modelar software y sistemas. La especificación oficial pertenece al Object Management Group (OMG). No todos los diagramas UML son igualmente útiles para arquitectura; los más relevantes son:
+
+**Diagrama de casos de uso**
+
+Muestra qué actores interactúan con el sistema y qué capacidades les ofrece. La notación tiene cuatro piezas: los actores como monigotes fuera del sistema, los casos de uso como elipses adentro, un rectángulo punteado que marca el límite del sistema, y líneas de asociación sin punta entre actor y caso de uso. Las dependencias entre casos de uso se dibujan punteadas con el estereotipo `«include»` o `«extend»`.
+
+<UseCaseDiagram />
+
+Sirve para acordar alcance, capacidades y actores. No sirve para explicar infraestructura ni orden temporal: un diagrama de casos de uso no dice en qué orden pasan las cosas.
+
+**Diagrama de componentes**
+
+Representa unidades reemplazables de software y, sobre todo, **los contratos por los que se conectan**. Esa es la parte que distingue un diagrama de componentes de un dibujo de cajas y flechas: cada componente declara las interfaces que provee (el círculo, la "ball") y las que requiere (el semicírculo, el "socket"), y un conector de ensamblaje une una con otra.
+
+<ComponentDiagram />
+
+Leído así, el diagrama dice algo que una flecha suelta no dice: `Checkout` no depende de `Payments`, depende de `PaymentApi`. Cambiar la implementación detrás de esa interfaz no toca a `Checkout`. Es la misma idea que el [principio de inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle), dibujada.
+
+**Diagrama de secuencia**
+
+Muestra el orden temporal de las interacciones: participantes arriba, líneas de vida hacia abajo, mensajes síncronos con punta llena y respuestas punteadas. Es el único de estos diagramas que responde "¿en qué orden?".
+
+<MermaidDiagram
+  caption="Diagrama de secuencia UML de una autorización de pago, con el camino alternativo cuando el proveedor no responde a tiempo."
+  code={`sequenceDiagram
+    autonumber
+    actor Cu as Customer
+    participant Ch as Checkout
+    participant Pa as Payments
+    participant Pr as Payment Provider
+
+    Cu->>Ch: Confirmar compra
+    Ch->>Pa: authorize(orderId, amount)
+    Pa->>Pr: POST /authorizations
+    alt Provider responde dentro del timeout
+        Pr-->>Pa: 200 approved
+        Pa-->>Ch: AUTHORIZED
+        Ch-->>Cu: Compra confirmada
+    else Timeout
+        Pa-->>Pa: Marcar PENDING_CONFIRMATION
+        Pa-->>Ch: PENDING
+        Ch-->>Cu: "Estamos confirmando tu pago"
+        Note over Pa,Pr: La reconciliación posterior resuelve el estado real
+    end`} />
+
+Es el diagrama que mejor expone los escenarios de fallo, los reintentos y los timeouts — justamente lo que se pierde cuando un flujo distribuido se dibuja como una cadena de flechas.
+
+**Diagrama de despliegue**
+
+Muestra dónde se ejecuta cada cosa. Los nodos son cajas 3D con un estereotipo que dice de qué tipo son (`«device»` para hardware o infraestructura, `«executionEnvironment»` para un runtime que aloja software), los artefactos desplegados van adentro del nodo, y las líneas entre nodos son caminos de comunicación, idealmente etiquetados con el protocolo.
+
+<DeploymentDiagram />
+
+Es el diagrama correcto para discutir disponibilidad, redundancia, regiones y AZs, porque hace visible qué se cae si se cae un nodo.
+
+**Diagrama de actividades**
+
+Representa un flujo de trabajo con sus bifurcaciones. La notación pide un nodo inicial (círculo relleno), acciones como rectángulos redondeados, un nodo de decisión como rombo con las guardas entre corchetes, un nodo de fusión que vuelve a juntar las ramas, y un nodo final (círculo con anillo).
+
+<MermaidDiagram
+  caption="Diagrama de actividades del flujo de autorización de un pago, con nodo inicial, nodo de decisión, nodo de fusión y nodo final."
+  code={`flowchart TD
+    start(( )):::umlInitial --> create["Create Payment"]
+    create --> check{"¿Datos válidos?"}
+    check -- "[sí]" --> auth["Authorize"]
+    auth --> capture["Capture"]
+    check -- "[no]" --> reject["Reject"]
+    capture --> merge{ }
+    reject --> merge
+    merge --> done((( ))):::umlFinal
+    classDef umlInitial fill:#a1a1aa,stroke:#a1a1aa
+    classDef umlFinal fill:none,stroke-width:2px`} />
+
+Útil para procesos de negocio y lógica con ramas. Cuando el flujo cruza varios servicios, un diagrama de secuencia suele comunicar mejor, porque muestra quién le habla a quién.
+
+**Diagrama de clases**
+
+Más útil para diseño detallado que para arquitectura de sistemas, pero es el diagrama natural para el DDD táctico: aggregates, entities y value objects con sus atributos, operaciones y multiplicidades.
+
+<MermaidDiagram
+  caption="Diagrama de clases UML del aggregate Payment, con su value object Money y sus intentos de autorización."
+  code={`classDiagram
+    class Payment {
+        <<aggregate root>>
+        -id PaymentId
+        -status PaymentStatus
+        -amount Money
+        +authorize(ProviderRef) void
+        +capture() void
+        +refund(Money) Refund
+    }
+    class Money {
+        <<value object>>
+        -amount BigDecimal
+        -currency Currency
+    }
+    class AuthorizationAttempt {
+        -attemptedAt Instant
+        -outcome Outcome
+    }
+    Payment *-- "1" Money : amount
+    Payment o-- "0..*" AuthorizationAttempt : attempts`} />
+
+Es el mismo tipo de diagrama que usa el [tema de patrones de diseño](/diseno/patrones/) para mostrar la estructura de cada patrón.
+
+### UML no es la única alternativa
+
+Para arquitectura de sistemas modernos también es muy útil el **modelo C4**, de Simon Brown. C4 propone cuatro niveles de zoom sobre el mismo sistema: contexto, contenedor, componente y código.
+
+La diferencia con un árbol de cajas es importante y se confunde seguido: **en C4 un nivel no "apunta" a sus hijos.** Cada diagrama muestra las piezas de *ese* nivel de abstracción y las relaciones entre ellas, siempre etiquetadas y con la tecnología anotada. Bajar un nivel no es seguir una flecha, es abrir una de las cajas.
+
+<Callout variant="warning" title="Error frecuente">
+Dibujar `Sistema → Web App → API → Base de datos` como una cadena de dependencias. La Web App no es algo de lo que el sistema depende: **es** parte del sistema. Ese árbol convierte una relación de contención en una de dependencia y hace ilegible el diagrama.
+</Callout>
+
+**Nivel 1 — Contexto.** Quién usa el sistema y con qué sistemas externos habla. Una sola caja para todo el sistema propio.
+
+<MermaidDiagram
+  caption="Diagrama de contexto C4: el cliente usa la plataforma de e-commerce, que se integra con el proveedor de pagos y el de email."
+  code={`C4Context
+    UpdateLayoutConfig($c4ShapeInRow="2")
+    Person(customer, "Customer", "Compra productos y paga online")
+    System(ecommerce, "E-commerce Platform", "Catálogo, órdenes y pagos")
+    System_Ext(provider, "Payment Provider", "Autoriza y captura pagos con tarjeta")
+    System_Ext(email, "Email Provider", "Entrega notificaciones transaccionales")
+
+    Rel(customer, ecommerce, "Compra y paga", "HTTPS")
+    Rel(ecommerce, provider, "Autoriza pagos", "HTTPS/REST")
+    Rel(ecommerce, email, "Envía confirmaciones", "SMTP")`} />
+
+**Nivel 2 — Contenedor.** Qué unidades desplegables componen el sistema, con qué tecnología, y cómo se comunican entre sí. El límite del sistema es explícito.
+
+<MermaidDiagram
+  caption="Diagrama de contenedores C4: dentro del límite del sistema, la SPA habla con la API, que usa el módulo de Payments, PostgreSQL y Kafka."
+  code={`C4Container
+    Person(customer, "Customer", "Compra productos y paga online")
+    System_Ext(provider, "Payment Provider", "Autoriza y captura pagos")
+
+    Container_Boundary(ecommerce, "E-commerce Platform") {
+        Container(spa, "Web App", "React", "Interfaz de compra y checkout")
+        Container(api, "API", "Java / Spring Boot", "Expone órdenes, catálogo y pagos")
+        Container(payments, "Payments Module", "Java", "Autoriza, captura y reembolsa")
+        ContainerDb(db, "Payments DB", "PostgreSQL", "Pagos y sus transiciones de estado")
+        ContainerQueue(kafka, "Event Bus", "Kafka", "Eventos de dominio de pagos")
+    }
+
+    Rel(customer, spa, "Usa", "HTTPS")
+    Rel(spa, api, "Llama", "JSON/HTTPS")
+    Rel(api, payments, "Invoca", "in-process")
+    Rel(payments, db, "Lee y escribe", "JDBC")
+    Rel(payments, kafka, "Publica PaymentCaptured", "Kafka protocol")
+    Rel(payments, provider, "Autoriza", "HTTPS/REST")`} />
+
+**Nivel 3 — Componente.** Qué hay adentro de un container. Acá se abre `Payments Module`, no la plataforma entera.
+
+<MermaidDiagram
+  caption="Diagrama de componentes C4 del módulo de Payments: controller, servicio de dominio, adapter del proveedor y repositorio."
+  code={`C4Component
+    UpdateLayoutConfig($c4ShapeInRow="2")
+    Container_Boundary(payments, "Payments Module") {
+        Component(controller, "Payment Controller", "Spring MVC", "Traduce HTTP a comandos de dominio")
+        Component(service, "Payment Service", "Domain", "Reglas de autorización, captura y refund")
+        Component(adapter, "Provider Adapter", "Infrastructure", "Traduce al SDK del proveedor")
+        Component(repo, "Payment Repository", "Spring Data", "Persiste el aggregate Payment")
+    }
+
+    System_Ext(provider, "Payment Provider", "Autoriza pagos")
+    ContainerDb(db, "Payments DB", "PostgreSQL", "Pagos y transiciones de estado")
+
+    Rel(controller, service, "Invoca")
+    Rel(service, adapter, "Autoriza vía", "puerto de salida")
+    Rel(service, repo, "Persiste con", "puerto de salida")
+    Rel(adapter, provider, "Llama", "HTTPS/REST")
+    Rel(repo, db, "Lee y escribe", "JDBC")`} />
+
+El **nivel 4**, **Código**, casi nunca vale la pena dibujarlo a mano: si hace falta, un diagrama de clases generado a partir del código envejece mejor.
+
+C4 es útil justamente porque evita el diagrama que mezcla negocio, servicios, clases e infraestructura en una sola imagen ilegible. Cada nivel tiene una audiencia distinta: contexto para negocio, contenedor para el equipo entero, componente para quien va a tocar ese módulo.
+
+**Herramientas**
+
+Los diagramas pueden producirse con Mermaid, PlantUML, Structurizr, diagrams.net, Lucidchart, Miro o Excalidraw. Para un blog técnico, Mermaid y PlantUML tienen una ventaja importante: el diagrama puede vivir como código junto al contenido.
+
+### Qué comunicar y con qué diagrama
+
+| Pregunta | Diagrama recomendado |
+|---|---|
+| ¿Cuál es el sistema y quién interactúa con él? | Contexto C4 |
+| ¿Qué servicios o módulos existen? | Componentes / contenedores C4 |
+| ¿Cómo se ejecuta un flujo? | Secuencia |
+| ¿Dónde corre cada componente? | Despliegue |
+| ¿Cómo es el modelo de dominio? | Clases |
+| ¿Cómo funciona un workflow? | Actividades |
+| ¿Qué decisión tomamos? | ADR |
+
+No existe un "diagrama de arquitectura definitivo". Cada diagrama debe responder una pregunta concreta.
+
+## Un ejemplo completo de comunicación
+
+Supongamos que Payments es un [monolito modular](/arquitectura/monolitos-microservicios-y-soa/) sobre PostgreSQL, que publica eventos en Kafka y se integra de forma síncrona con proveedores externos. Documentarlo bien no significa dibujarlo cinco veces: significa elegir cinco artefactos que respondan cinco preguntas distintas.
+
+| Pregunta | Artefacto |
+|---|---|
+| ¿Quién usa el sistema y con quién habla? | Diagrama de contexto (C4 nivel 1) |
+| ¿De qué piezas desplegables está hecho? | Diagrama de contenedores (C4 nivel 2) |
+| ¿Qué pasa cuando el proveedor no responde? | Diagrama de secuencia con camino alternativo |
+| ¿Qué se cae si se cae una AZ? | Diagrama de despliegue |
+| ¿Por qué Kafka y no llamadas síncronas? | ADR |
+
+Ninguno de los cuatro diagramas reemplaza al ADR, y el ADR no reemplaza a ninguno de los cuatro. Los diagramas muestran **qué es** el sistema; el ADR explica **por qué es así**. Es la distinción con la que abre este artículo, y es la que más seguido se pierde: equipos con diagramas impecables y sin una sola línea escrita sobre las alternativas que descartaron.
+
+## Cómo decidir qué documentar
+
+No toda decisión técnica necesita un documento de arquitectura. Documentar indiscriminadamente cada decisión genera ruido y hace más difícil encontrar aquello que realmente explica la evolución del sistema.
+
+Una decisión merece ser documentada cuando tiene un impacto significativo sobre la **estructura, el comportamiento o la evolución del sistema**, especialmente cuando existen varias alternativas razonables y modificarla posteriormente tendría un costo elevado.

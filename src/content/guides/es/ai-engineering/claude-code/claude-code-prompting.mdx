@@ -1,0 +1,223 @@
+---
+id: claude-code-prompting
+slug: como-escribir-buenos-prompts
+order: 2
+topic: ai-engineering
+subtopic: claude-code
+section: getting-started
+title: "Cómo escribir buenos prompts para Claude Code"
+description: "Cómo formular pedidos claros, aportar el contexto necesario y definir criterios para evaluar el resultado."
+created: 2026-08-24
+lastUpdated: 2026-08-24
+---
+
+import StepFlow from '../../../../../components/mdx/StepFlow.astro';
+
+## La estructura de 5 piezas
+
+Claude Code toma mejores decisiones cuanto mejor definido está el problema. Casi todo prompt profesional se arma combinando hasta cinco piezas:
+
+| Pieza | Responde a | ¿Siempre hace falta? |
+|---|---|---|
+| **Contexto** | ¿Qué necesita saber Claude de la situación? | No — un fix trivial puede no necesitarlo |
+| **Tarea** | ¿Qué tiene que hacer exactamente? | Sí, siempre |
+| **Restricciones** | ¿Qué no debe tocar o qué límites tiene? | Recomendado en casi todo lo que no sea trivial |
+| **Formato** | ¿Cómo querés el resultado? | Cuando el default no te sirve |
+| **Verificación** | ¿Cómo confirmar que salió bien? | Sí, casi siempre — es la pieza que más se olvida |
+
+<StepFlow
+  steps={[
+    { label: 'Contexto' },
+    { label: 'Tarea' },
+    { label: 'Restricciones' },
+    { label: 'Formato' },
+    { label: 'Verificación' },
+    { label: 'Listo para el siguiente paso' },
+  ]}
+  loopLabel="Si Verificación no pasa, vuelve a Contexto"
+/>
+
+Cuando un resultado no es el esperado, en la gran mayoría de los casos falta una de estas cinco piezas — no falta "más IA".
+
+## Siete patrones para el trabajo diario
+
+Los ejemplos usan el mismo proyecto ficticio: **ReservaResto**, una plataforma de reservas de mesas para restaurantes, con Node.js + Express + TypeScript + PostgreSQL.
+
+### 1. Implementar una feature
+
+```
+Contexto: ReservaResto es una plataforma de reservas de mesas para
+restaurantes (Express + TS + PostgreSQL). Ya tiene alta de
+restaurantes y creación de reservas funcionando.
+
+Tarea: Implementá una lista de espera. Cuando un restaurante está
+completo para un horario, la persona puede anotarse. Al cancelarse
+una reserva, ofrecele automáticamente el lugar a la siguiente
+persona de la lista para ese horario. Agregá un endpoint para que
+el dueño del restaurante vea cuánta gente está en espera, por
+horario.
+
+Restricciones:
+- Confirmar una reserva no puede volverse más lento (procesá la
+  lista de espera después de responder al usuario).
+- Respetá la estructura de módulos existente.
+- No cambies la interfaz de los endpoints de reservas actuales.
+
+Verificación: Escribí tests para el alta a la lista y la promoción
+automática al cancelarse un lugar. Corré toda la suite al terminar.
+```
+
+El contexto evita que invente una arquitectura propia; las restricciones protegen lo que ya funciona; la verificación hace que Claude corra los tests (u otro criterio) y trate un fallo como parte de la tarea, en vez de entregarte código que vos tenés que empezar a depurar.
+
+### 2. Depurar un problema
+
+El error más común al reportar un bug es decir "no anda" y esperar que adivine. Un buen reporte de bug para un agente se parece al que le harías a un compañero de equipo: error exacto, dónde ocurre, qué estabas haciendo.
+
+```
+Contexto: Estoy probando reservas concurrentes en ReservaResto.
+
+Tarea: Si dos personas reservan la última mesa disponible del
+mismo restaurante para el mismo horario en el mismo minuto, las dos
+reservas quedan confirmadas — se comprometió una mesa de más y
+ninguna lanza error.
+
+Formato: Antes de corregir nada:
+1. Identificá la causa raíz, no el síntoma
+2. Explicá por qué ocurre
+3. Proponé el fix y justificalo
+4. ¿Qué más podría verse afectado?
+
+Verificación: Test que simule dos reservas concurrentes para el
+mismo horario y confirme que solo una se acepta.
+```
+
+Pedirle que piense antes de tocar código produce fixes más precisos, y preguntar por efectos secundarios evita que un arreglo cree dos problemas nuevos.
+
+### 3. Refactorizar
+
+Es el patrón donde es más fácil desbordarse: sin restricciones claras, "refactorizá este módulo" puede terminar en una reescritura que rompe media aplicación. La clave es definir **qué no debe cambiar**.
+
+```
+Contexto: En ReservaResto la validación está dispersa: el servicio de
+reservas valida horarios, el de restaurantes valida capacidad de
+mesas, el de usuarios valida el tamaño del grupo. Quiero
+centralizarla.
+
+Tarea: Extraé toda la validación a un módulo dedicado que los demás
+servicios importen.
+
+Restricciones:
+- Los endpoints deben devolver exactamente los mismos errores.
+- Los tests existentes pasan sin modificarlos.
+- El módulo nuevo sigue la convención de naming y exports actual.
+
+Formato: Antes de tocar código, mostrame qué cambiarías, qué
+archivos afecta y qué riesgos ves.
+
+Verificación: Corré toda la suite sin tocarla. Si algo falla, el
+refactor rompió algo.
+```
+
+"Los tests pasan sin cambiarlos" es la red de seguridad más potente que le podés dar: convierte un cambio potencialmente destructivo en algo objetivamente verificable.
+
+### 4. Explorar un proyecto
+
+Este patrón no produce código, produce comprensión — y es el paso que más gente se salta antes de un cambio grande.
+
+```
+Tarea: Analizá ReservaResto y respondé:
+1. ¿Qué patrón separa rutas de lógica de negocio?
+2. ¿Cómo se inicializa y se accede a la base de datos?
+3. ¿Qué convenciones de naming usan los archivos y funciones?
+4. Si agrego un módulo "reseñas" (para que los comensales califiquen
+   un restaurante), ¿qué archivos necesito para seguir el mismo
+   patrón?
+
+Formato: Resumen breve por pregunta + diagrama ASCII de la
+estructura de carpetas relevante.
+
+Restricciones: No modifiques nada. Solo lectura.
+```
+
+Cuando explora antes de implementar, ancla sus decisiones en el código real en vez de en supuestos genéricos — y el código que genere después va a ser consistente con lo que ya existe.
+
+### 5. Escribir tests
+
+Pedir tests "para X" sin más detalle produce tests que solo confirman que la función no explota. Especificar las tres categorías con ejemplos concretos cambia todo:
+
+```
+Contexto: booking.service.ts tiene crearReserva y cancelarReserva.
+Se integra con una pasarela de pagos externa para la seña.
+
+Tarea: Generá tests para cada función pública:
+- Flujo principal: una reserva exitosa devuelve un código de
+  confirmación; una cancelación exitosa libera la mesa.
+- Casos límite: reserva sobre la última mesa disponible, cancelación
+  justo en el límite de la ventana de cancelación gratuita, reserva
+  de último minuto (mismo día).
+- Errores: reserva sin mesas disponibles, cancelar una reserva ya
+  cancelada, reserva sin campos obligatorios.
+
+Restricciones: Jest con describe/it. Tests independientes entre sí.
+
+Verificación: Corré los tests y después `jest --coverage`. Mostrame
+la cobertura de booking.service.ts.
+```
+
+### 6. Documentar
+
+El patrón más simple en estructura, pero el que más se beneficia de que le digas el formato. Definir **quién** va a leer la documentación cambia radicalmente el resultado — "para onboarding de developers" produce algo muy distinto a "para el equipo de QA".
+
+```
+Contexto: Nuevos developers necesitan una referencia de la API
+de ReservaResto para arrancar.
+
+Tarea: Generá docs/API.md con: descripción del proyecto,
+instalación/ejecución/tests, cada endpoint (método, ruta, auth,
+parámetros, respuesta, errores posibles) y un ejemplo con curl.
+
+Formato: Markdown con secciones por módulo (Restaurantes, Reservas,
+Lista de espera).
+
+Verificación: Compará contra las rutas registradas en el código.
+Si falta un endpoint, agregalo.
+```
+
+### 7. Pedir justificación
+
+No es un patrón de implementación, es de revisión. Se usa después de que Claude hizo algo, para entender el porqué y detectar mejores alternativas — algo que no suele explicar a menos que se lo pidas.
+
+```
+Sobre la implementación de la lista de espera:
+1. ¿Qué alternativas consideraste para no bloquear la confirmación
+   de la reserva?
+2. Si falla la escritura al promover a la siguiente persona de la
+   lista, ¿se pierde silenciosamente?
+3. Si se cancelan diez reservas del mismo restaurante al mismo
+   tiempo, ¿qué parte del sistema falla primero?
+4. Si tuvieras que escalar esto a miles de restaurantes en
+   simultáneo, ¿qué cambiarías de la arquitectura?
+```
+
+## Encadenando patrones
+
+Una tarea compleja no es un prompt gigante, es una secuencia donde cada instrucción usa un patrón distinto y produce algo verificable antes de lanzar el siguiente paso:
+
+```
+Explorar    → "Analizá cómo funciona el módulo X"
+Implementar → "Siguiendo ese patrón, agregá Y"
+Tests       → "Generá tests para lo que implementaste"
+Justificar  → "¿Qué alternativas consideraste?"
+Documentar  → "Actualizá la documentación con los cambios"
+```
+
+Si en algún eslabón de la cadena no podés comprobar el resultado, ese paso es demasiado grande o le falta el componente de verificación — volvé a partirlo.
+
+Con la práctica, esta forma de estructurar los pedidos se vuelve un hábito y ya no necesitás consultar la tabla.
+
+Cuando la cadena de prompts queda larga aunque esté bien partida, o el equipo necesita acordar el alcance de un cambio antes de tocar código, conviene sumar una capa por encima de los prompts sueltos: ver [Spec-Driven Development](/ai-engineering/claude-code/spec-driven-development/).
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview" target="_blank" rel="noopener noreferrer">guía oficial de prompt engineering</a> y{' '}
+  <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer">Best practices for Claude Code</a>.
+</p>

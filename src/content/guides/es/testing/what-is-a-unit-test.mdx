@@ -1,0 +1,84 @@
+---
+id: what-is-a-unit-test
+slug: que-es-un-test-unitario
+order: 2
+topic: testing
+section: unit-testing
+title: "¿Qué es un test unitario?"
+description: "Qué caracteriza a un test unitario, qué significa aislar una unidad y cómo evitar que la prueba dependa demasiado de la implementación."
+created: 2026-07-29
+lastUpdated: 2026-07-29
+---
+
+El testing unitario da feedback rápido sobre el comportamiento de piezas chicas de código y detecta defectos cerca de donde se producen. Pero escribir unit tests no consiste simplemente en invocar un método y agregar assertions. La calidad de un unit test depende de qué tan bien aísla el comportamiento que quiere verificar, qué tan claramente expresa su intención y qué tan estable permanece a medida que el código evoluciona.
+
+Un unit test verifica el comportamiento de una unidad relativamente pequeña y aislada del software. Dependiendo del lenguaje y de la arquitectura, esa unidad puede ser una función, un método, una clase o un pequeño componente de dominio.
+
+En ReservaResto, una unidad candidata es el cálculo de la penalidad por cancelación tardía:
+
+```typescript
+function calculateCancellationFee(
+  deposit: Money,
+  hoursBeforeReservation: number
+): Money {
+  if (hoursBeforeReservation >= 24) return Money.zero();
+  return deposit.multiply(0.5);
+}
+```
+
+Y el test correspondiente:
+
+```text
+Given: deposit = $2000, hoursBeforeReservation = 3
+Then: fee = $1000
+
+Given: deposit = $2000, hoursBeforeReservation = 30
+Then: fee = $0
+```
+
+La característica importante no es simplemente que el test sea chico. Un buen unit test debería ofrecer:
+
+- feedback rápido;
+- resultados deterministas;
+- aislamiento de dependencias irrelevantes;
+- una causa de fallo fácil de identificar;
+- una descripción clara del comportamiento esperado.
+
+## Aislamiento
+
+`ReservationService` en ReservaResto depende de `PricingService`, `TableAvailabilityService` y `PaymentService`. Un unit test de `ReservationService` no debería necesitar una base de datos real, una API de pagos real, ni ningún otro servicio remoto: esas dependencias se reemplazan por dobles de test cuando corresponde.
+
+```text
+ReservationService  ← la unidad bajo test
+├── PricingService            ← reemplazado
+├── TableAvailabilityService  ← reemplazado
+└── PaymentService            ← reemplazado
+```
+
+Con qué se reemplaza cada una no es una propiedad de la dependencia, sino de lo que ese test en particular quiere verificar: la misma `PaymentService` puede reemplazarse de tres formas distintas en tres tests distintos. Eso es lo que cubre el [artículo sobre dobles de test](/testing/dobles-de-test/).
+
+## Qué deberían cubrir
+
+Los unit tests deberían cubrir, sobre todo, reglas de negocio, casos límite, lógica de ramificación, invariantes y manejo de errores. No deberían usarse para perseguir un porcentaje arbitrario de cobertura de código:
+
+```text
+100% de cobertura ≠ 100% de corrección
+```
+
+La cobertura de código indica qué código fue ejecutado, no si fue correctamente verificado. Un test puede ejecutar `calculateCancellationFee` y no verificar nada relevante sobre su resultado.
+
+## Cuándo deja de ser útil
+
+Un test puede acoplarse demasiado a la implementación:
+
+```text
+assert que se llamó a PaymentService.charge() antes que a TableService.block()
+assert sobre un detalle interno de implementación
+assert sobre la estructura exacta de un objeto interno
+```
+
+Esto genera tests que fallan cuando cambia la implementación, aunque el comportamiento observable siga siendo correcto. La idea que hay que sostener:
+
+> Testear comportamiento, no implementación accidental.
+
+[F.I.R.S.T.](/testing/first-principios-para-tests-unitarios/) suma los criterios para chequear si ese unit test está bien pensado: rápido, independiente, repetible, con resultado claro y creado a tiempo.

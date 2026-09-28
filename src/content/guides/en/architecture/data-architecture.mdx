@@ -1,0 +1,189 @@
+---
+id: data-architecture
+slug: data-architecture
+order: 7
+topic: architecture
+section: communication-and-data
+title: "Data architecture"
+description: "How to organize data and decide who owns it. Modeling and persistence decisions, and when to consider event sourcing."
+created: 2026-05-14
+lastUpdated: 2026-05-14
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Data decisions tend to be among the hardest to change later. There are three distinct questions: **who owns the data?**, **how is it modeled?**, and **how is it persisted?**
+
+## Data ownership
+
+Two fundamental strategies: **a shared database** and **a database per service**.
+
+**Shared database**
+
+<MermaidDiagram code={`flowchart LR
+    Pay["Payments"] --> PG[("PostgreSQL")]
+    Ord["Orders"] --> PG
+    Inv["Inventory"] --> PG`} />
+
+Benefits: simple transactions, joins, relational integrity, less complexity.
+
+Problem: a schema change can affect multiple consumers. Payments can't change a column without coordinating with Orders and Inventory; the "shared database" becomes an implicit contract between teams.
+
+<MermaidDiagram code={`flowchart TD
+    S["Shared schema"] --> A["Service A"]
+    S --> B["Service B"]
+    S --> C["Service C"]`} />
+
+**Database per service**
+
+<MermaidDiagram code={`flowchart LR
+    PS["Payment Service"] --> PDB[("Payment DB")]
+    OS["Order Service"] --> ODB[("Order DB")]
+    IS["Inventory Service"] --> IDB[("Inventory DB")]`} />
+
+Each service owns its data. That buys autonomy: it can change its schema, its engine, and its release cycle without coordinating with the others. The cost is that you can no longer update Payment and Order in a single transaction. That `BEGIN/COMMIT` covered both writes:
+
+```sql
+BEGIN
+  Update Payment
+  Update Order
+COMMIT
+```
+
+If each one goes to a different database, you have to coordinate them with events or sagas, and accept eventual consistency, compensations, and idempotency.
+
+## Database types and modeling
+
+Don't start from:
+
+> SQL or NoSQL?
+
+The process should be:
+
+<MermaidDiagram code={`flowchart TD
+    D["Domain"] --> M["Data model"] --> AP["Access patterns"] --> CR["Consistency requirements"] --> W["Workload"] --> S["Scale"] --> T["Storage technology"]`} />
+
+### SQL / relational
+
+Model: tables, rows, columns, relations, constraints, transactions.
+
+Example:
+
+**`payments`**: `id`, `order_id`, `amount`, `currency`, `status`, `created_at`
+
+**`payment_transactions`**: `id`, `payment_id`, `provider`, `provider_transaction_id`, `status`, `created_at`
+
+Strengths: relations, constraints, transactions, joins, mature tooling, and solid OLTP support. Well-known databases: PostgreSQL, MySQL, SQL Server, Oracle.
+
+**Normalization**
+
+Normalization aims to reduce redundancy and update anomalies. Instead of repeating information (`Payment`, `OrderId`, `CustomerName`, `CustomerEmail`), we can keep clear relations:
+
+<MermaidDiagram code={`flowchart LR
+    P["Payment"] --> O["Order"] --> C["Customer"]`} />
+
+Normalizing isn't an end in itself: if every read has to cross many tables, it can be worth duplicating data on purpose to read faster.
+
+**Denormalization**
+
+Sometimes duplicating information is the right decision to improve read performance, simplify queries, and scale better. For example, an `Order Read Model` with `order_id`, `customer_name`, `payment_status`, `total`, `shipping_status` can be optimized for reads even though the data is normalized in the transactional system.
+
+### NoSQL
+
+"NoSQL" groups together several different models:
+
+|Category|Example|
+|---|---|
+|Document|MongoDB|
+|Key-value|Redis|
+|Wide-column|Cassandra|
+|Graph|Neo4j|
+
+**Document**
+
+```json
+{
+  "id": "123",
+  "status": "captured",
+  "amount": 100,
+  "currency": "ARS"
+}
+```
+
+It can be a good fit when documents are read and written as units and access doesn't need complex joins.
+
+**Key-value**
+
+```text
+payment:123 → { ... }
+```
+
+Excellent for caching, sessions, key lookups, and temporary data. Redis is the classic example.
+
+**Wide-column**
+
+Aimed at enormous-scale workloads and specific access patterns. Cassandra is a well-known technology in this category. Here the data model should be designed around the queries that will actually run.
+
+**Graph**
+
+Data is modeled as nodes, edges, and properties. Especially useful for representing complex relationships. Neo4j is a well-known implementation.
+
+
+**SQL vs. NoSQL**
+
+The right discussion isn't "SQL vs. NoSQL", it's: which model? which queries? which consistency? which workload? which scale? which operational constraints?
+
+A system can also use several types:
+
+<MermaidDiagram code={`flowchart TD
+    App["Application"] --> PG[("PostgreSQL<br/>source of truth")]
+    App --> R[("Redis<br/>cache")]
+    App --> ES[("Elasticsearch<br/>search")]`} />
+
+This is called **polyglot persistence**. The benefit is specialization; the cost is synchronization and operational complexity.
+
+## Event sourcing
+
+In a traditional model we store the current state (`Payment.status = CAPTURED`). With event sourcing, the events are the source of truth:
+
+<MermaidDiagram code={`flowchart LR
+    C["PaymentCreated"] --> A["PaymentAuthorized"] --> Cap["PaymentCaptured"]`} />
+
+Current state can be rebuilt:
+
+<MermaidDiagram code={`flowchart LR
+    ES["Event Store"] --> R["Replay"] --> CS["Current state"]`} />
+
+That gives you the complete history of changes.
+
+**Benefits**
+
+- a natural audit log;
+- replay;
+- multiple projections;
+- temporal analysis;
+- state reconstruction.
+
+**Costs**
+
+- schema evolution;
+- event versioning;
+- snapshots;
+- replay complexity;
+- concurrency;
+- debugging;
+- migration complexity.
+
+Also, **event sourcing ≠ event-driven architecture**. They can be combined, but they're independent decisions.
+
+**When to use event sourcing**
+
+Especially interesting when the history of changes is part of the domain, auditing is essential, you need to reconstruct states, there are multiple read models, or the domain is naturally expressed as a sequence of facts. Payments and financial systems are cases where the idea can be appealing, though that doesn't mean all of them need event sourcing.
+
+**When to avoid it**
+
+For a conventional CRUD where only the current state matters (`Product`: `name`, `price`, `description`), it probably adds more complexity than it removes.
+
+**Tools**
+
+PostgreSQL, MySQL, MongoDB, Redis, Cassandra, Neo4j, Elasticsearch, Kafka, Debezium. Kafka, for instance, can be used to transport events, but **Kafka doesn't automatically turn an application into an event-sourced system**.

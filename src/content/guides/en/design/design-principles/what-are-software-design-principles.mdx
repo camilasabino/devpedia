@@ -1,0 +1,81 @@
+---
+id: what-are-software-design-principles
+slug: what-are-software-design-principles
+order: 1
+topic: design
+subtopic: design-principles
+title: "What are software design principles?"
+description: "How to use principles like KISS, DRY, and SOLID to make design decisions, understanding what problems they address and when to apply them."
+created: 2026-05-25
+lastUpdated: 2026-05-25
+---
+
+import Icon from '../../../../../../../src/components/Icon.astro';
+
+A software design principle isn't a rule you always have to follow. It's a heuristic: a way of reasoning about complexity, duplication, and coupling that usually produces better results, depending on context.
+
+KISS, DRY, SOLID, and the rest of the names in this topic aren't laws. They're criteria for making design decisions. Applying them mechanically, without thinking about the concrete problem, can produce a worse design than not applying them at all.
+
+## Why they're worth knowing
+
+- **They give you shared vocabulary.** Saying "this violates Single Responsibility" or "this is a DRY violation" communicates a design diagnosis to another developer who knows the principles, in a few words.
+- **They explain why a small change ends up taking so much work.** When changing one business rule means touching ten files, or adding a new provider means rewriting a giant `if`, the symptom usually points at a specific principle. Naming it doesn't solve the problem, but it narrows down where to look.
+- **They give you a test for how much to abstract.** The question when designing isn't "which pattern do I drop in here?" but "what concrete problem do I have, and which principle describes it best?". The pattern, if you need one, comes after.
+
+## Principles aren't absolute rules
+
+Applying a principle where it isn't needed can add indirection, layers, and abstractions that someone later has to understand and maintain. Applying SOLID to the letter in a small project can produce accidental complexity just as real as not applying it where it's actually needed. Every principle in this topic comes with its flip side — what applying it badly looks like, or when it simply isn't worth it — because that's the part most often overlooked.
+
+## How this topic is organized
+
+<div className="grid gap-4 sm:grid-cols-3">
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-violet-400">
+      <Icon name="layers" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">General principles</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">Complexity, duplication, premature features, responsibilities, and coupling.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>KISS</li>
+      <li>DRY</li>
+      <li>YAGNI</li>
+      <li>Separation of concerns</li>
+      <li>Composition over inheritance</li>
+      <li>Law of Demeter</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-sky-400">
+      <Icon name="shield" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">SOLID</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">The five principles of object-oriented design.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Single Responsibility</li>
+      <li>Open/closed</li>
+      <li>Liskov Substitution</li>
+      <li>Interface Segregation</li>
+      <li>Dependency Inversion</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-fuchsia-400">
+      <Icon name="radar" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">How to review a design</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">The concrete questions for applying all of the above when reviewing a design.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Complexity</li>
+      <li>Duplication</li>
+      <li>Responsibilities</li>
+      <li>Coupling</li>
+      <li>Contracts and interfaces</li>
+    </ul>
+  </div>
+</div>
+
+- **[General design principles](/en/design/principles/general-design-principles/)** — the six heuristics that come before anything else, whatever the paradigm: when something is unnecessarily complex, when duplicating is worse than abstracting (and the other way around), and how much one object needs to know about another.
+- **[SOLID](/en/design/principles/solid/)** — the five principles specific to object-oriented design, with the test for not applying them where they add nothing.
+- **[How to review a software design](/en/design/principles/how-to-review-a-software-design/)** — the checklist of questions to use when designing or reviewing a component.
+
+The examples in this topic are in Java. Several revolve around `OrderService`, `Order`, and `PaymentProcessor`, in an e-commerce domain that recurs across the entries.

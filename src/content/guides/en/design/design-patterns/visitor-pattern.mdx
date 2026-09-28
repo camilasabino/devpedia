@@ -1,0 +1,132 @@
+---
+id: visitor-pattern
+slug: visitor
+order: 27
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Visitor"
+description: "How to add operations over a structure of objects without modifying their classes each time, and where this approach runs out."
+created: 2026-07-23
+lastUpdated: 2026-07-23
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Visitor** is a behavioral pattern that separates an algorithm from the objects it operates on, so you can add new operations without modifying those classes.
+
+## The problem
+
+AndesShop's catalog has several kinds of item — `PhysicalProduct`, `DigitalGiftCard`, `Bundle` (a combo of several products) — and over time it needs to apply operations to them that have nothing to do with each other: calculate the total weight for shipping, calculate the applicable tax, generate XML for export to an external marketplace. Adding each new operation directly as a method on `PhysicalProduct`, `DigitalGiftCard`, and `Bundle` fills those classes with methods that have nothing to do with what a product _is_, only with the various things someone wants to _do_ with it.
+
+## The solution
+
+Visitor moves each operation into a separate visitor class, with a different method for each concrete kind of item. Catalog items only need one method, `accept(Visitor visitor)`, which hands control over to the visitor — and the visitor is the one that decides, based on the item's real type, what to do with it. That `accept` calling `visitor.visit(this)` is what makes double dispatch possible: the concrete `this` picks the right overloaded `visit`. Adding a new operation (exporting to a new marketplace, say) means creating a new visitor, without touching any catalog class.
+
+<ClassDiagram
+  caption="The structure of Visitor: a new operation is a new visitor. Adding TaxVisitor doesn't touch any catalog class."
+  diagram={`    class CatalogItem {
+        <<interface · element>>
+        +accept(CatalogVisitor) void
+    }
+    class PhysicalProduct {
+        -weightGrams int
+        +accept(CatalogVisitor) void
+    }
+    class DigitalGiftCard {
+        -amount Money
+        +accept(CatalogVisitor) void
+    }
+    class CatalogVisitor {
+        <<interface>>
+        +visit(PhysicalProduct) void
+        +visit(DigitalGiftCard) void
+    }
+    class ShippingWeightVisitor {
+        +visit(PhysicalProduct) void
+        +visit(DigitalGiftCard) void
+    }
+    class TaxVisitor {
+        +visit(PhysicalProduct) void
+        +visit(DigitalGiftCard) void
+    }
+    class Cart {
+        <<object structure>>
+        -items List~CatalogItem~
+        +accept(CatalogVisitor) void
+    }
+    CatalogItem <|.. PhysicalProduct
+    CatalogItem <|.. DigitalGiftCard
+    CatalogVisitor <|.. ShippingWeightVisitor
+    CatalogVisitor <|.. TaxVisitor
+    Cart o-- "0..*" CatalogItem : items
+    CatalogItem ..> CatalogVisitor : accept(v) calls v.visit(this)`}
+/>
+
+## Example in Java
+
+```java
+interface CatalogItem {
+    void accept(CatalogVisitor visitor);
+}
+
+class PhysicalProduct implements CatalogItem {
+    double weightKg;
+    public void accept(CatalogVisitor visitor) { visitor.visit(this); }
+}
+
+class DigitalGiftCard implements CatalogItem {
+    public void accept(CatalogVisitor visitor) { visitor.visit(this); }
+}
+
+interface CatalogVisitor {
+    void visit(PhysicalProduct product);
+    void visit(DigitalGiftCard giftCard);
+}
+
+// A concrete visitor: calculates the total weight to ship
+class ShippingWeightVisitor implements CatalogVisitor {
+    private double totalWeight = 0;
+
+    public void visit(PhysicalProduct product) {
+        totalWeight += product.weightKg;
+    }
+
+    public void visit(DigitalGiftCard giftCard) {
+        // weighs nothing — but the visitor decides that, not the GiftCard class
+    }
+
+    public double getTotalWeight() {
+        return totalWeight;
+    }
+}
+```
+
+```java
+ShippingWeightVisitor weightVisitor = new ShippingWeightVisitor();
+for (CatalogItem item : cart.getItems()) {
+    item.accept(weightVisitor); // each item delegates to the visitor based on its own type
+}
+System.out.println(weightVisitor.getTotalWeight());
+```
+
+## When to use it
+
+- When you need to perform distinct, unrelated operations over an already-defined class hierarchy, without cluttering those classes with methods outside their responsibility.
+- When the class hierarchy you operate on is relatively stable, but the operations applied to it keep growing.
+
+## When to avoid it
+
+If the class hierarchy changes frequently (new types are added often), Visitor becomes expensive to maintain: every new type forces you to add a `visit()` method to _all_ the existing visitor classes.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|Adding a new operation (tax, XML, weight) means creating a visitor, without touching the catalog|Adding a new type to the hierarchy forces you to update every existing visitor|
+|The code for one operation stays together, instead of one loose method in each catalog class|It can break encapsulation if the visitor needs access to too much of each type's internal state|
+
+## Relationship with other patterns
+
+- It combines naturally with **[Composite](/en/design/patterns/composite/)** to apply operations over a whole tree structure.
+- **[Iterator](/en/design/patterns/iterator/)** handles traversing a collection; Visitor handles what to do with each element during that traversal — they usually show up together.

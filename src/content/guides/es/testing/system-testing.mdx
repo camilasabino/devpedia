@@ -1,0 +1,44 @@
+---
+id: system-testing
+slug: testing-de-sistema
+order: 8
+topic: testing
+section: test-levels
+title: "Testing de sistema"
+description: "Cómo evaluar el comportamiento del sistema completo y en qué se diferencia de probar la integración entre componentes."
+created: 2026-08-10
+lastUpdated: 2026-08-10
+---
+
+## Qué es
+
+El testing de sistema evalúa el sistema completo desde una perspectiva funcional. A diferencia de un test de integración, el foco no está en una interacción puntual entre componentes sino en un comportamiento de punta a punta.
+
+```text
+1. Usuario busca disponibilidad  (Availability Service)
+2. Reserva creada                (Reservation API)
+3. Seña cobrada                  (Payment Service)
+4. Mesa bloqueada                (Table Service)
+5. Confirmación enviada          (Notification Service)
+```
+
+El objetivo no es verificar cada componente por separado, sino que el sistema satisfaga los requisitos funcionales **como un todo**.
+
+## Testing de sistema vs. testing de integración
+
+Esta diferencia genera confusión seguido, así que vale la pena dejarla explícita:
+
+| | Foco |
+|---|---|
+| **Testing de integración** | La interacción entre componentes (`ReservationService → PostgreSQL`) |
+| **Testing de sistema** | Un comportamiento completo del sistema (`Usuario → API → múltiples componentes → resultado`) |
+
+Un test de sistema puede recorrer varios puntos de integración, pero su objetivo es distinto: no verifica una interacción puntual, sino el resultado final que le llega al usuario.
+
+## El costo de subir de nivel
+
+A medida que aumenta el alcance —de unitario a integración a sistema— normalmente aumentan el tiempo de ejecución, la complejidad de configuración, los requisitos de infraestructura y el costo de diagnosticar un fallo. Por eso no conviene convertir toda la suite en tests end-to-end: es exactamente la razón de ser de la [pirámide de tests](/testing/que-es-el-testing/#dónde-va-cada-test-la-pirámide).
+
+## Qué no detecta
+
+Un test de sistema puede confirmar que el flujo de cancelación de ReservaResto funciona exactamente como está implementado: la seña se reintegra según la regla implementada, la mesa se libera, se notifica al comensal. Lo que no puede confirmar es que esa regla implementada sea la que el negocio realmente necesita. Ahí es donde entra [UAT](/testing/pruebas-de-aceptacion-de-usuario-uat/).

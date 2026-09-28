@@ -1,0 +1,269 @@
+---
+id: general-design-principles
+slug: general-design-principles
+order: 2
+topic: design
+subtopic: design-principles
+title: "General design principles"
+description: "Six principles for handling complexity, duplication, and dependencies. What each one gives you, and when applying it can make the design worse."
+created: 2026-05-27
+lastUpdated: 2026-05-27
+---
+
+import MermaidDiagram from '../../../../../components/mdx/MermaidDiagram.astro';
+
+## KISS — Keep It Simple, Stupid
+
+KISS is about keeping a solution as simple as it can be while still meeting the requirements. The goal isn't to write as few lines of code as possible — it's to minimize **unnecessary complexity**.
+
+Say you need to calculate a discount:
+
+```java
+public BigDecimal calculateDiscount(Order order) {
+    return order.getTotal().multiply(new BigDecimal("0.10"));
+}
+```
+
+If the requirement is a flat 10% discount, a hierarchy of strategies, a _factory_, a configuration engine, and a rules DSL add complexity without value. The few-line function is understood, tested, and changed without any of that apparatus.
+
+### What does "simple" actually mean?
+
+Simplicity is contextual. A system can have a lot of code and still be simple if its responsibilities and dependencies are easy to follow. The reverse holds too: a small codebase can be hard to understand if it has implicit behavior, excessive indirection, or complex abstractions.
+
+Some signs of unnecessary complexity:
+
+- Too many layers for a straightforward use case.
+- Abstractions with a single implementation and no clear reason to exist.
+- Overuse of design patterns.
+- Deep inheritance hierarchies.
+- Framework abstractions that hide simple behavior.
+- Configuration used in place of simple code, with no concrete need.
+- Generic infrastructure built before there's a real use case.
+
+### KISS doesn't mean "avoid architecture"
+
+A frequent and mistaken reading is that KISS implies avoiding abstractions or architectural patterns. It doesn't. A distributed system may legitimately need queues, retries, idempotency, observability, caching, and multiple services. Removing those components doesn't necessarily simplify the system — it can make it incorrect or unreliable.
+
+> **Don't introduce complexity unless the problem demands it.**
+
+_Necessary_ complexity comes with the problem. _Accidental_ complexity is what we introduce with our design, and that's what KISS tries to trim.
+
+## DRY — Don't Repeat Yourself
+
+DRY is about avoiding duplication of **knowledge**, not simply of lines of code. The core idea is that each piece of knowledge in the system lives in one place: a single representation everything else derives from.
+
+Say different parts of the system each implement the same business rule on their own:
+
+```java
+if (customer.getAge() >= 18) {
+    // allow operation
+}
+```
+
+If the rule changes and the minimum age becomes 21, you have to touch several places. The problem isn't that there's repeated code — it's that there's duplicated **business knowledge**. If we centralize the rule:
+
+```java
+public boolean canPerformOperation(Customer customer) {
+    return customer.getAge() >= 21;
+}
+```
+
+we're left with a single source of truth.
+
+### DRY doesn't mean "never repeat code"
+
+Two fragments that look alike don't necessarily represent the same concept:
+
+```java
+calculateShippingPrice(...)
+calculateInsurancePrice(...)
+```
+
+They may have similar calculations today, but if shipping and insurance are independent business concepts, forcing them to share a common abstraction creates unnecessary coupling: a change in one drags the other along.
+
+> **Duplication is usually cheaper than the wrong abstraction.**
+
+Removing every syntactic duplication prematurely can produce abstractions that are harder to understand than the original code.
+
+### Types of duplication
+
+|Type|Description|
+|---|---|
+|**Code**|The same implementation appears in different places.|
+|**Logic**|The same behavior is implemented independently.|
+|**Knowledge**|The same business rule exists in multiple places.|
+|**Data**|The same information is stored redundantly.|
+
+DRY is mostly concerned with duplication of **knowledge**.
+
+### DRY and coupling
+
+Removing duplication can reduce maintenance, but it can also increase coupling. If two modules have a similar function (`calculatePrice(...)`) and their rules evolve independently, extracting it into a shared library ties them to the same abstraction — a small local duplication can be the better architectural decision.
+
+Before abstracting, it's worth asking:
+
+> **Do these pieces really represent the same knowledge, and should they evolve together?**
+
+## YAGNI — You Aren't Gonna Need It
+
+YAGNI advises against implementing features before there's a concrete requirement that justifies them.
+
+If an API today needs to support:
+
+```text
+POST /orders
+GET /orders/{id}
+```
+
+also building `PATCH`, `DELETE`, batch operations, versioned orders, scheduled orders, and import/export "because they might be needed" adds code and maintenance without solving any current problem.
+
+> **Implement what you need, not what you assume you might need.**
+
+### Why premature features are expensive
+
+Every extra capability brings code to maintain, tests, documentation, security considerations, operational complexity, and compatibility constraints. And once something is part of a public API, taking it out is expensive: there are already consumers depending on it.
+
+### YAGNI and extensibility
+
+YAGNI doesn't mean a system should never be designed with change in mind. There's a difference between **designing for change** and **implementing hypothetical features**. Creating an abstraction around an external dependency we already know might change is justified. Creating five implementations for hypothetical providers isn't.
+
+The idea is to keep an architecture that **can evolve without implementing imaginary requirements**.
+
+### YAGNI doesn't mean ignoring known risks
+
+Some decisions made up front are justified:
+
+- known regulatory requirements
+- scalability limits you've already identified
+- explicit security requirements
+- infrastructure constraints
+- compatibility with known external systems
+- architecture decisions that are expensive to change later
+
+The key is telling **real uncertainty** apart from **speculation**.
+
+## Separation of concerns
+
+**Separation of concerns** (SoC) organizes software so that different concerns can change without dragging the others along. A concern is an axis of the system with its own reason to change: persistence, presentation, business rules, notifications.
+
+An HTTP controller that concentrates request parsing, validation, business rules, database queries, payment processing, email notifications, and response formatting ends up with multiple responsibilities and dependencies. A cleaner separation:
+
+<MermaidDiagram code={`flowchart TD
+    A[Controller] --> B[Application service]
+    B --> C[Domain logic]
+    C --> D[Repository]`} />
+
+Each component deals with a different concern.
+
+### Why the separation matters
+
+That separation cuts down the reasons a change has to touch a component. A database change shouldn't force you to rewrite business rules; a change to the response JSON shouldn't mean touching the domain; adding a payment provider shouldn't rewrite the order flow. The practical effect is that the domain can be tested without HTTP or a database, and two people can work on the controller and the rules without stepping on each other.
+
+### SoC and the Single Responsibility Principle
+
+They're closely related, but they aren't the same. SoC is the general principle: separate concerns. SRP gives a more concrete test for deciding when a class or module groups responsibilities that should evolve independently — the detail is in [SOLID](/en/design/principles/solid/).
+
+### Separation doesn't mean creating more layers
+
+A common mistake is reading SoC as "every concern needs its own class", which can produce excessive fragmentation. A codebase with hundreds of tiny classes doesn't necessarily have better separation than one with fewer but more cohesive classes.
+
+The relevant question:
+
+> **Do these responsibilities have independent reasons to change?**
+
+If the answer is no, separating them only adds indirection.
+
+## Composition over inheritance
+
+This principle recommends preferring object composition to build behavior, instead of leaning heavily on inheritance hierarchies.
+
+Inheritance establishes a strong relationship between a class and its base class: the subtype inherits behavior and implementation from the supertype. Composition, by contrast, lets you build behavior out of independent components:
+
+<MermaidDiagram code={`flowchart LR
+    OS[OrderService] --> PP[PricingPolicy]
+    OS --> PAY[PaymentProcessor]
+    OS --> NS[NotificationService]
+    PAY -.implementations.-> MP[MercadoPagoProcessor]
+    PAY -.implementations.-> ST[StripeProcessor]
+    PAY -.implementations.-> PPL[PayPalProcessor]`} />
+
+```java
+public class OrderService {
+
+    private final PricingPolicy pricingPolicy;
+    private final PaymentProcessor paymentProcessor;
+
+    public OrderService(
+            PricingPolicy pricingPolicy,
+            PaymentProcessor paymentProcessor) {
+        this.pricingPolicy = pricingPolicy;
+        this.paymentProcessor = paymentProcessor;
+    }
+}
+```
+
+The behavior is assembled through dependencies instead of being coupled to a hierarchy.
+
+### Why composition is usually preferred
+
+Inheritance couples the subtype to the base class's implementation: it inherits its behavior, becomes fragile when the parent changes, and gets locked into a taxonomy that's hard to change later. Composition lets you replace components separately — an `OrderService` can take any `PaymentProcessor` without being part of a hierarchy.
+
+### Composition and reuse
+
+A historical reason for using inheritance is reusing code. But sharing an implementation doesn't necessarily mean there's a conceptual subtype relationship. Composition lets you reuse behavior without setting up an inheritance relationship, which usually produces smaller, replaceable components that are easy to test.
+
+Two patterns from the GoF catalog are this principle taken to its canonical form: [Decorator](/en/design/patterns/decorator/) adds behavior by wrapping instead of by inheriting, and [Strategy](/en/design/patterns/strategy/) swaps an algorithm by composition instead of by subclassing.
+
+### When inheritance can be the right call
+
+It isn't inherently bad. It makes sense when:
+
+- there's a genuine semantic relationship between subtype and supertype
+- the subtype honors the supertype's behavioral contract
+- the hierarchy represents a stable relationship in the domain
+- reuse isn't the only reason for using it
+
+The problem isn't inheritance itself — it's using it primarily as a mechanism for **code reuse**.
+
+## The Law of Demeter
+
+The **Law of Demeter** (LoD) is a guideline for reducing the unnecessary knowledge an object has about the internal structure of other objects: **an object should only talk to its direct collaborators.**
+
+```java
+order.getCustomer()
+     .getAddress()
+     .getCity()
+     .getCountry();
+```
+
+<MermaidDiagram code={`flowchart LR
+    Order --> Customer --> Address --> City --> Country`} />
+
+The calling code knows a large part of the internal object graph and gets coupled to several internal relationships. One alternative is to expose the behavior directly:
+
+```java
+order.getShippingCountry();
+```
+
+<MermaidDiagram code={`flowchart LR
+    Order -->|getShippingCountry| Country`} />
+
+`Order` encapsulates how it gets that information.
+
+### Why it matters
+
+Long navigation chains make code more sensitive to structural changes. If the model goes from `Customer → Address` to `Customer → Profile → Address`, all the code that navigated that structure directly can break. If access is encapsulated behind an operation on the object, the change stays localized.
+
+### The "train wreck" problem
+
+Code like `a.getB().getC().getD().doSomething()` is usually a sign of too much knowledge about internal structure. But a chain of calls isn't automatically an LoD violation: _fluent APIs_ chain operations on purpose (`query.where(...).orderBy(...).limit(...)`) because those operations are part of an API designed to be chained.
+
+The relevant question isn't how many calls are on a line, it's:
+
+> **Does this code need to know the internal structure of the objects it interacts with?**
+
+### The Law of Demeter and encapsulation
+
+An object should expose relevant behavior (`order.calculateShippingCost()`) instead of forcing other objects to reconstruct that behavior by navigating its internal state (`order.getCustomer().getAddress().getPostalCode().getRegion().getShippingRate()`). The second approach exposes too much of the model and makes callers depend on structural details.
+
+These six principles apply whatever the paradigm. [SOLID](/en/design/principles/solid/) brings together the five principles specific to object-oriented design — which lean on several of these same ideas, above all on separation of concerns.

@@ -1,0 +1,36 @@
+---
+id: user-acceptance-testing
+slug: pruebas-de-aceptacion-de-usuario-uat
+order: 9
+topic: testing
+section: test-levels
+title: "Pruebas de aceptación de usuario (UAT)"
+description: "Cumplir una especificación no garantiza que el sistema responda a las necesidades del negocio. Cómo evaluar su aceptación y quiénes participan."
+created: 2026-08-12
+lastUpdated: 2026-08-12
+---
+
+## Qué es
+
+Las **pruebas de aceptación** (UAT, de *User Acceptance Testing*) verifican que el sistema sea aceptable para sus usuarios o stakeholders de negocio. Su pregunta central no es "¿el código funciona?", sino:
+
+> ¿El sistema resuelve correctamente la necesidad de negocio?
+
+Este es exactamente el escenario de [validación](/testing/que-es-el-testing/#verificación-vs-validación): ReservaResto puede crear la reserva, cobrar la seña y bloquear la mesa de forma técnicamente impecable, y UAT puede descubrir igual que la política de no-show que implementamos —por ejemplo, cobrar el 50% de la seña pasadas 24 horas— no refleja cómo el restaurante realmente quiere manejar a un cliente que falta reiteradas veces.
+
+## Quién lo ejecuta
+
+Normalmente participan stakeholders de negocio, product owners, expertos de dominio y, en el caso de ReservaResto, los dueños o encargados de los restaurantes que van a usar el producto todos los días. Como Software Engineers podemos colaborar preparando los escenarios y la infraestructura necesaria, pero el criterio de aceptación debería representar la necesidad real del negocio, no la nuestra.
+
+## UAT vs. testing de sistema
+
+| | Pregunta |
+|---|---|
+| **Testing de sistema** | ¿El sistema completo se comporta según sus especificaciones? |
+| **UAT** | ¿Ese comportamiento es aceptable para los usuarios y el negocio? |
+
+Ambos pueden usar escenarios muy parecidos —el mismo flujo de reserva y cancelación—, pero tienen criterios de éxito distintos: uno mira la especificación, el otro mira si esa especificación era la correcta.
+
+### Del testing funcional al no funcional
+
+El testing funcional nos permite verificar que el sistema hace lo que debe hacer. Pero que el comportamiento sea correcto no alcanza para que el sistema sea adecuado en las condiciones reales de uso. [Testing de performance](/testing/testing-de-performance/) evalúa **qué tan bien cumple esas funciones**.

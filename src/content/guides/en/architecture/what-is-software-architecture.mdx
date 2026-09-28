@@ -1,0 +1,67 @@
+---
+id: what-is-software-architecture
+slug: what-is-software-architecture
+order: 1
+topic: architecture
+section: fundamentals
+title: "What is software architecture?"
+description: "How decisions about the structure of a system shape the way it evolves, and why some of them are hard to reverse."
+created: 2026-05-04
+lastUpdated: 2026-05-04
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+Designing software at scale isn't simply a matter of writing code that works. As a system grows, decisions show up about its boundaries, its dependencies, its data, its communication, its infrastructure, and how it behaves when things fail.
+
+These decisions have consequences that reach far beyond a class or an endpoint. They determine how easy the system is to change, how much traffic it can take, what happens when a dependency stops responding, how much it costs to operate, and how quickly it can evolve.
+
+## A usable definition
+
+The reference definition is the one from Bass, Clements, and Kazman in *Software Architecture in Practice*:
+
+> The software architecture of a system is the set of structures needed to reason about the system, which comprise software elements, relations among them, and properties of both.
+
+Let's unpack that, because every part of it is doing work:
+
+- **"Structures", plural.** There is no single architecture. There's a module structure, a structure of components at runtime, a deployment structure, and each one is there to reason about different questions. That's why the [article on communicating decisions](/en/architecture/how-to-communicate-architecture-decisions/) insists that each diagram answers one question and none of them answers all of them.
+- **"Relations", not just elements.** Knowing that a payments service and an orders service exist tells you nothing; what each one asks of the other, synchronously or asynchronously, is what determines how the system behaves.
+- **"Properties".** Latency, availability, consistency. These are what make a decision right or wrong *for this case*.
+- **"Reason about the system".** That's the practical test: if a decision doesn't change how you reason about the system, it probably isn't architectural.
+
+A second formulation, looser and widely quoted, comes from Ralph Johnson, popularized by Martin Fowler:
+
+> Architecture is the things that people perceive as hard to change.
+
+It isn't a rigorous definition, which is exactly why it complements the first one: it puts the focus on the **cost of reversing**. Changing the color of a button is cheap; moving from a shared database to one per service, with data in production, is not. That asymmetry is what justifies thinking before building.
+
+<Callout variant="key" title="The working test">
+Putting the two together: a decision is architectural when it **affects more than one component** and **reversing it is expensive**. If both hold, it's worth analyzing explicitly and, probably, leaving an [ADR](/en/architecture/how-to-communicate-architecture-decisions/#architecture-decision-records-adrs) behind. If it neither spans components nor is hard to reverse, you can decide and move on without that ceremony.
+</Callout>
+
+## What architecture is not
+
+Three common confusions, which this topic deliberately avoids:
+
+- **Architecture is not a list of technologies.** "Kubernetes, Kafka, and Postgres" isn't an architecture, it's an inventory. The architecture is the boundaries and the relations; technologies are how they get implemented, and they usually follow from the [architectural drivers](/en/architecture/architectural-drivers/), not the other way around.
+- **Architecture is not the same as software design.** The difference is scope. How responsibilities are split across services is architecture; how they're split across classes inside one service is [design](/en/design/principles/), and that's where [patterns](/en/design/patterns/) operate. They aren't two separate disciplines: coupling and cohesion matter at both scales.
+- **Architecture doesn't get settled before any code is written.** It's decided gradually, and revisited when the drivers that justified it change.
+
+## How this topic is organized
+
+- **[Architectural drivers: what guides architecture decisions](/en/architecture/architectural-drivers/)** — why an architecture should follow from explicit requirements and constraints, rather than from a technology picked in advance.
+- **[Domain-Driven Design (DDD)](/en/architecture/domain-driven-design/)** — how to model the business domain: bounded contexts, shared language, entities, aggregates, and domain events.
+- **[Monoliths, microservices, and SOA](/en/architecture/monoliths-microservices-and-soa/)** — how to split and deploy the system: monolith, modular monolith, microservices, and SOA, with the real trade-offs of each option.
+- **[Application architecture](/en/architecture/application-architecture/)** — how to organize the code inside each application: horizontal vs. vertical slicing, and domain-centric architectures like Hexagonal, Onion, and Clean.
+- **[Communication patterns](/en/architecture/communication-patterns/)** — synchronous vs. asynchronous, REST, gRPC, GraphQL, queues, and pub/sub.
+- **[Data architecture](/en/architecture/data-architecture/)** — data ownership, SQL vs. NoSQL, and when event sourcing makes sense.
+- **[Resilience in distributed systems](/en/architecture/resilience-in-distributed-systems/)** — timeouts, retries, circuit breaker, idempotency, bulkhead, sagas, and the rest of the mechanisms for living with partial failures.
+- **[Infrastructure and cloud architecture](/en/architecture/infrastructure-and-cloud-architecture/)** — compute, networking, regions, autoscaling, IaC, and disaster recovery.
+- **[Observability and reliability](/en/architecture/observability-and-reliability/)** — logs, metrics, and traces, and how SLIs/SLOs/SLAs turn reliability into a measurable target.
+- **[How to communicate architecture decisions](/en/architecture/how-to-communicate-architecture-decisions/)** — ADRs, UML diagrams, and the C4 model, so that an architecture doesn't only exist in the head of whoever designed it.
+
+## The example system
+
+The examples in this topic revolve around the **Payments** domain inside an e-commerce platform: the kind of system where availability, consistency, and idempotency stop being abstract concerns and become concrete requirements with consequences in real money.
+
+That platform is **AndesShop**, the same e-commerce used as an example by the [design patterns topic](/en/design/patterns/). The difference is the scale of the view: there, problems get solved inside a class; here, you decide where the boundaries between services go, who owns which data, and what happens when the payment provider doesn't respond.

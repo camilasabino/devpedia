@@ -1,0 +1,125 @@
+---
+id: proxy-pattern
+slug: proxy
+order: 16
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Proxy"
+description: "How to control access to an object through a stand-in with the same interface, and when that turns out to be useful."
+created: 2026-07-01
+lastUpdated: 2026-07-01
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Proxy** is a structural pattern that places a stand-in object in front of another one to control access.
+
+## The problem
+
+Every AndesShop product has several high-resolution photos. Loading them from cloud storage is relatively slow, and most of the time it isn't even needed: a search results list shows hundreds of products, but the user only sees a fraction of them on screen before scrolling. Loading every image up front, "just in case", wastes time and bandwidth.
+
+## The solution
+
+Proxy introduces an object that implements the same interface as the real object (`ProductImage`), but defers the expensive work until the moment it's actually needed. The client code always interacts with the same interface, with no need to know whether the real image or a stand-in that hasn't loaded it yet is on the other side.
+
+<ClassDiagram
+  caption="The structure of Proxy: the proxy shares the real object's interface and controls when it gets created. The client doesn't notice the difference."
+  diagram={`    class ProductImage {
+        <<interface>>
+        +display() String
+    }
+    class RealProductImage {
+        -url String
+        -bytes byte[]
+        +display() String
+    }
+    class LazyProductImageProxy {
+        -url String
+        -real RealProductImage
+        +display() String
+    }
+    class ProductPage {
+        -image ProductImage
+    }
+    ProductImage <|.. RealProductImage
+    ProductImage <|.. LazyProductImageProxy
+    LazyProductImageProxy --> "0..1" RealProductImage : subject
+    LazyProductImageProxy ..> RealProductImage : «create» on the first display()
+    ProductPage --> "1" ProductImage : can't tell proxy from real`}
+/>
+
+## Example in Java
+
+```java
+interface ProductImage {
+    String display();
+}
+
+// The real object: loading it is expensive
+class RealProductImage implements ProductImage {
+    private final String url;
+
+    public RealProductImage(String url) {
+        this.url = url;
+        loadFromCloudStorage(); // expensive work, happens when the object is constructed
+    }
+
+    private void loadFromCloudStorage() {
+        System.out.println("Loading image from " + url + "...");
+    }
+
+    public String display() {
+        return "Displaying image: " + url;
+    }
+}
+
+// The Proxy: defers loading until the first real use
+class LazyProductImageProxy implements ProductImage {
+    private final String url;
+    private RealProductImage real;
+
+    public LazyProductImageProxy(String url) {
+        this.url = url; // lightweight: nothing is loaded yet
+    }
+
+    public String display() {
+        if (real == null) {
+            real = new RealProductImage(url); // only here is the cost paid
+        }
+        return real.display();
+    }
+}
+```
+
+```java
+// Client code: creating the proxy is cheap, however many products are in the list
+List<ProductImage> searchResults = skus.stream()
+    .map(sku -> new LazyProductImageProxy(imageUrlFor(sku)))
+    .toList();
+
+// The real image is loaded only when the user actually sees it
+searchResults.get(0).display();
+```
+
+## When to use it
+
+- When you need to defer creating an expensive object until the moment it's actually needed (_virtual proxy_).
+- When you need to control access to an object: checking permissions before letting the call through (_protection proxy_), caching an expensive result, or talking to an object living in another process (_remote proxy_).
+
+## When to avoid it
+
+If the object isn't expensive to create and doesn't need access control, a Proxy only adds a layer of indirection with no real benefit.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The client keeps talking to the same interface: lazy loading, caching, or permissions stay behind the proxy|Adds a layer of indirection that can make the code harder to follow|
+|Defers expensive work until the first real use|The response can come with extra latency the first time the real object is resolved|
+|It also helps when the real object doesn't exist yet or lives in another process||
+
+## Relationship with other patterns
+
+- It shares its structure with **[Decorator](/en/design/patterns/decorator/)** (both wrap an object behind its same interface), but with a different intent: Decorator adds behavior, Proxy controls access.
+- It differs from **[Adapter](/en/design/patterns/adapter/)** in that Proxy keeps the same interface as the object it wraps; Adapter changes it.

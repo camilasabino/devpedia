@@ -1,0 +1,129 @@
+---
+id: memento-pattern
+slug: memento
+order: 22
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Memento"
+description: "Cómo guardar y restaurar el estado de un objeto sin exponer sus detalles internos."
+created: 2026-07-14
+lastUpdated: 2026-07-14
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+_También llamado: Snapshot_
+
+**Memento** es un patrón de comportamiento que permite guardar y restaurar el estado previo de un objeto sin exponer los detalles de su implementación.
+
+## El problema
+
+En el panel de administración, un pedido en estado borrador se puede editar varias veces antes de confirmarlo: agregar o quitar productos, cambiar la dirección, ajustar cantidades. El equipo de soporte quiere poder deshacer esas ediciones y volver a una versión anterior del borrador. Guardar el estado accediendo directamente a los campos privados de `Order` desde afuera rompe su encapsulamiento — y cualquier cambio futuro en la estructura interna de `Order` obligaría a actualizar también el código que la guarda y restaura.
+
+## La solución
+
+Memento deja la captura del estado en el propio objeto que lo posee: `Order` es quien sabe crear una foto de sí mismo (`OrderMemento`) y quien sabe restaurarse a partir de una foto anterior. El historial de borradores guarda esas fotos, pero nunca mira ni modifica su contenido — solo las pasa de un lado a otro cuando hace falta deshacer.
+
+<ClassDiagram
+  caption="Estructura de Memento: el originador crea y lee el memento; el cuidador solo lo guarda y lo devuelve, sin poder inspeccionarlo."
+  diagram={`    class Order {
+        <<originator>>
+        -items List~Item~
+        -address String
+        +save() OrderMemento
+        +restore(OrderMemento) void
+    }
+    class OrderMemento {
+        <<memento>>
+        -items List~Item~
+        -address String
+    }
+    class OrderHistory {
+        <<caretaker>>
+        -snapshots Deque~OrderMemento~
+        +push(OrderMemento) void
+        +pop() OrderMemento
+    }
+    Order ..> OrderMemento : «create»
+    OrderHistory o-- "0..*" OrderMemento : snapshots
+    note for OrderMemento "Interfaz ancha para Order, angosta para OrderHistory:\nel cuidador guarda el memento pero no puede leer su estado."`}
+/>
+
+## Ejemplo en Java
+
+```java
+// El Memento: inmutable, solo Order sabe interpretarlo
+class OrderMemento {
+    private final List<Item> items;
+    private final String address;
+
+    OrderMemento(List<Item> items, String address) {
+        this.items = List.copyOf(items);
+        this.address = address;
+    }
+}
+
+class Order {
+    private List<Item> items = new ArrayList<>();
+    private String address;
+
+    public OrderMemento save() {
+        return new OrderMemento(items, address);
+    }
+
+    public void restore(OrderMemento memento) {
+        this.items = new ArrayList<>(memento.items);
+        this.address = memento.address;
+    }
+
+    public void addItem(Item item) { items.add(item); }
+    public void setAddress(String address) { this.address = address; }
+}
+
+// El Caretaker: guarda mementos, sin mirar nunca su contenido
+class OrderHistory {
+    private final Deque<OrderMemento> snapshots = new ArrayDeque<>();
+
+    public void push(OrderMemento memento) {
+        snapshots.push(memento);
+    }
+
+    public OrderMemento pop() {
+        return snapshots.pop();
+    }
+}
+```
+
+```java
+Order draft = new Order();
+OrderHistory history = new OrderHistory();
+
+draft.addItem(jacket);
+history.push(draft.save()); // guarda el punto de partida
+
+draft.setAddress("wrong address");
+// ...si hace falta deshacer:
+draft.restore(history.pop());
+```
+
+## Cuándo usarlo
+
+- Cuando necesitás poder deshacer cambios sobre un objeto sin exponer sus detalles internos al código que gestiona el historial.
+- Cuando capturar el estado directamente desde afuera rompería el encapsulamiento del objeto.
+
+## Cuándo evitarlo
+
+Guardar mementos de objetos muy grandes o que cambian con mucha frecuencia puede consumir bastante memoria — hay que evaluar cuántas fotos se van a acumular.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Permite deshacer cambios sin romper el encapsulamiento del objeto original|Guardar muchos mementos de objetos grandes puede consumir mucha memoria|
+|El historial no necesita conocer la estructura interna del objeto que respalda|Hay que decidir explícitamente cuándo tomar cada snapshot: uno por tecla es caro; uno por "guardar" puede ser demasiado tarde||
+
+## Relación con otros patrones
+
+- Se usa a menudo junto con **[Command](/diseno/patrones/command/)** para implementar `undo()`: el Command guarda un Memento antes de ejecutarse, y lo usa para revertir.
+- Se diferencia de **[Prototype](/diseno/patrones/prototype/)** en que Memento captura estado para restaurarlo _sobre el mismo objeto_ más adelante, mientras que Prototype crea un objeto _nuevo e independiente_ a partir de uno existente.

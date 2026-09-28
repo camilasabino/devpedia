@@ -1,0 +1,30 @@
+---
+id: creational-patterns
+slug: creational-patterns
+order: 2
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Creational patterns"
+description: "The way objects are created shapes the design too. How to separate their construction from the code that uses them, and how to pick the right pattern."
+created: 2026-06-03
+lastUpdated: 2026-06-03
+---
+
+Creational patterns solve one underlying problem: **how to create objects without tying the rest of the code to concrete classes.** A `new ConcreteClass()` scattered across the whole project works until you need to change which concrete class gets created — and then you have to go hunting for every occurrence.
+
+Signs that an object creation problem is better solved with one of these patterns:
+
+- You have object creation logic duplicated or scattered across many places in the code.
+- A constructor ended up with ten parameters, most of them optional, and assembling the object correctly by hand is easy to get wrong.
+- You need the code to work with complete families of related objects (say, all the UI components for one particular operating system) without mixing pieces from different families.
+- You need to guarantee that a class has a single shared instance across the whole application.
+- Creating an object from scratch is expensive, and it would be cheaper to start from a copy of one that already exists.
+
+The five patterns in this category:
+
+- **[Factory Method](/en/design/patterns/factory-method/)** — delegates object creation to a method subclasses can override.
+- **[Abstract Factory](/en/design/patterns/abstract-factory/)** — groups several related Factory Methods to produce complete families of mutually compatible objects.
+- **[Builder](/en/design/patterns/builder/)** — splits the construction of a complex object into steps, so you can assemble different variants with the same process.
+- **[Prototype](/en/design/patterns/prototype/)** — creates new objects by cloning an existing one, without depending on its concrete classes.
+- **[Singleton](/en/design/patterns/singleton/)** — guarantees that a class has a single instance, with a global access point to it.

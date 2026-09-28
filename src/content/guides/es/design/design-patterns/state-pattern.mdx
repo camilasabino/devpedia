@@ -1,0 +1,164 @@
+---
+id: state-pattern
+slug: state
+order: 24
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "State"
+description: "Cómo organizar el comportamiento de un objeto según su estado y hacer explícitas las transiciones permitidas."
+created: 2026-07-16
+lastUpdated: 2026-07-16
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**State** es un patrón de comportamiento que permite que un objeto cambie su comportamiento cuando cambia su estado interno, dando la impresión de que cambió de clase.
+
+## El problema
+
+Un pedido de AndesShop pasa por los estados `PENDING`, `PAID`, `SHIPPED`, `DELIVERED` y `CANCELLED`, y lo que se puede hacer con él depende de en cuál esté: se puede cancelar si está `PENDING` o `PAID`, pero no si ya está `SHIPPED`; se puede marcar como enviado solo si está `PAID`. Modelar esto con un campo `status` y un condicional gigante en cada método (`cancel()`, `markAsShipped()`, etc.) que revisa en qué estado está, funciona al principio — pero cada estado nuevo obliga a revisar y actualizar todos esos condicionales, en todos los métodos, y es fácil olvidarse de uno.
+
+## La solución
+
+State extrae el comportamiento específico de cada estado a su propia clase, y todas implementan la misma interfaz. El pedido delega en su estado actual las decisiones sobre qué hacer, y es el propio objeto de estado quien decide, además, a qué estado pasar después.
+
+<ClassDiagram
+  caption="Estructura de State: cada estado implementa la misma interfaz y decide a qué estado transiciona. Las flechas punteadas son las transiciones válidas."
+  diagram={`    class Order {
+        <<context>>
+        -state OrderState
+        +cancel() void
+        +markAsPaid() void
+        +markAsShipped() void
+        ~setState(OrderState) void
+    }
+    class OrderState {
+        <<interface>>
+        +cancel(Order) void
+        +markAsPaid(Order) void
+        +markAsShipped(Order) void
+    }
+    class PendingState
+    class PaidState
+    class ShippedState
+    class DeliveredState
+    class CancelledState
+
+    Order --> "1" OrderState : state actual
+    OrderState <|.. PendingState
+    OrderState <|.. PaidState
+    OrderState <|.. ShippedState
+    OrderState <|.. DeliveredState
+    OrderState <|.. CancelledState
+    PendingState ..> PaidState : markAsPaid
+    PendingState ..> CancelledState : cancel
+    PaidState ..> ShippedState : markAsShipped
+    PaidState ..> CancelledState : cancel
+    ShippedState ..> DeliveredState : deliver`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface OrderState {
+    void cancel(Order order);
+    void markAsShipped(Order order);
+}
+
+class PendingState implements OrderState {
+    public void cancel(Order order) {
+        order.setState(new CancelledState());
+    }
+    public void markAsShipped(Order order) {
+        throw new IllegalStateException("Cannot ship an unpaid order");
+    }
+}
+
+class PaidState implements OrderState {
+    public void cancel(Order order) {
+        order.setState(new CancelledState());
+    }
+    public void markAsShipped(Order order) {
+        order.setState(new ShippedState());
+    }
+}
+
+class ShippedState implements OrderState {
+    public void cancel(Order order) {
+        throw new IllegalStateException("Cannot cancel a shipped order");
+    }
+    public void markAsShipped(Order order) {
+        throw new IllegalStateException("Already shipped");
+    }
+}
+
+class CancelledState implements OrderState {
+    public void cancel(Order order) {
+        throw new IllegalStateException("Already cancelled");
+    }
+    public void markAsShipped(Order order) {
+        throw new IllegalStateException("Cannot ship a cancelled order");
+    }
+}
+
+class Order {
+    private OrderState state = new PendingState();
+
+    // Package-private a propósito: la transición la disparan los propios estados,
+    // que viven en este paquete. Si fuera pública, cualquier cliente podría poner
+    // un pedido en SHIPPED sin pasar por PaidState, rompiendo la invariante que
+    // este patrón busca preservar.
+    void setState(OrderState state) { this.state = state; }
+
+    public void cancel() { state.cancel(this); }
+    public void markAsShipped() { state.markAsShipped(this); }
+}
+```
+
+```java
+Order order = new Order();
+order.markAsShipped(); // lanza excepción: todavía está PENDING
+```
+
+## Cuándo usarlo
+
+- Cuando el comportamiento de un objeto cambia según su estado interno, y ese comportamiento involucra varios métodos que necesitan chequear el mismo campo de estado.
+- Cuando hay tantos estados y transiciones que un único condicional, repartido en varios métodos, se vuelve difícil de mantener.
+
+## Cuándo evitarlo
+
+Con dos o tres estados que se comportan casi igual, un enum con un condicional simple suele ser más directo que una clase por estado.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Elimina condicionales grandes repartidos en varios métodos|Puede ser excesivo si hay pocos estados y poca diferencia de comportamiento entre ellos|
+|Cada estado vive en su propia clase: el comportamiento de `SHIPPED` se lee y se cambia sin tocar el de `PENDING`|Agrega una clase nueva por cada estado|
+|Las transiciones quedan explícitas, en vez de escondidas en asignaciones sueltas de un campo||
+
+## Relación con otros patrones
+
+- Es la forma orientada a objetos de proteger las transiciones válidas de un agregado. El [tema de arquitectura](/arquitectura/domain-driven-design/) llama *invariante* justamente a lo que acá impide que un pedido enviado se cancele.
+- Se implementa de forma muy similar a **[Strategy](/diseno/patrones/strategy/)** — ambos delegan comportamiento a un objeto intercambiable — pero con intención distinta: Strategy lo elige el código cliente; State lo cambian los propios objetos de estado entre sí, según transiciones internas.
+
+<Callout variant="note" title="La alternativa que conviene considerar primero">
+Si hay pocos estados y las transiciones son simples, un `enum` con una tabla de transiciones permitidas suele ser más directo — y se puede leer entero de una vez:
+
+```java
+enum OrderStatus {
+    PENDING(Set.of("PAID", "CANCELLED")),
+    PAID(Set.of("SHIPPED", "CANCELLED")),
+    SHIPPED(Set.of("DELIVERED")),
+    DELIVERED(Set.of()),
+    CANCELLED(Set.of());
+
+    private final Set<String> allowedNext;
+    // ...
+}
+```
+
+State gana cuando cada estado además **hace cosas distintas** (calcula un reembolso distinto, notifica a otra gente), no solo cuando restringe transiciones. Si lo único que varía es qué transición es válida, la tabla alcanza.
+</Callout>

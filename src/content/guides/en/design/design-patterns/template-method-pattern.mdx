@@ -1,0 +1,140 @@
+---
+id: template-method-pattern
+slug: template-method
+order: 26
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Template Method"
+description: "How to define an algorithm's sequence in a base class and let subclasses adapt specific steps."
+created: 2026-07-21
+lastUpdated: 2026-07-21
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**Template Method** is a behavioral pattern that defines an algorithm's skeleton in a base class, delegating the implementation of some of its steps to subclasses.
+
+## The problem
+
+AndesShop generates several kinds of internal report: a daily sales report, an inventory report, a returns report. All three follow the same general sequence — fetch the data, build a header, format the body, add a footer with totals, and export it — but each one fetches and formats different data. If every report type implements that complete sequence on its own, the shared steps (header, export, overall structure) end up duplicated in each report class, and a change to that shared structure has to be replicated in all of them.
+
+## The solution
+
+Template Method defines the complete algorithm once, in a base class, as a fixed sequence of method calls — some already implemented (the shared steps), others abstract (the steps that vary). Each concrete subclass only implements the steps that are its own; the order and the overall structure stay fixed in the base class and can't be altered by accident.
+
+<ClassDiagram
+  caption="The structure of Template Method: the base class fixes the skeleton in a final method and delegates only the variable steps."
+  diagram={`    class ReportGenerator {
+        <<abstract>>
+        +generate() String
+        #fetchData() List~Row~*
+        #formatBody(List~Row~) String*
+        #buildHeader() String
+        #buildFooter() String
+    }
+    class DailySalesReport {
+        #fetchData() List~Row~
+        #formatBody(List~Row~) String
+    }
+    class InventoryReport {
+        #fetchData() List~Row~
+        #formatBody(List~Row~) String
+        #buildFooter() String
+    }
+    ReportGenerator <|-- DailySalesReport
+    ReportGenerator <|-- InventoryReport
+    note for ReportGenerator "generate() is the template method: it's final and fixes the order.\nThe italicized methods are abstract; buildHeader and buildFooter are hooks with defaults."`}
+/>
+
+## Example in Java
+
+```java
+abstract class ReportGenerator {
+    // The Template Method: it fixes the sequence, subclasses can't reorder it
+    public final String generate() {
+        StringBuilder report = new StringBuilder();
+        report.append(buildHeader());
+        report.append(formatBody(fetchData()));
+        report.append(buildFooter());
+        return report.toString();
+    }
+
+    protected abstract List<?> fetchData();
+    protected abstract String formatBody(List<?> data);
+
+    // Shared steps, already resolved in the base class
+    protected String buildHeader() { return "=== AndesShop Report ===\n"; }
+    protected String buildFooter() { return "=== End of report ===\n"; }
+}
+
+class DailySalesReport extends ReportGenerator {
+    private final SalesRepository salesRepository;
+
+    public DailySalesReport(SalesRepository salesRepository) {
+        this.salesRepository = salesRepository;
+    }
+
+    protected List<?> fetchData() {
+        return salesRepository.findForToday();
+    }
+    protected String formatBody(List<?> data) {
+        return "Sales today: " + data.size() + " orders\n";
+    }
+}
+
+class InventoryReport extends ReportGenerator {
+    private final InventoryRepository inventoryRepository;
+
+    public InventoryReport(InventoryRepository inventoryRepository) {
+        this.inventoryRepository = inventoryRepository;
+    }
+
+    protected List<?> fetchData() {
+        return inventoryRepository.findLowStock();
+    }
+    protected String formatBody(List<?> data) {
+        return "Low stock items: " + data.size() + "\n";
+    }
+}
+```
+
+```java
+ReportGenerator report = new DailySalesReport(salesRepository);
+System.out.println(report.generate()); // header + its own body + footer, always in that order
+```
+
+## When to use it
+
+- When several classes implement an algorithm with the same general structure but differ in specific steps.
+- When you want to control exactly where in the algorithm subclasses can introduce variations, without giving them control over the whole sequence.
+
+## When to avoid it
+
+If the variants don't genuinely share a sequence, forcing them into the same skeleton ends in abstract methods that are empty or irrelevant in some subclasses.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The shared steps (header, export, order) live once in the base class|Subclasses are tied to the fixed structure the base class defines|
+|The overall flow reads in one piece in `generate()`, instead of scattered across each report|As the hierarchy grows, you have to jump between the base and several subclasses to understand one report|
+|A new variant only implements the abstract steps; it doesn't rewrite the sequence||
+
+## Relationship with other patterns
+
+- It frequently leans on **[Factory Method](/en/design/patterns/factory-method/)** as one of its abstract steps.
+- It shares with **[Strategy](/en/design/patterns/strategy/)** the goal of varying part of a behavior, but does it with inheritance instead of composition — Strategy is usually preferred when the algorithm has to change at runtime.
+
+<Callout variant="key" title="The Template Method goes final">
+This is the rule that defines the pattern, and the one most often omitted. If a subclass can override `generate()`, it can change the order of the steps or skip one — and then the base class no longer guarantees anything about the algorithm. In Java that's expressed with `final`; the equivalent in other languages is not leaving that method as an extension point.
+
+The flip side is that the steps that **are** meant to be redefined should be `protected`, not `public`: they're extension points for subclasses, not part of the API the client consumes.
+</Callout>
+
+<Callout variant="note" title="Template Method or Strategy">
+Both let you vary part of an algorithm. Template Method does it with **inheritance**, at compile time: the variant is chosen by choosing the subclass, and only what the base left abstract can vary. [Strategy](/en/design/patterns/strategy/) does it with **composition**, at runtime: the object can change strategy while it lives.
+
+Because of the bias toward [composition over inheritance](/en/design/principles/general-design-principles/#composition-over-inheritance), Strategy is usually the default choice. Template Method is still better when there are many steps, they're tightly bound to each other, and the order has to stay fixed in one place.
+</Callout>

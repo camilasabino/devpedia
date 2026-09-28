@@ -1,0 +1,101 @@
+---
+id: what-are-design-patterns
+slug: que-son-los-patrones-de-diseno
+order: 1
+topic: design
+subtopic: design-patterns
+title: "¿Qué son los patrones de diseño?"
+description: "Qué hace que una solución sea un patrón de diseño, cómo se organiza el catálogo clásico y por qué cada patrón necesita adaptarse al problema."
+created: 2026-06-02
+lastUpdated: 2026-06-02
+---
+
+import Icon from '../../../../../../../src/components/Icon.astro';
+
+Un patrón de diseño es una solución reutilizable a un problema que aparece una y otra vez al diseñar software. No es un algoritmo (una receta exacta de pasos) ni una librería (código que se importa y usa tal cual), sino algo intermedio: una forma de estructurar clases y objetos que resuelve un problema recurrente, y que hay que adaptar a cada caso concreto. Nadie "instala" el patrón Observer; se implementa, con nombres y detalles propios de cada proyecto, siguiendo una forma general que ya se sabe que funciona.
+
+Esa forma general no salió de la nada: en 1994, cuatro autores —conocidos desde entonces como la "Gang of Four" (GoF)— publicaron un catálogo de 23 patrones que habían observado repetirse en sistemas orientados a objetos bien diseñados. Ese catálogo, con ligeras variaciones, sigue siendo la referencia estándar.
+
+## Por qué vale la pena conocerlos
+
+- **Son soluciones ya probadas.** Cuando usás un patrón conocido, no estás inventando una solución nueva a un problema de diseño — estás aplicando algo que ya se validó en miles de proyectos distintos. Eso reduce el margen de error en decisiones que, mal tomadas, salen caras de revertir más adelante.
+- **Dan un vocabulario común.** Decir "esto necesita un Strategy" comunica en tres palabras una intención de diseño completa a otro developer que conozca el catálogo. Sin ese vocabulario, la misma idea requiere explicar la estructura entera cada vez.
+- **Facilitan un cambio futuro sin tocar el código que ya funciona.** La mayoría de los patrones existen para que un tipo de cambio (agregar un nuevo tipo de producto, un nuevo formato de exportación, una nueva regla de negocio) se resuelva agregando código nuevo, no modificando el que ya funciona y ya fue probado.
+
+## No todos los problemas necesitan un patrón
+
+Los patrones no son un objetivo en sí mismos. Meter un patrón donde no hace falta agrega indirección, archivos y capas que después alguien tiene que entender — a veces la solución más simple es directamente no usar ningún patrón. La pregunta útil no es "¿puedo usar un patrón acá?" sino "¿este problema concreto ya lo resolvió alguien de una forma reconocible?". Los artículos de cada patrón incluyen una sección de cuándo conviene y cuándo no, justamente para eso.
+
+## Las tres categorías
+
+El catálogo se organiza en tres grupos, según qué tipo de problema resuelven:
+
+<div className="grid gap-4 sm:grid-cols-3">
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-violet-400">
+      <Icon name="layers" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">Creacionales</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">Cómo se crean los objetos.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Factory Method</li>
+      <li>Abstract Factory</li>
+      <li>Builder</li>
+      <li>Prototype</li>
+      <li>Singleton</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-sky-400">
+      <Icon name="layout" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">Estructurales</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">Cómo se ensamblan objetos en estructuras más grandes.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Adapter</li>
+      <li>Bridge</li>
+      <li>Composite</li>
+      <li>Decorator</li>
+      <li>Facade</li>
+      <li>Flyweight</li>
+      <li>Proxy</li>
+    </ul>
+  </div>
+  <div className="card-surface p-5">
+    <div className="mb-3 flex items-center gap-2 text-fuchsia-400">
+      <Icon name="radar" class="h-4 w-4" />
+      <p className="font-mono text-xs uppercase tracking-wide">De comportamiento</p>
+    </div>
+    <p className="text-sm leading-relaxed text-neutral-300 light:text-neutral-600">Cómo se reparten responsabilidades y se comunican los objetos.</p>
+    <ul className="mt-3 space-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
+      <li>Chain of Responsibility</li>
+      <li>Command</li>
+      <li>Interpreter</li>
+      <li>Iterator</li>
+      <li>Mediator</li>
+      <li>Memento</li>
+      <li>Observer</li>
+      <li>State</li>
+      <li>Strategy</li>
+      <li>Template Method</li>
+      <li>Visitor</li>
+    </ul>
+  </div>
+</div>
+
+- **[Patrones creacionales](/diseno/patrones/patrones-creacionales/)** — tienen que ver con _cómo_ se crean los objetos, para no atar el código a clases concretas.
+- **[Patrones estructurales](/diseno/patrones/patrones-estructurales/)** — tienen que ver con cómo se combinan clases y objetos en estructuras más grandes, manteniéndolas flexibles y eficientes.
+- **[Patrones de comportamiento](/diseno/patrones/patrones-de-comportamiento/)** — tienen que ver con cómo se reparten responsabilidades entre objetos y cómo se comunican entre sí.
+- **[Patrones de diseño que suelen confundirse](/diseno/patrones/patrones-que-suelen-confundirse/)** — algunos patrones tienen estructuras parecidas, pero resuelven problemas distintos: qué los diferencia y cómo reconocer cuándo usar cada uno.
+
+## El dominio de los ejemplos
+
+Los ejemplos de código de este tema están en Java, y casi todos comparten un mismo caso ficticio: **AndesShop**, un e-commerce de indumentaria y equipo de trekking que va creciendo y se encuentra con problemas de diseño distintos a medida que suma features.
+
+AndesShop es el mismo negocio cuyo módulo de pagos usa como ejemplo el [tema de arquitectura de software](/arquitectura/): allá se lo mira desde afuera, decidiendo los límites entre servicios (boundaries), qué datos comparte cada uno y cómo se comunican; acá se lo mira desde adentro de una clase. Es deliberado: los patrones de diseño y las decisiones de arquitectura operan sobre el mismo sistema, en escalas distintas.
+
+## Relación con los principios de diseño
+
+Un patrón no es una alternativa a los [principios de diseño](/diseno/principios/), es una aplicación concreta de varios de ellos a la vez. Strategy es [Open/Closed](/diseno/principios/solid/#o--openclosed-principle) hecho estructura; Decorator es [composición sobre herencia](/diseno/principios/principios-generales-de-diseno/#composición-sobre-herencia) llevada al límite; casi todos empujan la dependencia hacia una abstracción, que es [inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle).
+
+Por eso conviene leer los principios antes que el catálogo: los patrones se entienden mucho mejor cuando ya se sabe qué tensión de diseño están resolviendo.

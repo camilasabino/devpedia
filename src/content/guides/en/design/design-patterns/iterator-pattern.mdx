@@ -1,0 +1,129 @@
+---
+id: iterator-pattern
+slug: iterator
+order: 20
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Iterator"
+description: "How to traverse a collection without exposing its internal structure or coupling the traversal to a concrete implementation."
+created: 2026-07-09
+lastUpdated: 2026-07-09
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Iterator** is a behavioral pattern that lets you traverse the elements of a collection without exposing its internal representation.
+
+## The problem
+
+AndesShop's catalog starts out storing products in a simple `List`. Over time, to speed up searches by category, it's reorganized internally into a tree of categories; and for the seasonal featured catalog, an additional structure ordered by popularity is maintained. If the code that walks the catalog depends on it always being a `List` (using indices, for instance), every change to the internal structure breaks all the code that traverses it.
+
+## The solution
+
+Iterator extracts the traversal logic into a separate object that exposes a simple, uniform interface (`hasNext()` / `next()`) regardless of how the collection is organized inside. The client code traverses through the iterator and never touches the internal structure directly — so that structure can change without the traversing code ever finding out.
+
+<ClassDiagram
+  caption="The structure of Iterator: the aggregate knows how to create its iterator, and the client traverses without knowing the collection's internal structure."
+  diagram={`    class ProductCollection {
+        <<interface · aggregate>>
+        +createIterator() ProductIterator
+    }
+    class CatalogTree {
+        -root Category
+        +createIterator() ProductIterator
+    }
+    class ProductIterator {
+        <<interface>>
+        +hasNext() boolean
+        +next() Product
+    }
+    class CatalogTreeIterator {
+        -pending Deque~CatalogNode~
+        +hasNext() boolean
+        +next() Product
+    }
+    class StockReport {
+        <<client>>
+    }
+    ProductCollection <|.. CatalogTree
+    ProductIterator <|.. CatalogTreeIterator
+    CatalogTree ..> CatalogTreeIterator : «create»
+    CatalogTreeIterator --> "1" CatalogTree : traverses
+    StockReport ..> ProductCollection
+    StockReport ..> ProductIterator`}
+/>
+
+## Example in Java
+
+```java
+// Java already defines this interface in java.util.Iterator — here the mechanism is shown
+interface ProductIterator {
+    boolean hasNext();
+    Product next();
+}
+
+// The traversal knows the internal structure (a tree), the client doesn't.
+// It walks level by level (breadth-first): that's why it uses queues (Queue) all
+// the way through, instead of a stack — mixing stack semantics (push/pop) with a
+// bulk operation like addAll usually ends in a traversal order different from the
+// one the variable names suggest.
+class CatalogTreeIterator implements ProductIterator {
+    private final Queue<Category> pendingCategories = new LinkedList<>();
+    private final Queue<Product> buffer = new LinkedList<>();
+
+    public CatalogTreeIterator(Category root) {
+        pendingCategories.offer(root);
+        advance();
+    }
+
+    private void advance() {
+        while (buffer.isEmpty() && !pendingCategories.isEmpty()) {
+            Category current = pendingCategories.poll();
+            buffer.addAll(current.getDirectProducts());
+            pendingCategories.addAll(current.getSubcategories());
+        }
+    }
+
+    public boolean hasNext() {
+        return !buffer.isEmpty();
+    }
+
+    public Product next() {
+        Product product = buffer.poll();
+        advance();
+        return product;
+    }
+}
+```
+
+```java
+// Client code: it traverses without knowing there's a tree inside
+ProductIterator iterator = new CatalogTreeIterator(trekkingCategory);
+while (iterator.hasNext()) {
+    Product product = iterator.next();
+    System.out.println(product.getName());
+}
+```
+
+## When to use it
+
+- When your collection has a complex internal structure (trees, graphs, combined collections) and you want to hide it from code that only needs to walk it.
+- When you need several different ways to traverse the same collection (by category, by popularity, by price) without cluttering the collection's class with each of them.
+
+## When to avoid it
+
+A simple collection (a flat list, say) that's already traversed fine with the language's standard tools doesn't need an iterator of its own.
+
+## Benefits and drawbacks
+
+|Benefits|Drawbacks|
+|---|---|
+|The traversing code doesn't break when the catalog goes from a list to a tree|It can be overkill for simple collections the language's own tools already handle|
+|Several different traversals (by category, by popularity) over the same collection at once|Each new kind of traversal means a new iterator class|
+|A tree, a list, or an ordered structure are all traversed with the same `hasNext()` / `next()` interface||
+
+## Relationship with other patterns
+
+- It's used alongside **[Composite](/en/design/patterns/composite/)** to traverse tree structures without exposing their internal levels.
+- **[Memento](/en/design/patterns/memento/)** is sometimes combined with Iterator to capture and restore the exact point of a traversal.

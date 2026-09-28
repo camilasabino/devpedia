@@ -1,0 +1,143 @@
+---
+id: observer-pattern
+slug: observer
+order: 23
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Observer"
+description: "Cómo notificar cambios a los objetos suscriptos sin depender de sus clases concretas y qué implica esa relación para el diseño."
+created: 2026-07-15
+lastUpdated: 2026-07-15
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+_También llamado: Listener_
+
+**Observer** es un patrón de comportamiento que hace que, cuando un objeto cambia, todos los que dependen de él se enteren — sin que el que cambia tenga que conocerlos uno por uno.
+
+## El problema
+
+Cuando un producto de AndesShop que estaba agotado vuelve a tener stock, varias cosas tienen que reaccionar: hay que avisarle a cada usuario que se anotó en la lista de "avisame cuando esté disponible", hay que actualizar el índice de búsqueda para que el producto vuelva a aparecer en los resultados, y hay que refrescar la caché de recomendaciones. Si el código que actualiza el stock llama directamente a cada uno de esos tres procesos, cada vez que se agregue un cuarto proceso interesado en ese evento (por ejemplo, analytics) hay que volver a modificar esa misma función — que termina sabiendo demasiado sobre quién más necesita enterarse de un cambio de stock.
+
+## La solución
+
+Observer invierte esa dependencia: el objeto que cambia (`Product`) no conoce a quienes están interesados en sus cambios. En cambio, mantiene una lista de "observadores" que se suscriben a sus eventos, y simplemente les avisa a todos cuando ocurre algo relevante. Sumar un interesado nuevo es agregarlo a la lista de suscriptores, sin tocar el código de `Product`.
+
+<ClassDiagram
+  caption="Estructura de Observer: el sujeto mantiene una lista de observadores y les avisa sin conocer sus clases concretas. `unsubscribe` no es opcional."
+  diagram={`    class StockSubject {
+        <<abstract · subject>>
+        -observers List~StockObserver~
+        +subscribe(StockObserver) void
+        +unsubscribe(StockObserver) void
+        #notifyObservers() void
+    }
+    class Product {
+        -sku String
+        -stock int
+        +setStock(int) void
+    }
+    class StockObserver {
+        <<interface>>
+        +onBackInStock(Product) void
+    }
+    class WaitlistNotifier {
+        +onBackInStock(Product) void
+    }
+    class SearchIndexUpdater {
+        +onBackInStock(Product) void
+    }
+    StockSubject <|-- Product
+    StockSubject --> "0..*" StockObserver : observers
+    StockObserver <|.. WaitlistNotifier
+    StockObserver <|.. SearchIndexUpdater`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface StockObserver {
+    void onBackInStock(Product product);
+}
+
+class Product {
+    private final List<StockObserver> observers = new ArrayList<>();
+    private int stock;
+
+    public void subscribe(StockObserver observer) {
+        observers.add(observer);
+    }
+
+    public void setStock(int newStock) {
+        boolean wasOutOfStock = this.stock == 0;
+        this.stock = newStock;
+        if (wasOutOfStock && newStock > 0) {
+            for (StockObserver observer : observers) {
+                observer.onBackInStock(this);
+            }
+        }
+    }
+}
+
+class WaitlistNotifier implements StockObserver {
+    public void onBackInStock(Product product) {
+        System.out.println("Notifying waitlist for " + product);
+    }
+}
+
+class SearchIndexUpdater implements StockObserver {
+    public void onBackInStock(Product product) {
+        System.out.println("Re-indexing " + product + " for search");
+    }
+}
+```
+
+```java
+// Client code: sumar un interesado nuevo no toca la clase Product
+Product jacket = new Product();
+jacket.subscribe(new WaitlistNotifier());
+jacket.subscribe(new SearchIndexUpdater());
+
+jacket.setStock(10); // dispara ambas reacciones, sin que Product las conozca
+```
+
+## Cuándo usarlo
+
+- Cuando un cambio en un objeto necesita disparar reacciones en un número variable de otros objetos, que se conocen recién en tiempo de ejecución.
+- Cuando querés evitar que el objeto que cambia dependa directamente de todos los que reaccionan a su cambio.
+
+## Cuándo evitarlo
+
+Si el orden en que se notifica a los observadores importa y es rígido, o si necesitás la garantía de que la notificación se procesó antes de continuar, un Observer en memoria puede no alcanzar: el orden no está garantizado y un observador que falla puede cortar el resto. En esos casos conviene una cola de mensajes, o llamar a los interesados de forma explícita.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|`Product` no nombra a la lista de espera, al índice ni a las recomendaciones|El orden de notificación entre observadores no siempre es predecible ni controlable|
+|La lista de suscriptores se arma y se desarma en tiempo de ejecución|Un observador que falla puede afectar a los demás si no se maneja con cuidado|
+|Un interesado nuevo (analytics) se suma sin tocar `Product`|Si hay muchos observadores encadenados entre sí, rastrear el flujo completo de reacciones se vuelve difícil||
+
+## Relación con otros patrones
+
+- **[Mediator](/diseno/patrones/mediator/)** también reduce el acoplamiento entre objetos, pero centraliza _toda_ la coordinación; Observer solo notifica eventos de uno a muchos, sin que el emisor decida cómo reaccionan.
+- Es la base conceptual detrás de mecanismos de eventos y de programación reactiva más generales.
+
+<Callout variant="warning" title="unsubscribe no es opcional">
+El método que más seguido falta en una implementación de Observer es el que da de baja. Un sujeto de vida larga que mantiene referencias a observadores que ya nadie usa los deja vivos para siempre: es la fuga de memoria clásica del patrón, conocida como *lapsed listener*.
+
+```java
+public void unsubscribe(StockObserver observer) {
+    observers.remove(observer);
+}
+```
+
+Si el ciclo de vida del observador es más corto que el del sujeto —un componente de UI, un request— hay que darlo de baja explícitamente, o usar referencias débiles. Y si `notifyObservers()` recorre la lista mientras un observador se da de baja durante la notificación, hace falta iterar sobre una copia para no fallar con `ConcurrentModificationException`.
+</Callout>
+
+<Callout variant="note" title="Observer ≠ pub/sub">
+    Observer ocurre dentro de un mismo proceso, de forma síncrona y con referencias directas; [pub/sub](/arquitectura/patrones-de-comunicacion/#asíncrona) funciona entre procesos, de forma asíncrona y con un broker intermedio.
+</Callout>

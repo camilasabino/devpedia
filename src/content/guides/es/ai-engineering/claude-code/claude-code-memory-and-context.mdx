@@ -1,0 +1,154 @@
+---
+id: claude-code-memory-and-context
+slug: memoria-y-contexto
+order: 4
+topic: ai-engineering
+subtopic: claude-code
+section: context-and-control
+title: "Memoria y contexto"
+description: "Cómo organizar las instrucciones del proyecto en CLAUDE.md y reglas específicas para aportar contexto útil sin sobrecargar la sesión."
+created: 2026-08-27
+lastUpdated: 2026-09-10
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+<Callout variant="warning" title="Contenido verificado al 10/09/2026">
+Claude Code cambia rápido. Todo lo de este artículo está contrastado con la [documentación oficial de memoria](https://code.claude.com/docs/en/memory) a esa fecha; si algo no coincide con lo que ves en tu versión, la documentación manda.
+</Callout>
+
+## Los dos sistemas de memoria
+
+Claude Code tiene **dos** mecanismos de memoria, complementarios, y los dos se cargan al inicio de cada sesión. No son alternativas: resuelven cosas distintas.
+
+| | Archivos `CLAUDE.md` | Auto memory |
+|---|---|---|
+| Quién lo escribe | Vos | Claude |
+| Qué contiene | Instrucciones y reglas | Aprendizajes y preferencias que te vio corregir |
+| Alcance | Proyecto, usuario u organización | Por repositorio |
+| Se usa para | Convenciones, comandos, arquitectura del proyecto | Tus preferencias y contexto que no se deduce del código |
+
+**`CLAUDE.md`** es el manual de onboarding que escribís vos. Se carga desde el directorio actual y desde todos los de arriba, y los archivos se acumulan en vez de pisarse. Sus ubicaciones, de alcance más amplio a más específico:
+
+| Alcance | Ubicación |
+|---|---|
+| Política administrada (organización) | `/Library/Application Support/ClaudeCode/CLAUDE.md` en macOS |
+| Usuario | `~/.claude/CLAUDE.md` |
+| Proyecto | `./CLAUDE.md` o `./.claude/CLAUDE.md` |
+| Local, sin commitear | `./CLAUDE.local.md` (agregalo a `.gitignore`) |
+
+**Auto memory** son las notas que Claude escribe solo, a partir de tus correcciones. Vive en `~/.claude/projects/<proyecto>/memory/`, con un índice `MEMORY.md` y un archivo por tema. Guarda cuatro tipos de nota, marcados en el frontmatter con el campo `type`: `user` (tu rol y cómo trabajás), `feedback` (correcciones que le diste), `project` (decisiones y trabajo en curso que no se deducen del código) y `reference` (dónde encontrar información fuera del proyecto).
+
+Está activada por defecto. Se prende y apaga con el comando `/memory`, o con `autoMemoryEnabled` en `settings.json`. Del índice `MEMORY.md` se cargan las primeras 200 líneas o 25 KB, lo que se alcance primero; los archivos por tema los lee bajo demanda.
+
+<Callout variant="note" title="No compiten entre sí">
+Es tentador pensar que tener las dos sobrecarga el contexto, pero están pensadas para convivir: Claude descarta explícitamente lo que ya dice tu `CLAUDE.md` y lo que puede deducir del código. Si notás repetición entre ambas, la solución es revisar el contenido, no apagar una.
+</Callout>
+
+## Cómo escribir un buen CLAUDE.md
+
+Todo lo que ponés en `CLAUDE.md` consume tokens de la ventana de contexto en **cada** interacción. Un archivo inflado no solo desperdicia presupuesto: reduce la calidad de las respuestas, porque Claude tiene más instrucciones que compiten por su atención y las sigue de forma menos consistente.
+
+**Regla simple:** incluí solo lo que causaría errores si faltara. Todo lo demás es ruido.
+
+**Tamaño de referencia:** apuntá a un máximo de ~200 líneas. Si crece más, es señal de que necesitás dividir con reglas modulares (`.claude/rules/`, ver más abajo) o con importaciones `@`.
+
+**Qué sí incluir:**
+
+- Comandos exactos de build, test y lint (Claude los va a ejecutar literalmente).
+- Decisiones de arquitectura que afectan cómo se escribe el código.
+- Convenciones de código específicas del proyecto.
+- Variables de entorno y servicios requeridos.
+- Trampas comunes o patrones que Claude debe evitar.
+- Estructura de monorepo: qué paquete es responsable de qué.
+
+**Qué no incluir:**
+
+- Cosas que Claude ya sabe (sintaxis estándar, APIs comunes).
+- Recordatorios obvios ("escribí código limpio").
+- Guías de estilo extensas que ya aplica un linter.
+- Documentación completa de APIs externas (mejor referenciarlas con `@`).
+
+> **Nunca le pidas a un LLM que haga el trabajo de un linter.** Los LLMs son costosos y lentos comparados con ESLint o Prettier. Si el código ya sigue una guía de estilo, Claude tiende a respetar los patrones existentes por aprendizaje en contexto, sin que haga falta indicárselo. Para lo que un linter no cubre — o para forzar el formato siempre, sin depender de que el modelo lo infiera — conviene un Hook que corra el formatter automáticamente ([Skills, subagentes y hooks](/ai-engineering/claude-code/skills-subagentes-y-hooks/)).
+
+**Cómo escribir las reglas:**
+
+```markdown
+# ❌ Mal (sugerencia, no verificable)
+- Estaría bueno manejar bien los errores de negocio
+- Preferimos que los controllers no tengan lógica de negocio
+
+# ✅ Bien (imperativo, específico, verificable)
+- Los errores de negocio se lanzan como `AppError({ code, status })`,
+  nunca `throw new Error(...)` genérico
+- Los controllers solo parsean el request y llaman al service — la
+  lógica de negocio vive únicamente en services/
+- Los archivos de test van junto al módulo que testean, con sufijo
+  `.test.ts`
+- Las rutas de la API van en src/routes/, un archivo por recurso
+```
+
+Usá `IMPORTANT` o `YOU MUST` con moderación: reservalos para 2-3 reglas críticas cuyo incumplimiento genera problemas graves. Si marcás diez reglas como IMPORTANT, Claude deja de tratarlas como excepción.
+
+```markdown
+- IMPORTANT: Nunca reprocesés ni canceles un pago manualmente desde
+  el código. Los reembolsos pasan siempre por el servicio de pagos,
+  nunca con un UPDATE directo a la tabla.
+- YOU MUST ejecutar `npm run lint:fix` antes de dar un cambio
+  por terminado.
+```
+
+## Reglas modulares con `.claude/rules/`
+
+Cuando `CLAUDE.md` se vuelve muy grande, dividilo en archivos temáticos dentro de `.claude/rules/` (a nivel proyecto o global). Cada archivo puede restringirse a ciertos directorios o extensiones usando **patrones glob**, así solo se carga cuando es relevante para lo que estás tocando.
+
+## Sintaxis de patrones glob
+
+Un glob es una plantilla con comodines que se compara con una ruta de archivo: o encaja, o no encaja. No es una regex — el punto `.` es literal y no hay cuantificadores como `+` o `{3,5}`.
+
+| Símbolo | Significa | Ejemplo |
+|---|---|---|
+| `*` | Cualquier texto **dentro de un mismo tramo** de ruta (no cruza `/`) | `*.ts` → `index.ts`, no `src/index.ts` |
+| `**` | Cualquier texto, **atravesando** directorios | `src/**/*.ts` → cualquier `.ts` en `src`, a cualquier profundidad |
+| `?` | Exactamente un carácter | `v?.md` → `v1.md`, no `v10.md` |
+| `[abc]` / `[a-z]` | Un carácter dentro de un conjunto o rango | `[0-9].txt` → `0.txt` a `9.txt` |
+| `[!abc]` | Un carácter que **no** está en el conjunto | `[!_]*.js` → excluye los que empiezan con `_` |
+| `{a,b}` | Alternativas (funciona como un OR) | `*.{js,ts}` → `app.js` o `app.ts` |
+| `!patrón` | Excluye rutas ya incluidas — **soportado según la herramienta**, no en el campo `paths` de las reglas | `!**/*.test.ts` |
+
+**Ejemplos que vas a usar seguido:**
+
+```yaml
+---
+paths:
+  - "src/**/*.{jsx,tsx}"                     # componentes React en src
+  - "db/migrations/[0-9][0-9][0-9][0-9]_*.sql"  # migraciones numeradas
+  - "**/__tests__/**"                        # cualquier cosa dentro de un __tests__
+---
+```
+
+<Callout variant="warning" title="Cuidado con las llaves">
+Cada grupo `{a,b}` multiplica la cantidad de patrones expandidos: `{a,b}/{c,d}/*.{ts,tsx}` son ocho. La lista `paths` de una regla comparte un presupuesto de 1.000 patrones expandidos; si lo supera, el patrón se usa sin expandir y sus llaves literales no coinciden con ningún archivo.
+</Callout>
+
+**Errores típicos:**
+
+1. **Confundir `*` con `**`.** `src/*.ts` no cubre subcarpetas; para eso necesitás `src/**/*.ts`.
+2. **`**` mal aislado.** `src**/foo` no funciona como globstar; tiene que ir solo entre barras: `src/**/foo`.
+3. **Pensar que son regex.** `app.js` en un glob es exactamente `app.js`, punto literal incluido.
+4. **Olvidar los archivos ocultos.** `.env`, `.gitignore` suelen quedar fuera de patrones genéricos como `*.json`; si los querés incluir, sé explícito con `.*` o `**/.*`.
+
+Estos mismos globs se usan en tres lugares de Claude Code: el campo `paths` de las reglas de `.claude/rules/`, las reglas de permisos ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)) y el campo `paths` de una skill ([Skills, subagentes y hooks](/ai-engineering/claude-code/skills-subagentes-y-hooks/)) — aprenderlos una vez alcanza para los tres.
+
+## Ver y editar la memoria
+
+El comando **`/memory`** lista tus archivos `CLAUDE.md` y `CLAUDE.local.md` por scope, permite abrirlos en el editor, prender o apagar auto memory, y abrir la carpeta de memoria automática. Para verificar qué se cargó **realmente** en la sesión actual, el comando es `/context`, que muestra los archivos bajo **Memory files**.
+
+Dos cosas que conviene saber:
+
+- **`AGENTS.md` no se lee.** Claude Code lee `CLAUDE.md`. Si el repo ya usa `AGENTS.md` para otros agentes, la solución recomendada es un `CLAUDE.md` que lo importe con `@AGENTS.md` y agregue debajo lo específico de Claude.
+- **En monorepos**, `claudeMdExcludes` permite saltear los `CLAUDE.md` de otros equipos que quedan en el árbol de directorios por encima del tuyo.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener noreferrer">referencia oficial de memoria y CLAUDE.md</a>.
+</p>

@@ -1,0 +1,94 @@
+---
+id: claude-code-commands-and-shortcuts
+slug: comandos-y-atajos-esenciales
+order: 3
+topic: ai-engineering
+subtopic: claude-code
+section: getting-started
+title: "Comandos y atajos esenciales"
+description: "Comandos y atajos para el trabajo cotidiano con Claude Code, junto con criterios para elegir el modelo según la tarea."
+created: 2026-08-25
+lastUpdated: 2026-09-10
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+<Callout variant="warning" title="Contenido verificado al 10/09/2026">
+El set de comandos cambia entre versiones. Todo lo de acá está contrastado con la [referencia oficial de comandos](https://code.claude.com/docs/en/commands) a esa fecha. Ante una diferencia, la documentación manda.
+</Callout>
+
+Esta es la referencia rápida: los comandos y atajos de uso más frecuente, agrupados por lo que resuelven.
+
+## Gestión de contexto
+
+| Comando | Qué hace |
+|---|---|
+| `/compact` | Resume el historial de la conversación para liberar espacio, sin perder el hilo de lo que estás haciendo. |
+| `/clear` | Borra todo el historial y arranca de cero. Usalo cuando cambiás de tarea por completo. |
+| `/context` | Te muestra qué está ocupando tu ventana de contexto — útil para decidir si conviene compactar. |
+
+## Planificación y control de cambios
+
+| Comando | Qué hace |
+|---|---|
+| `/plan` | Modo en el que Claude explora y arma un plan sin tocar tu código todavía. Ideal antes de una tarea grande. |
+| `/diff` | Muestra los cambios hechos, para revisarlos de un vistazo antes de commitear. |
+| `/rewind` (o doble `Esc Esc`) | Deshace cambios de código y de conversación, volviendo a un punto anterior. Útil cuando el enfoque actual no sirve y conviene volver atrás. |
+
+## Permisos
+
+| Comando / atajo | Qué hace |
+|---|---|
+| `/permissions` | Abre el panel para ver y editar qué comandos/herramientas están permitidos, denegados o requieren confirmación. |
+| `Shift+Tab` | Rota entre los modos de permiso sin escribir nada (ver [Permisos en Claude Code](/ai-engineering/claude-code/permisos/)). |
+
+## Trabajo diario / repo
+
+| Comando | Qué hace |
+|---|---|
+| `/init` | Genera un `CLAUDE.md` inicial analizando tu repo. Ideal al arrancar un proyecto nuevo. |
+| `/memory` | Lista y abre tus archivos de memoria, y prende o apaga auto memory. Ver [Memoria y contexto](/ai-engineering/claude-code/memoria-y-contexto/). |
+| `/agents` | Gestiona subagentes: crearlos, editarlos, invocarlos. |
+| `/mcp` | Ver y gestionar los servidores MCP conectados. |
+| `/security-review` | Corre una revisión de seguridad sobre los cambios de tu rama actual. Ver [Seguridad al trabajar con Claude Code](/ai-engineering/claude-code/seguridad/). |
+
+<Callout variant="note" title="`/commit` no es un comando nativo">
+Aparece en muchos tutoriales, pero no está en la referencia oficial: es un comando que definís vos —o que trae un plugin instalado— como skill en `.claude/skills/commit/SKILL.md`. Vale la pena armarlo, justamente porque el mensaje de commit conviene que siga las convenciones de tu equipo. Solo hay que saber que sale de tu configuración y no de la instalación base. Ver [Skills, subagentes y hooks](/ai-engineering/claude-code/skills-subagentes-y-hooks/).
+</Callout>
+
+## Modelo y rendimiento
+
+| Comando | Qué hace |
+|---|---|
+| `/model` | Cambia entre modelos (Sonnet, Opus, Haiku) según la complejidad de la tarea. |
+| `/effort` | Ajusta cuánto "piensa" el modelo antes de responder (`low` a `xhigh`, más `max` y `auto`) — más esfuerzo ayuda en debugging complejo, pero gasta más cuota. |
+
+### Cómo elegir modelo según la tarea
+
+`/model` acepta alias (`haiku`, `sonnet`, `opus`) que siempre resuelven a la última versión de esa familia — es la forma más estable de referirte a un modelo en `settings.json` o en un subagente, porque no se rompe cada vez que Anthropic saca una versión nueva. La lógica para elegir entre familias se mantiene aunque las versiones concretas cambien:
+
+- **Haiku** → pensalo para tareas de alta frecuencia y bajo riesgo: exploración rápida de archivos, lint, subagentes que corren en loop, o cuando estás por chocar contra tu límite de uso. No lo uses para decisiones de arquitectura ni para debugging de una causa raíz no obvia.
+- **Sonnet** → el default razonable para el 80% del trabajo diario: implementar features, refactors acotados, escribir tests. Es el punto de partida hasta que tengas una razón concreta para cambiar.
+- **Opus** → reservalo para problemas donde el costo de una mala decisión es alto: diseño de arquitectura, un bug que ya resistió un par de intentos, revisión de seguridad. Evitalo en tareas repetitivas o de bajo riesgo — es el modelo más caro y lento de los tres.
+
+Hay dos ejes independientes entre sí que conviene no confundir: **el modelo** (qué tan capaz es) y **el `/effort`** (cuánto tiempo de razonamiento le dedica antes de responder). Podés tener Sonnet con `effort` alto para un debugging puntual sin necesidad de escalar a Opus, y es casi siempre más barato que subir de familia.
+
+Arrancá en Sonnet como default. Subí a Opus solo cuando Sonnet ya te dio una respuesta poco convincente en un problema genuinamente difícil, no de forma preventiva. Bajá a Haiku para tareas mecánicas de alto volumen — un subagente de exploración que se invoca veinte veces en la misma sesión es buen candidato.
+
+## Navegación
+
+| Comando / atajo | Qué hace |
+|---|---|
+| `/add-dir` | Le da acceso a otra carpeta además de la actual — útil en monorepos. |
+| `/cd` | Mueve la sesión a otro directorio sin perder la conversación. |
+| `@` | Adjunta un archivo específico a tu mensaje (autocompleta con el explorador de archivos). |
+| `!` | Al arrancar un mensaje con `!`, corrés un comando de shell directo, sin pasar por Claude. |
+| `Esc` | Interrumpe a Claude mientras está trabajando. |
+
+<Callout variant="key" title="El combo que más tiempo ahorra">
+Antes de arrancar una tarea grande: `/plan`, revisar el plan, salir del modo plan y ejecutar. Frenar un mal enfoque en la etapa de plan es mucho más barato que hacerlo después de que ya tocó diez archivos.
+</Callout>
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Documentación relacionada: esta es una selección curada — la <a href="https://code.claude.com/docs/en/commands" target="_blank" rel="noopener noreferrer">referencia completa de comandos</a> incluye varios más, entre ellos <code>/doctor</code>, <code>/code-review</code> y los que se agregan por SDK o por plugins instalados.
+</p>

@@ -1,0 +1,281 @@
+---
+id: domain-driven-design
+slug: domain-driven-design
+order: 3
+topic: architecture
+section: domain-and-structure
+title: "Domain-Driven Design (DDD)"
+description: "Cómo modelar el dominio para que el software refleje el negocio y cuándo vale la pena invertir en este enfoque."
+created: 2026-05-07
+lastUpdated: 2026-05-07
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Mientras que los drivers de arquitectura responden:
+
+> ¿Qué necesita el sistema y qué lo condiciona?
+
+**Domain-Driven Design** responde:
+
+> ¿Cómo entendemos y modelamos correctamente el problema de negocio?
+
+DDD propone centrar el diseño en el **dominio**: sus conceptos, sus reglas y su lenguaje.
+
+<MermaidDiagram code={`flowchart TD
+    B["Negocio"] --> D["Dominio"]
+    D --> C1["Conceptos"]
+    D --> C2["Reglas"]
+    D --> C3["Procesos"]
+    D --> C4["Relaciones"]`} />
+
+DDD tiene dos grandes dimensiones: **diseño estratégico** (*strategic design*) y **diseño táctico** (*tactical design*).
+
+## Diseño estratégico (strategic design)
+
+El diseño estratégico intenta responder:
+
+- ¿qué partes del negocio existen?
+- ¿cómo se relacionan?
+- ¿dónde están los límites?
+- ¿qué lenguaje se utiliza?
+- ¿qué partes son estratégicamente importantes?
+
+### Dominio y subdominios
+
+Imaginemos una plataforma de e-commerce:
+
+<MermaidDiagram code={`flowchart TD
+    E["E-commerce"] --> Cat["Catalog"]
+    E --> Ord["Orders"]
+    E --> Pay["Payments"]
+    E --> Inv["Inventory"]
+    E --> Ship["Shipping"]
+    E --> Cus["Customers"]`} />
+
+Cada una de estas áreas puede representar un **subdominio** (*subdomain*) diferente, y no todas tienen necesariamente la misma importancia.
+
+**Dominio core** (*Core Domain*)
+
+Es la parte donde existe una ventaja o diferenciación importante. `Payments` sería core si la plataforma tiene capacidades de procesamiento de pagos que representan una ventaja competitiva.
+
+**Dominio de soporte** (*Supporting Domain*)
+
+Necesario para el negocio, pero sin valor diferencial. Un ejemplo típico es `Inventory`.
+
+**Dominio genérico** (*Generic Domain*)
+
+Funcionalidad común, como `Authentication`.
+
+Esta clasificación ayuda a decidir dónde invertir en diseño propio y dónde apoyarse en soluciones existentes.
+
+### Bounded Context
+
+Es uno de los conceptos más importantes de DDD. Un **contexto delimitado** (*Bounded Context*) define un límite dentro del cual un modelo y su lenguaje tienen un significado específico.
+
+<MermaidDiagram code={`flowchart TD
+    E["E-commerce"] --> P["Payments"]
+    E --> O["Orders"]
+    E --> S["Shipping"]
+    P --> PC["Customer = pagador"]
+    O --> OC["Customer = comprador"]
+    S --> SC["Customer = destinatario"]`} />
+
+El término `Customer` puede existir en los tres contextos sin representar el mismo modelo en cada uno.
+
+**Bounded Context ≠ microservicio**
+
+Esta distinción es fundamental:
+
+|Concepto|Qué representa|
+|---|---|
+|Bounded Context|Límite conceptual y de dominio|
+|Microservicio|Límite de despliegue / ejecución|
+
+Un Bounded Context puede implementarse como un módulo, un límite dentro de un monolito o un microservicio. Por eso DDD no implica microservicios.
+
+### Lenguaje ubicuo (ubiquitous language)
+
+El **lenguaje ubicuo** (*ubiquitous language*) es el que el equipo y los expertos de dominio deberían compartir. En Payments:
+
+```text
+Authorize
+Capture
+Refund
+Payment
+Transaction
+Provider
+Settlement
+```
+
+La terminología debería aparecer también en el software:
+
+```text
+payment.authorize()
+payment.capture()
+payment.refund()
+```
+
+y no esconder conceptos importantes detrás de nombres genéricos como `payment.process()`, `payment.update()` o `payment.handle()` cuando esos métodos abarcan múltiples reglas de negocio.
+
+### Mapa de contextos (Context Map)
+
+Los Bounded Contexts no existen aislados. Podemos representar sus relaciones:
+
+<MermaidDiagram code={`flowchart LR
+    Pay["Payments"] -- publica --> Ord["Orders"]
+    Ord -- consume --> Inv["Inventory"]`} />
+
+DDD dispone de patrones para describir estas relaciones, como _customer/supplier_, _conformist_, _anti-corruption layer_, _shared kernel_, _open host service_ y _published language_.
+
+Un anti-corruption layer, por ejemplo, protege el modelo interno de un contexto frente a conceptos provenientes de otro sistema:
+
+<MermaidDiagram code={`flowchart LR
+    Ext["Modelo del proveedor externo"] --> ACL["Anti-Corruption Layer"] --> Our["Nuestro modelo de dominio"]`} />
+
+Es particularmente útil al integrar sistemas legacy o terceros con modelos poco alineados.
+
+## Diseño táctico (tactical design)
+
+El diseño estratégico define los límites. El diseño táctico trabaja sobre el modelo interno, con bloques de construcción como:
+
+- Entity
+- Value object
+- Aggregate
+- Aggregate root
+- Domain service
+- Domain event
+- Repository
+- Factory
+
+### Entity
+
+Tiene identidad persistente:
+
+```text
+Payment
+PaymentId = 123
+```
+
+Dos Payments pueden tener los mismos valores, pero seguir siendo entidades diferentes si tienen identidades diferentes.
+
+### Value object
+
+Se define por sus valores:
+
+```text
+Money(100, ARS)
+Currency(ARS)
+Email(...)
+Address(...)
+```
+
+Un `Money(100, ARS)` no necesita un `MoneyId`.
+
+### Aggregate
+
+Un aggregate es una frontera dentro de la cual se protege un conjunto de invariantes.
+
+<MermaidDiagram code={`flowchart TD
+    A["Payment Aggregate"] --> P["Payment (root)"]
+    A --> PT["PaymentTransaction"]
+    A --> PM["PaymentMethod"]`} />
+
+El **aggregate root** es el punto de entrada:
+
+```text
+payment.authorize()
+payment.capture()
+payment.refund()
+```
+
+No queremos que cualquier código pueda modificar arbitrariamente `payment.status = CAPTURED`, porque podría saltarse reglas del dominio.
+
+
+Proteger esas invariantes dentro del aggregate es un problema de diseño con solución conocida: cuando lo que varía según el estado son las operaciones permitidas —un pedido enviado ya no se puede cancelar—, el [patrón State](/diseno/patrones/state/) evita que esa regla quede repartida en condicionales por todo el código.
+
+### Diseño de aggregates
+
+Una idea importante es no construir aggregates gigantes. Un aggregate debería contener aquello que necesita mantener consistencia transaccional. Podría ser tentador modelar todo como un único aggregate:
+
+<MermaidDiagram code={`flowchart TD
+    O["Order"] --> I["100 OrderItems"]
+    O --> P["Payments"]
+    O --> C["Customer"]
+    O --> S["Shipping"]
+    O --> N["Inventory"]`} />
+
+Pero eso produciría transacciones muy grandes, contención de locks, alto acoplamiento y peor escalabilidad: un cambio en envío bloquearía también pagos e inventario. DDD ayuda precisamente a preguntar:
+
+> ¿Qué cosas realmente necesitan cambiar juntas?
+
+### Domain service
+
+Existe lógica de dominio que no pertenece naturalmente a una sola entity. Por ejemplo, un `FraudDecisionService` que combina varias fuentes:
+
+<MermaidDiagram code={`flowchart LR
+    P["Payment"] --> F["FraudDecisionService"]
+    C["Customer"] --> F
+    T["TransactionHistory"] --> F
+    R["RiskPolicy"] --> F`} />
+
+No significa que todos los servicios de una aplicación deban ser domain services. Un `PaymentService` con veinte responsabilidades suele ser una señal de que el modelo de dominio no expresa las reglas con suficiente claridad.
+
+### Domain events
+
+Un domain event expresa un hecho —`PaymentAuthorized`, `PaymentCaptured`, `PaymentRefunded`— y no una orden como `CapturePayment`.
+
+<MermaidDiagram code={`flowchart LR
+    C["Payment.capture()"] --> E["PaymentCaptured"]
+    E --> O["Orders"]
+    E --> N["Notifications"]
+    E --> A["Analytics"]`} />
+
+Los domain events conectan DDD con los patrones de comunicación dirigidos por eventos (*event-driven*), pero no implican por sí mismos que necesitemos Kafka o microservicios.
+
+### Repository
+
+Un repository abstrae la persistencia de un aggregate. `PaymentRepository` podría implementarse como `PostgresPaymentRepository`: el dominio depende de la abstracción, no de PostgreSQL. Esta idea conecta directamente con hexagonal, onion y Clean Architecture.
+
+### Factory
+
+Una _factory_ puede encapsular una creación compleja, como `Payment.create(...)`, si para crear un Payment hay que validar múltiples condiciones o garantizar invariantes. Para objetos triviales como `new Money(100, ARS)`, introducir una factory puede ser innecesario.
+
+### Ejemplo integrado
+
+<MermaidDiagram code={`flowchart TD
+    BC["Payments Bounded Context"] --> Dom["Domain"]
+    BC --> App["Application"]
+    Dom --> P["Payment"]
+    Dom --> PID["PaymentId"]
+    Dom --> M["Money"]
+    Dom --> PT["PaymentTransaction"]
+    Dom --> Repo["PaymentRepository"]
+    Dom --> DE["Domain Events"]
+    DE --> DE1["PaymentAuthorized"]
+    DE --> DE2["PaymentCaptured"]
+    App --> A1["AuthorizePayment"]
+    App --> A2["CapturePayment"]
+    App --> A3["RefundPayment"]`} />
+
+**Cuándo DDD es especialmente útil**
+
+- dominios complejos;
+- muchas reglas de negocio;
+- terminología ambigua;
+- equipos grandes;
+- múltiples subdominios;
+- sistemas que evolucionarán durante años.
+
+**Cuándo no hace falta usar todo DDD**
+
+Para un CRUD muy simple (`Users`, `Products`, `Categories`), crear aggregates, domain services, factories y mapas de contexto para cada operación puede introducir más ceremonia que valor. DDD es sobre todo una herramienta para lidiar con la **complejidad del dominio**, no una checklist.
+
+**Herramientas y tecnologías**
+
+DDD no requiere una tecnología específica. Puede implementarse con Java + Spring, C# + .NET, Kotlin, TypeScript, Go o Python. Lo importante es el modelo, no el framework.
+
+**Referencias**
+
+- Eric Evans sentó las bases de Domain-Driven Design en *Domain-Driven Design: Tackling Complexity in the Heart of Software*.
+- [Microsoft Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/microservices/model/microservice-boundaries) presenta cómo utilizar Bounded Contexts y principios de Domain-Driven Design para definir límites de microservicios.

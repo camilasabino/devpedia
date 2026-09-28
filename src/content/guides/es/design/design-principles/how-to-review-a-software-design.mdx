@@ -1,0 +1,59 @@
+---
+id: how-to-review-a-software-design
+slug: como-revisar-un-diseno-de-software
+order: 4
+topic: design
+subtopic: design-principles
+title: "Cómo revisar un diseño de software"
+description: "Preguntas prácticas para detectar complejidad innecesaria, responsabilidades poco claras y dependencias que dificultan los cambios."
+created: 2026-06-01
+lastUpdated: 2026-06-01
+---
+
+Al diseñar o revisar un componente, estas preguntas ayudan a aplicar los [principios generales](/diseno/principios/principios-generales-de-diseno/) y [SOLID](/diseno/principios/solid/) sin caer en la sobreingeniería. Están agrupadas por síntoma, no por principio: una misma pregunta puede disparar KISS y YAGNI a la vez.
+
+## Complejidad (KISS)
+
+- ¿Esta abstracción justifica su costo — más archivos, más indirección — con un problema que hoy existe?
+- ¿Podría implementar el requisito de forma más simple?
+- ¿El patrón usado resuelve un problema real o solo hace que el diseño parezca más sofisticado?
+
+## Duplicación (DRY)
+
+- ¿El código duplicado representa realmente el mismo conocimiento?
+- ¿Estas piezas deberían evolucionar juntas?
+- ¿Eliminar la duplicación aumentaría el acoplamiento?
+
+## Requisitos futuros (YAGNI)
+
+- ¿Esta feature hace falta realmente?
+- ¿Estamos resolviendo un problema conocido o uno hipotético?
+- ¿El costo de prepararlo ahora es menor que el costo esperado de cambiarlo después?
+
+## Responsabilidades (SoC / SRP)
+
+- ¿Este componente tiene múltiples razones independientes para cambiar?
+- ¿Separarlas mejora realmente la cohesión o solo agrega indirección?
+
+## Acoplamiento (composición, Demeter)
+
+- ¿Este componente depende de detalles internos de otro?
+- ¿Estamos navegando un grafo de objetos que debería estar encapsulado?
+- ¿La herencia está ocultando un acoplamiento que la composición dejaría visible?
+
+## Contratos y sustitución (LSP)
+
+- ¿Puedo reemplazar esta implementación por otra sin que quien llama lo note?
+- ¿Esta implementación exige más de lo que el contrato promete, o entrega menos?
+
+## Interfaces (ISP)
+
+- ¿Los consumidores de esta interfaz usan realmente todos sus métodos?
+- ¿Existen implementaciones que lanzan excepciones en métodos que no les corresponden?
+
+## Dirección de dependencias (DIP)
+
+- ¿La lógica de negocio depende de un detalle de infraestructura concreto?
+- ¿Podría invertir esa dependencia sin introducir una abstracción prematura?
+
+> Ninguna de estas preguntas tiene una respuesta universal. El objetivo no es marcar todos los casilleros, sino tener el vocabulario para justificar una decisión de diseño: reconocer cuándo una abstracción está resolviendo un problema real y cuándo solo está ahí porque "es lo que corresponde".

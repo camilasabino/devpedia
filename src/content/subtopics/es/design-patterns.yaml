@@ -1,0 +1,18 @@
+id: design-patterns
+slug: patrones
+order: 2
+topic: design
+title: Patrones
+description: >-
+  Soluciones a problemas recurrentes de diseño: cómo funcionan,
+  cuándo aplicarlas y cuándo conviene una alternativa más simple.
+icon: layers
+sections:
+  - id: creational
+    title: Patrones creacionales
+  - id: structural
+    title: Patrones estructurales
+  - id: behavioral
+    title: Patrones de comportamiento
+  - id: reference
+    title: Comparaciones y referencia

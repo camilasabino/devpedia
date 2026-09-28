@@ -1,0 +1,48 @@
+---
+id: integration-testing
+slug: testing-de-integracion
+order: 7
+topic: testing
+section: test-levels
+title: "Testing de integración"
+description: "Qué problemas aparecen al conectar componentes y cómo probar esas interacciones más allá de los tests unitarios."
+created: 2026-08-07
+lastUpdated: 2026-08-07
+---
+
+## Qué es
+
+El testing de integración verifica que dos o más componentes funcionen correctamente cuando interactúan entre sí. El foco cambia respecto del unit test:
+
+```text
+Unitario:     ¿este componente se comporta correctamente?
+Integración:  ¿estos componentes interactúan correctamente?
+```
+
+En ReservaResto, un caso natural es `ReservationService` contra PostgreSQL:
+
+```text
+Crear reserva → Persistir (ReservationService) → PostgreSQL (test container) → Leer reserva → Verificar resultado esperado
+```
+
+Acá la base de datos es real —aislada en un entorno de test o en un container—, a diferencia del [test unitario](/testing/que-es-un-test-unitario/), donde esa dependencia estaba reemplazada por un [doble de test](/testing/dobles-de-test/).
+
+## Qué problemas detecta
+
+Los tests de integración son particularmente buenos para encontrar errores que los unit tests no pueden ver: SQL incorrecto, mapeos de ORM mal configurados, problemas de serialización/deserialización, límites transaccionales mal definidos, schemas que no coinciden, problemas de configuración, o fallos al integrarse con un broker de mensajes (por ejemplo, si ReservaResto publica un evento `reservation.created` para que `NotificationService` lo consuma).
+
+Un unit test puede demostrar que el código arma correctamente un objeto `Reservation`. No demuestra que el ORM lo persista como esperamos.
+
+## Dobles de test vs. dependencias reales
+
+Conviene evitar la simplificación de "unit tests usan mocks, integration tests no". La pregunta correcta es otra:
+
+> ¿Qué límite queremos verificar?
+
+Si queremos verificar la interacción real con PostgreSQL, necesitamos PostgreSQL. Si lo que queremos verificar es solamente una regla de negocio, probablemente no.
+
+## Qué no detecta
+
+Un test de integración de `ReservationService` contra la base de datos no prueba que el flujo de negocio completo funcione: no prueba que la seña se cobre, que la mesa quede bloqueada para otros usuarios, ni que la confirmación efectivamente le llegue al comensal. Eso es responsabilidad del siguiente nivel: el [testing de sistema](/testing/testing-de-sistema/).
+
+Y hay un límite que ni siquiera el nivel siguiente cubre bien: si `NotificationService` es un servicio aparte con su propio ciclo de despliegue, un test de integración verifica que *tu* lado del contrato funciona, no que el otro lado siga entendiéndolo. Ese es el problema que trata la [compatibilidad hacia atrás en APIs](/testing/testing-de-compatibilidad/#compatibilidad-hacia-atrás), y la razón por la que los sistemas de [comunicación asíncrona](/arquitectura/patrones-de-comunicacion/) necesitan versionar sus eventos.

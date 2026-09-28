@@ -1,0 +1,30 @@
+---
+id: creational-patterns
+slug: patrones-creacionales
+order: 2
+topic: design
+subtopic: design-patterns
+section: creational
+title: "Patrones creacionales"
+description: "La forma de crear objetos también condiciona el diseño. Cómo separar su construcción del código que los usa y elegir el patrón adecuado."
+created: 2026-06-03
+lastUpdated: 2026-06-03
+---
+
+Los patrones creacionales resuelven un mismo problema de fondo: **cómo crear objetos sin atar el resto del código a clases concretas.** Un `new ClaseConcreta()` esparcido por todo el proyecto funciona hasta que necesitás cambiar qué clase concreta se crea — y ahí hay que salir a buscar cada aparición.
+
+Señales de que un problema de creación de objetos se resuelve mejor con uno de estos patrones:
+
+- Tenés lógica de creación de objetos duplicada o dispersa en muchos lugares del código.
+- Un constructor terminó con diez parámetros, la mayoría opcionales, y armar el objeto correctamente a mano es fácil de hacer mal.
+- Necesitás que el código funcione con familias completas de objetos relacionados entre sí (por ejemplo, todos los componentes de una UI para un sistema operativo puntual) sin mezclar piezas de familias distintas.
+- Necesitás garantizar que una clase tenga una única instancia compartida en toda la aplicación.
+- Crear un objeto desde cero es costoso, y sería más barato partir de una copia de uno que ya existe.
+
+Los cinco patrones de esta categoría:
+
+- **[Factory Method](/diseno/patrones/factory-method/)** — delega la creación de objetos a un método que las subclases pueden sobrescribir.
+- **[Abstract Factory](/diseno/patrones/abstract-factory/)** — agrupa varios Factory Methods relacionados para producir familias completas de objetos compatibles entre sí.
+- **[Builder](/diseno/patrones/builder/)** — separa la construcción de un objeto complejo en pasos, para poder armar distintas variantes con el mismo proceso.
+- **[Prototype](/diseno/patrones/prototype/)** — crea nuevos objetos clonando uno existente, sin depender de sus clases concretas.
+- **[Singleton](/diseno/patrones/singleton/)** — garantiza que una clase tenga una única instancia, con un punto de acceso global a ella.

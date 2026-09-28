@@ -1,0 +1,315 @@
+---
+id: how-to-communicate-architecture-decisions
+slug: how-to-communicate-architecture-decisions
+order: 11
+topic: architecture
+section: decisions
+title: "How to communicate architecture decisions"
+description: "How to use diagrams and architecture decision records (ADRs) to explain the structure of a system and the reasoning behind its design."
+created: 2026-05-22
+lastUpdated: 2026-05-22
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+import Callout from '../../../../components/mdx/Callout.astro';
+import UseCaseDiagram from '../../../../components/mdx/uml/UseCaseDiagram.astro';
+import ComponentDiagram from '../../../../components/mdx/uml/ComponentDiagram.astro';
+import DeploymentDiagram from '../../../../components/mdx/uml/DeploymentDiagram.astro';
+
+An architecture that only exists in one person's head is hard to review, maintain, and evolve. Architectural communication has two goals that aren't quite the same thing: **explaining the system** and **explaining the decisions**.
+
+A diagram can show `Payment Service → Kafka → Orders`, but it can't explain:
+
+> Why did we pick Kafka? What alternatives did we consider? What trade-off did we accept?
+
+For that you need to combine **diagrams, decision documents, and written context**.
+
+## Architecture decision records (ADRs)
+
+An **architecture decision record** (ADR) is a technique for capturing a single relevant decision, its context, and its consequences.
+
+Martin Fowler makes the point that an ADR should be short and focused on one concrete decision, with the context, the decision, and its implications. He also notes that writing the decision down helps surface differences of judgment and improves the team's reasoning.
+
+The term ADR was coined by Michael Nygard in 2011.
+
+**A practical template**
+
+You don't need to adopt a rigid format. A useful template might be:
+
+```markdown
+# ADR-001: Use asynchronous events for payment notifications
+
+## Status
+Accepted
+
+## Context
+Payment providers send notifications about status changes.
+The system needs to inform Orders, Analytics, and Notifications
+without coupling the provider's request to every downstream consumer.
+
+## Decision
+Payment status changes will be published as domain events
+through Kafka.
+
+## Alternatives considered
+1. Synchronous calls
+2. Queue-based processing
+3. Kafka
+
+## Trade-offs
+Benefits:
+- Multiple consumers
+- Temporal decoupling
+- Replay capability
+- High throughput
+
+Costs:
+- Eventual consistency
+- Additional infrastructure
+- Idempotent consumers
+- Event schema evolution
+
+## Consequences
+Orders can observe payment changes with a small delay.
+Consumers must be idempotent.
+Events must have versioned schemas.
+
+## Revisit when
+Reconsider this decision if:
+- the event volume changes significantly;
+- the operational complexity becomes disproportionate;
+- consumers no longer need independent processing.
+```
+
+The goal is that someone who wasn't part of the discussion can understand what was decided, why, what alternatives were considered, what trade-offs were accepted, and what consequences followed.
+
+**A decision is not an implementation**
+
+An ADR should document "use asynchronous events" and not necessarily "create the Kafka topic `payment.events` with 3 partitions and replication factor 3...". The latter belongs in a deployment or configuration document. An architecture decision should be kept at a level that stays useful even if some implementation details change.
+
+## Architecture diagrams
+
+Diagrams serve a different purpose:
+
+> **Making the structure of the system visible.**
+
+Not every diagram is there to answer the same questions. A practical taxonomy: **context, components, deployment, runtime/sequence, and data/domain**.
+
+### UML
+
+UML 2.5.1 defines a standardized language for modeling software and systems. The official specification belongs to the Object Management Group (OMG). Not every UML diagram is equally useful for architecture; the most relevant ones are:
+
+**Use case diagram**
+
+Shows which actors interact with the system and what capabilities it offers them. The notation has four pieces: actors as stick figures outside the system, use cases as ellipses inside it, a dashed rectangle marking the system boundary, and plain association lines with no arrowhead between actor and use case. Dependencies between use cases are drawn dashed with the `«include»` or `«extend»` stereotype.
+
+<UseCaseDiagram />
+
+It's for agreeing on scope, capabilities, and actors. It isn't for explaining infrastructure or ordering in time: a use case diagram says nothing about the order things happen in.
+
+**Component diagram**
+
+Represents replaceable units of software and, above all, **the contracts they connect through**. That's the part that separates a component diagram from a box-and-arrow drawing: each component declares the interfaces it provides (the circle, the "ball") and the ones it requires (the half-circle, the "socket"), and an assembly connector joins one to the other.
+
+<ComponentDiagram />
+
+Read that way, the diagram says something a bare arrow doesn't: `Checkout` doesn't depend on `Payments`, it depends on `PaymentApi`. Changing the implementation behind that interface doesn't touch `Checkout`. It's the [dependency inversion principle](/en/design/principles/solid/#d--dependency-inversion-principle), drawn.
+
+**Sequence diagram**
+
+Shows the ordering of interactions in time: participants across the top, lifelines running down, synchronous messages with a filled arrowhead and replies dashed. It's the only one of these diagrams that answers "in what order?".
+
+<MermaidDiagram
+  caption="UML sequence diagram of a payment authorization, with the alternative path for when the provider doesn't respond in time."
+  code={`sequenceDiagram
+    autonumber
+    actor Cu as Customer
+    participant Ch as Checkout
+    participant Pa as Payments
+    participant Pr as Payment Provider
+
+    Cu->>Ch: Confirm purchase
+    Ch->>Pa: authorize(orderId, amount)
+    Pa->>Pr: POST /authorizations
+    alt Provider responds within the timeout
+        Pr-->>Pa: 200 approved
+        Pa-->>Ch: AUTHORIZED
+        Ch-->>Cu: Purchase confirmed
+    else Timeout
+        Pa-->>Pa: Mark PENDING_CONFIRMATION
+        Pa-->>Ch: PENDING
+        Ch-->>Cu: "We're confirming your payment"
+        Note over Pa,Pr: Later reconciliation resolves the real status
+    end`} />
+
+It's the diagram that best exposes failure scenarios, retries, and timeouts — exactly what gets lost when a distributed flow is drawn as a chain of arrows.
+
+**Deployment diagram**
+
+Shows where each thing runs. Nodes are 3D boxes with a stereotype saying what kind they are (`«device»` for hardware or infrastructure, `«executionEnvironment»` for a runtime hosting software), deployed artifacts sit inside the node, and the lines between nodes are communication paths, ideally labeled with the protocol.
+
+<DeploymentDiagram />
+
+It's the right diagram for discussing availability, redundancy, regions, and AZs, because it makes visible what goes down when a node goes down.
+
+**Activity diagram**
+
+Represents a workflow with its branches. The notation calls for an initial node (filled circle), actions as rounded rectangles, a decision node as a diamond with the guards in square brackets, a merge node bringing the branches back together, and a final node (circle with a ring).
+
+<MermaidDiagram
+  caption="Activity diagram of the payment authorization flow, with an initial node, a decision node, a merge node, and a final node."
+  code={`flowchart TD
+    start(( )):::umlInitial --> create["Create Payment"]
+    create --> check{"Valid data?"}
+    check -- "[yes]" --> auth["Authorize"]
+    auth --> capture["Capture"]
+    check -- "[no]" --> reject["Reject"]
+    capture --> merge{ }
+    reject --> merge
+    merge --> done((( ))):::umlFinal
+    classDef umlInitial fill:#a1a1aa,stroke:#a1a1aa
+    classDef umlFinal fill:none,stroke-width:2px`} />
+
+Useful for business processes and branching logic. When the flow crosses several services, a sequence diagram usually communicates better, because it shows who talks to whom.
+
+**Class diagram**
+
+More useful for detailed design than for systems architecture, but it's the natural diagram for tactical DDD: aggregates, entities, and value objects with their attributes, operations, and multiplicities.
+
+<MermaidDiagram
+  caption="UML class diagram of the Payment aggregate, with its Money value object and its authorization attempts."
+  code={`classDiagram
+    class Payment {
+        <<aggregate root>>
+        -id PaymentId
+        -status PaymentStatus
+        -amount Money
+        +authorize(ProviderRef) void
+        +capture() void
+        +refund(Money) Refund
+    }
+    class Money {
+        <<value object>>
+        -amount BigDecimal
+        -currency Currency
+    }
+    class AuthorizationAttempt {
+        -attemptedAt Instant
+        -outcome Outcome
+    }
+    Payment *-- "1" Money : amount
+    Payment o-- "0..*" AuthorizationAttempt : attempts`} />
+
+It's the same kind of diagram the [design patterns topic](/en/design/patterns/) uses to show the structure of each pattern.
+
+### UML isn't the only option
+
+For modern systems architecture, the **C4 model** by Simon Brown is also very useful. C4 offers four levels of zoom over the same system: context, container, component, and code.
+
+The difference from a tree of boxes matters and gets confused often: **in C4, a level doesn't "point at" its children.** Each diagram shows the pieces at *that* level of abstraction and the relations between them, always labeled and with the technology annotated. Going down a level isn't following an arrow, it's opening one of the boxes.
+
+<Callout variant="warning" title="Common mistake">
+Drawing `System → Web App → API → Database` as a chain of dependencies. The Web App isn't something the system depends on: it **is** part of the system. That tree turns a containment relation into a dependency and makes the diagram unreadable.
+</Callout>
+
+**Level 1 — Context.** Who uses the system and which external systems it talks to. A single box for your own system as a whole.
+
+<MermaidDiagram
+  caption="C4 context diagram: the customer uses the e-commerce platform, which integrates with the payment provider and the email provider."
+  code={`C4Context
+    UpdateLayoutConfig($c4ShapeInRow="2")
+    Person(customer, "Customer", "Buys products and pays online")
+    System(ecommerce, "E-commerce Platform", "Catalog, orders, and payments")
+    System_Ext(provider, "Payment Provider", "Authorizes and captures card payments")
+    System_Ext(email, "Email Provider", "Delivers transactional notifications")
+
+    Rel(customer, ecommerce, "Buys and pays", "HTTPS")
+    Rel(ecommerce, provider, "Authorizes payments", "HTTPS/REST")
+    Rel(ecommerce, email, "Sends confirmations", "SMTP")`} />
+
+**Level 2 — Container.** Which deployable units make up the system, with which technology, and how they communicate with each other. The system boundary is explicit.
+
+<MermaidDiagram
+  caption="C4 container diagram: inside the system boundary, the SPA talks to the API, which uses the Payments module, PostgreSQL, and Kafka."
+  code={`C4Container
+    Person(customer, "Customer", "Buys products and pays online")
+    System_Ext(provider, "Payment Provider", "Authorizes and captures payments")
+
+    Container_Boundary(ecommerce, "E-commerce Platform") {
+        Container(spa, "Web App", "React", "Shopping and checkout interface")
+        Container(api, "API", "Java / Spring Boot", "Exposes orders, catalog, and payments")
+        Container(payments, "Payments Module", "Java", "Authorizes, captures, and refunds")
+        ContainerDb(db, "Payments DB", "PostgreSQL", "Payments and their status transitions")
+        ContainerQueue(kafka, "Event Bus", "Kafka", "Payment domain events")
+    }
+
+    Rel(customer, spa, "Uses", "HTTPS")
+    Rel(spa, api, "Calls", "JSON/HTTPS")
+    Rel(api, payments, "Invokes", "in-process")
+    Rel(payments, db, "Reads and writes", "JDBC")
+    Rel(payments, kafka, "Publishes PaymentCaptured", "Kafka protocol")
+    Rel(payments, provider, "Authorizes", "HTTPS/REST")`} />
+
+**Level 3 — Component.** What's inside a container. This is where you open up `Payments Module`, not the whole platform.
+
+<MermaidDiagram
+  caption="C4 component diagram of the Payments module: controller, domain service, provider adapter, and repository."
+  code={`C4Component
+    UpdateLayoutConfig($c4ShapeInRow="2")
+    Container_Boundary(payments, "Payments Module") {
+        Component(controller, "Payment Controller", "Spring MVC", "Translates HTTP into domain commands")
+        Component(service, "Payment Service", "Domain", "Authorization, capture, and refund rules")
+        Component(adapter, "Provider Adapter", "Infrastructure", "Translates to the provider's SDK")
+        Component(repo, "Payment Repository", "Spring Data", "Persists the Payment aggregate")
+    }
+
+    System_Ext(provider, "Payment Provider", "Authorizes payments")
+    ContainerDb(db, "Payments DB", "PostgreSQL", "Payments and status transitions")
+
+    Rel(controller, service, "Invokes")
+    Rel(service, adapter, "Authorizes via", "outbound port")
+    Rel(service, repo, "Persists with", "outbound port")
+    Rel(adapter, provider, "Calls", "HTTPS/REST")
+    Rel(repo, db, "Reads and writes", "JDBC")`} />
+
+**Level 4**, **Code**, is almost never worth drawing by hand: if you need it, a class diagram generated from the code ages better.
+
+C4 is useful precisely because it avoids the diagram that mixes business, services, classes, and infrastructure into one unreadable image. Each level has a different audience: context for the business, container for the whole team, component for whoever is about to touch that module.
+
+**Tools**
+
+Diagrams can be produced with Mermaid, PlantUML, Structurizr, diagrams.net, Lucidchart, Miro, or Excalidraw. For a technical blog, Mermaid and PlantUML have one big advantage: the diagram can live as code alongside the content.
+
+### What to communicate, and with which diagram
+
+| Question | Recommended diagram |
+|---|---|
+| What is the system and who interacts with it? | C4 context |
+| Which services or modules exist? | C4 components / containers |
+| How does a flow run? | Sequence |
+| Where does each component run? | Deployment |
+| What does the domain model look like? | Class |
+| How does a workflow work? | Activity |
+| What did we decide? | ADR |
+
+There's no such thing as a "definitive architecture diagram". Each diagram should answer one concrete question.
+
+## A complete communication example
+
+Say Payments is a [modular monolith](/en/architecture/monoliths-microservices-and-soa/) on PostgreSQL that publishes events to Kafka and integrates synchronously with external providers. Documenting it well doesn't mean drawing it five times: it means picking five artifacts that answer five different questions.
+
+| Question | Artifact |
+|---|---|
+| Who uses the system and who does it talk to? | Context diagram (C4 level 1) |
+| Which deployable pieces is it made of? | Container diagram (C4 level 2) |
+| What happens when the provider doesn't respond? | Sequence diagram with an alternative path |
+| What goes down if an AZ goes down? | Deployment diagram |
+| Why Kafka and not synchronous calls? | ADR |
+
+None of the four diagrams replaces the ADR, and the ADR replaces none of the four. The diagrams show **what** the system is; the ADR explains **why** it is that way. It's the distinction this article opens with, and it's the one most often lost: teams with impeccable diagrams and not a single line written about the alternatives they ruled out.
+
+## How to decide what to document
+
+Not every technical decision needs an architecture document. Documenting every decision indiscriminately creates noise and makes it harder to find the ones that actually explain how the system evolved.
+
+A decision deserves to be documented when it has a significant impact on the **structure, the behavior, or the evolution of the system**, especially when several reasonable alternatives exist and changing it later would be expensive.

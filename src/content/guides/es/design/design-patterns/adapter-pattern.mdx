@@ -1,0 +1,110 @@
+---
+id: adapter-pattern
+slug: adapter
+order: 10
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Adapter"
+description: "Cómo integrar componentes con interfaces incompatibles mediante un adaptador, sin modificar sus implementaciones."
+created: 2026-06-19
+lastUpdated: 2026-06-19
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+_También llamado: Wrapper_
+
+**Adapter** es un patrón estructural que permite que dos interfaces incompatibles trabajen juntas, traduciendo las llamadas de una a la otra.
+
+## El problema
+
+AndesShop suma una nueva pasarela de pagos, `GlobalPay`, para poder cobrar en Chile. El SDK que provee `GlobalPay` tiene su propia forma de hacer las cosas: un método `charge(amountInCents, currencyCode, token)` que devuelve un objeto `GlobalPayResult` propio. Pero todo el resto del sistema de checkout de AndesShop ya está escrito contra una interfaz interna, `PaymentProcessor`, con un método `pay(PaymentRequest request)` que devuelve un `PaymentResult` propio. Reescribir el checkout para hablar el idioma de `GlobalPay` rompería la integración con las otras dos pasarelas que ya funcionan; reescribir el SDK de `GlobalPay` no es una opción, porque no es código de AndesShop.
+
+## La solución
+
+Adapter crea una clase intermedia que implementa la interfaz que el resto del sistema espera (`PaymentProcessor`), y que por dentro traduce cada llamada al formato que entiende el SDK externo (`GlobalPay`). El resto del checkout nunca se entera de que, del otro lado, hay una API completamente distinta.
+
+<ClassDiagram
+  caption="Estructura de Adapter: el adapter realiza la interfaz que el cliente espera y traduce cada llamada al SDK externo."
+  diagram={`    class PaymentProcessor {
+        <<interface>>
+        +pay(PaymentRequest) PaymentResult
+    }
+    class GlobalPayAdapter {
+        -sdk GlobalPaySdk
+        +pay(PaymentRequest) PaymentResult
+    }
+    class GlobalPaySdk {
+        <<external>>
+        +charge(long, String, String) GlobalPayResult
+    }
+    class Checkout {
+        -processor PaymentProcessor
+    }
+    PaymentProcessor <|.. GlobalPayAdapter
+    GlobalPayAdapter --> "1" GlobalPaySdk : adaptee
+    Checkout --> "1" PaymentProcessor : processor`}
+/>
+
+## Ejemplo en Java
+
+```java
+// La interfaz que ya usa el resto del checkout
+interface PaymentProcessor {
+    PaymentResult pay(PaymentRequest request);
+}
+
+// El SDK externo, con su propia forma de hacer las cosas — no se puede modificar
+class GlobalPaySdk {
+    public GlobalPayResult charge(long amountInCents, String currencyCode, String token) {
+        // Llamada real a la API de GlobalPay
+        return new GlobalPayResult("APPROVED", "gp_txn_123");
+    }
+}
+
+// El Adapter: traduce entre las dos interfaces
+class GlobalPayAdapter implements PaymentProcessor {
+    private final GlobalPaySdk globalPaySdk;
+
+    public GlobalPayAdapter(GlobalPaySdk globalPaySdk) {
+        this.globalPaySdk = globalPaySdk;
+    }
+
+    @Override
+    public PaymentResult pay(PaymentRequest request) {
+        long amountInCents = Math.round(request.getAmount() * 100);
+        GlobalPayResult result = globalPaySdk.charge(amountInCents, request.getCurrency(), request.getToken());
+        return new PaymentResult(result.getStatus().equals("APPROVED"), result.getTransactionId());
+    }
+}
+```
+
+```java
+// Client code: el checkout sigue hablando siempre con PaymentProcessor
+PaymentProcessor processor = new GlobalPayAdapter(new GlobalPaySdk());
+PaymentResult result = processor.pay(request);
+```
+
+## Cuándo usarlo
+
+- Cuando querés usar una clase existente (típicamente de una librería externa) pero su interfaz no coincide con la que necesita el resto de tu código.
+- Cuando querés reutilizar varias subclases relacionadas que carecen de una funcionalidad común, sin duplicar código en cada una.
+
+## Cuándo evitarlo
+
+Si podés modificar directamente la clase con la interfaz incompatible (es código propio, no una librería de terceros), suele ser más simple ajustarla que agregar una capa de adaptación.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Separa la conversión de interfaz de la lógica de negocio: el checkout sigue hablando con `PaymentProcessor`|Aumenta la cantidad total de clases e interfaces del proyecto|
+|Permite integrar clases incompatibles sin modificar ninguna de las dos|A veces es más simple modificar la clase original, si es código propio|
+|Sigue el principio de abierto/cerrado: podés sumar adapters nuevos sin tocar el código existente||
+
+## Relación con otros patrones
+
+- Se diferencia de **[Bridge](/diseno/patrones/bridge/)** en el momento en que se aplica: Bridge se diseña de entrada para que abstracción e implementación varíen por separado; Adapter se agrega después, para hacer compatibles interfaces que ya existían y no se pensaron juntas.
+- Se diferencia de **[Facade](/diseno/patrones/facade/)** en el propósito: Adapter hace compatible una interfaz existente; Facade define una interfaz nueva y más simple sobre un subsistema.
+- **[Decorator](/diseno/patrones/decorator/)** también envuelve un objeto, pero para sumarle responsabilidades sin cambiar su interfaz — Adapter la cambia.

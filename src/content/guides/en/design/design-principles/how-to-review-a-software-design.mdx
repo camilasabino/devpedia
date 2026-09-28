@@ -1,0 +1,59 @@
+---
+id: how-to-review-a-software-design
+slug: how-to-review-a-software-design
+order: 4
+topic: design
+subtopic: design-principles
+title: "How to review a software design"
+description: "Practical questions for spotting unnecessary complexity, unclear responsibilities, and dependencies that make change harder."
+created: 2026-06-01
+lastUpdated: 2026-06-01
+---
+
+When designing or reviewing a component, these questions help you apply the [general principles](/en/design/principles/general-design-principles/) and [SOLID](/en/design/principles/solid/) without slipping into over-engineering. They're grouped by symptom, not by principle: the same question can raise KISS and YAGNI at once.
+
+## Complexity (KISS)
+
+- Does this abstraction justify its cost — more files, more indirection — with a problem that exists today?
+- Could I implement the requirement more simply?
+- Does the pattern being used solve a real problem, or does it just make the design look more sophisticated?
+
+## Duplication (DRY)
+
+- Does the duplicated code really represent the same knowledge?
+- Should these pieces evolve together?
+- Would removing the duplication increase coupling?
+
+## Future requirements (YAGNI)
+
+- Is this feature actually needed?
+- Are we solving a known problem or a hypothetical one?
+- Is the cost of preparing for it now lower than the expected cost of changing it later?
+
+## Responsibilities (SoC / SRP)
+
+- Does this component have multiple independent reasons to change?
+- Does separating them actually improve cohesion, or does it just add indirection?
+
+## Coupling (composition, Demeter)
+
+- Does this component depend on another one's internal details?
+- Are we navigating an object graph that should be encapsulated?
+- Is inheritance hiding coupling that composition would leave visible?
+
+## Contracts and substitution (LSP)
+
+- Can I replace this implementation with another one without the caller noticing?
+- Does this implementation demand more than the contract promises, or deliver less?
+
+## Interfaces (ISP)
+
+- Do the consumers of this interface actually use all of its methods?
+- Are there implementations throwing exceptions in methods that don't apply to them?
+
+## Direction of dependencies (DIP)
+
+- Does the business logic depend on a concrete infrastructure detail?
+- Could I invert that dependency without introducing a premature abstraction?
+
+> None of these questions has a universal answer. The goal isn't to tick every box, it's to have the vocabulary to justify a design decision: to recognize when an abstraction is solving a real problem and when it's only there because "that's how it's done".

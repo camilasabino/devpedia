@@ -1,0 +1,55 @@
+---
+id: performance-testing
+slug: testing-de-performance
+order: 10
+topic: testing
+section: non-functional
+title: "Testing de performance"
+description: "Cómo evaluar tiempos de respuesta y capacidad bajo distintas cargas, sin depender solo de los promedios."
+created: 2026-08-13
+lastUpdated: 2026-08-13
+---
+
+El testing no funcional evalúa atributos de calidad y características operativas del sistema. No se limita a correcto/incorrecto: pregunta qué tan rápido responde, cuánta carga soporta, qué tan seguro es, qué tan usable resulta y en qué entornos funciona.
+
+Lo que distingue un atributo de calidad útil de uno decorativo es que esté formulado de modo medible. En lugar de:
+
+> La búsqueda de disponibilidad debería ser rápida.
+
+Es mucho mejor:
+
+> El p95 de latencia de `GET /restaurants/:id/availability` debe mantenerse por debajo de 300 ms con 500 usuarios concurrentes.
+
+Esto convierte una expectativa vaga en un criterio verificable.
+
+## Qué es el testing de performance
+
+El testing de performance evalúa cómo se comporta un sistema respecto del tiempo de respuesta, throughput (solicitudes por unidad de tiempo), utilización de recursos, escalabilidad y estabilidad. Para ReservaResto, un objetivo concreto podría ser:
+
+```text
+GET /restaurants/:id/availability
+Target: p95 < 300 ms con 500 usuarios concurrentes
+Umbral de quiebre: ¿a partir de qué carga deja de cumplirse?
+```
+
+Un objetivo así tiene las tres piezas que lo vuelven verificable: **qué se mide** (p95 de latencia), **cuánto** (300 ms) y **bajo qué condiciones** (500 usuarios concurrentes). Sin la tercera, el número no significa nada: casi cualquier endpoint cumple casi cualquier latencia con un solo usuario.
+
+## Categorías principales
+
+- **Testing de carga**: evalúa el comportamiento bajo la carga esperada, por ejemplo un viernes a la noche típico.
+- **Testing de estrés**: incrementa la carga progresivamente hasta encontrar el punto de quiebre del sistema.
+- **Testing de picos**: evalúa cambios bruscos de carga, como el pico de tráfico que genera una campaña de descuentos en redes sociales.
+- **Testing de resistencia / soak**: mantiene una carga prolongada —un fin de semana largo entero— para detectar fugas de memoria (*memory leaks*), agotamiento de recursos o degradación gradual que solo aparece con el tiempo.
+
+## Qué medir
+
+No alcanza con mirar el promedio. Son especialmente importantes p50, p95, p99, throughput, CPU, memoria, utilización de la base de datos, red y profundidad de las colas. Un endpoint de ReservaResto con:
+
+```text
+average = 100 ms
+p99 = 4 segundos
+```
+
+puede parecer excelente en un dashboard superficial, y ser exactamente el motivo por el cual una parte significativa de los usuarios abandona el intento de reservar un viernes a la noche.
+
+Performance responde qué tan rápido y bajo qué carga. [Testing de seguridad](/testing/testing-de-seguridad/) pregunta qué tan expuesto está el sistema cuando alguien deja de comportarse como un usuario de buena fe.

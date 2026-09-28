@@ -1,0 +1,218 @@
+---
+id: claude-code-skills-subagents-and-hooks
+slug: skills-subagents-and-hooks
+order: 6
+topic: ai-engineering
+subtopic: claude-code
+section: extension
+title: "Skills, subagents, and hooks"
+description: "Three ways to extend Claude Code: reusing procedures, delegating tasks, and automating actions. What each one gives you and when to use it."
+created: 2026-09-01
+lastUpdated: 2026-09-01
+---
+
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+import Icon from '../../../../../../../src/components/Icon.astro';
+
+Claude Code isn't limited to answering one-off prompts: it exposes pieces that combine into repeatable workflows. It's best to read them in this order: in this article, the ones that run **inside** a session (Skills, subagents, and hooks); in [MCP](/en/ai-engineering/claude-code/mcp/), the connection to **external** tools; and in [Plugins](/en/ai-engineering/claude-code/plugins/), packaging all of the above for distribution. Skills, subagents, and hooks let you extend Claude Code in different ways.
+
+<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="layers" class="h-5 w-5 text-neutral-400 light:text-neutral-600" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">CLAUDE.md</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">Rules and persistent context</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="sparkles" class="h-5 w-5 text-accent-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Skill</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">A reusable method</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="send" class="h-5 w-5 text-violet-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Subagent</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">A specialist to delegate to</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="check" class="h-5 w-5 text-sky-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Hook</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">An automation that ALWAYS happens</p>
+  </div>
+  <div className="card-surface flex flex-col items-start gap-2 p-4">
+    <Icon name="plug" class="h-5 w-5 text-amber-400" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">MCP</p>
+    <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">A connection to external tools</p>
+  </div>
+</div>
+
+<div className="card-surface mt-3 flex flex-col gap-2 border-dashed p-4">
+  <div className="flex items-center gap-2">
+    <Icon name="briefcase" class="h-5 w-5 text-neutral-300 light:text-neutral-600" />
+    <p className="font-mono text-xs font-semibold uppercase tracking-wide text-neutral-200 light:text-neutral-700">Plugin</p>
+  </div>
+  <p className="text-xs leading-relaxed text-neutral-500 light:text-neutral-600">
+    A box that packages several of the above for distribution — it holds combinations of <strong className="text-neutral-300 light:text-neutral-700">Skill</strong>, <strong className="text-neutral-300 light:text-neutral-700">Subagent</strong>, <strong className="text-neutral-300 light:text-neutral-700">Hook</strong>, and <strong className="text-neutral-300 light:text-neutral-700">MCP</strong>.
+  </p>
+</div>
+
+## Skill vs. subagent: the underlying difference
+
+This is the most common confusion, because both specialize Claude — but not in the same way.
+
+- **A skill specializes the method.** It says: "when this kind of task comes up, follow this recipe, use these resources, this template, this validation." It's knowledge and process, packaged.
+- **A subagent specializes the doer.** It says: "hand this problem to an agent built specifically for this job." It's a role, with its own context and, often, its own tool restrictions.
+
+Quick questions for deciding:
+
+| If... | Use |
+|---|---|
+| The value is in the output format/template | **Skill** |
+| The value is in specializing a role (explore, audit security, plan) | **Subagent** |
+| You need packaged examples, templates, or scripts | **Skill** |
+| You need to keep exploration or analysis out of the main thread | **Subagent** |
+| It must always run, without depending on the model "deciding" to | **Hook** |
+| It's a short, stable project rule | **CLAUDE.md** |
+
+And in practice, combining them almost always pays off more: a subagent explores and spots patterns → a skill turns that analysis into output with a fixed format (a PRD, a post, a changelog) → a hook validates the result before the task is considered closed.
+
+## Skills: a method Claude knows to use when it applies
+
+Custom slash commands — previously defined in `.claude/commands/` — were merged with skills in recent versions: a file at `.claude/commands/deploy.md` and a skill at `.claude/skills/deploy/SKILL.md` produce the same `/deploy` and behave the same. The ones defined the old way still work.
+
+A skill lives in `.claude/skills/name/SKILL.md`, with YAML frontmatter and the body in Markdown:
+
+```yaml
+---
+name: review-pr
+description: >                    # Claude reads this to decide when to load it
+  Reviews a PR diff against the team's style and security guidelines,
+  before asking a person for a review.
+argument-hint: "[pr-number]"      # hint in the autocomplete
+disable-model-invocation: true    # it has side effects (comments on the PR): only you trigger it
+allowed-tools: Read Bash(gh pr diff *)   # pre-approved, no prompt, while it runs
+model: sonnet
+effort: medium
+context: fork                     # runs in an isolated subagent
+agent: Explore                    # which subagent it delegates to if you use context: fork
+paths: "src/**/*.ts"              # only activates when you touch these files
+---
+Markdown instructions for the body of the skill.
+$ARGUMENTS = everything following /skill-name
+${CLAUDE_SKILL_DIR} = the folder where the skill lives
+```
+
+Two fields cause confusion and are worth being clear about:
+
+- **`disable-model-invocation: true`** → _only you_ can trigger it (with `/name`); Claude will never use it on its own. Think of it for actions with side effects where timing matters: `/deploy`, `/commit`, `/send-slack-message`.
+- **`user-invocable: false`** → _only Claude_ can use it; it doesn't appear in your `/` menu. Think of it for background knowledge Claude should apply on its own, but that isn't an "action" you'd trigger by hand (e.g. the conventions of a legacy system).
+
+<Callout variant="warning" title="They're independent axes, not opposites">
+They can be combined, but putting both in the most restrictive position at once leaves the skill unreachable for everyone. Also, `user-invocable: false` is an *interface* preference (it doesn't appear in the menu), not a guarantee the model won't use it — the real control over that is `disable-model-invocation`.
+</Callout>
+
+**When to create a skill:** you repeat the same recipe often, part of your `CLAUDE.md` is already a multi-step process rather than a rule, or you want to package instructions + templates + scripts (auditing a workflow, generating a PRD, drafting posts in a fixed tone).
+
+**Two real examples from the third-party skills ecosystem:**
+
+- **`caveman`** — changes Claude's *communication style* to an ultra-compressed one (fragments instead of prose, no articles or filler) to cut output tokens without losing technical precision. It's a process skill: it doesn't touch what Claude does, only how it says it.
+- **`ui-ux-pro-max`** — packages design knowledge (product palettes, font pairings, UX guidelines, animation presets) as a queryable database, so Claude makes UI/UX decisions on solid ground instead of "inventing" a generic style. It's a domain-knowledge skill.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener noreferrer">official Skills reference</a>.
+</p>
+
+## Subagents: who to delegate a task to
+
+A subagent is defined in Markdown with its own frontmatter, and it does **not** receive Claude Code's full system prompt — only the contents of its file plus basic environment details:
+
+```yaml
+---
+name: security-auditor
+description: >                    # CRITICAL for automatic delegation
+  Reviews code changes for common vulnerabilities: injection, secrets,
+  validation, and permissions. Use proactively after any change to API
+  routes.
+tools: Read, Grep, Glob, Bash(npm audit)   # tool allowlist
+model: opus                       # sonnet | opus | haiku | inherit
+permissionMode: default
+maxTurns: 15
+memory: project                   # persistent memory across sessions
+background: false
+isolation: worktree                # isolated copy of the repo via git worktree
+---
+The subagent's system prompt, in Markdown.
+```
+
+Claude Code ships with built-in subagents like **Explore** (code search and analysis, fast model, read-only) and **Plan**. Creating your own makes sense when the task is more "specialized role" than "formatting recipe": a security reviewer, a performance analyst, an incident investigator.
+
+**Common custom subagents on a team:**
+
+| Subagent | Role |
+|---|---|
+| `code-reviewer` | Reviews a diff or PR for bugs, technical debt, and style deviations, without touching the code |
+| `debugger` | Works in isolation to reproduce a bug, form hypotheses, and confirm them with evidence before touching anything |
+| `planner` | Turns an ambiguous requirement into a step-by-step implementation plan, without writing code |
+| `test-runner` | Runs the test suite, interprets failures, and reports only what's actionable |
+| `security-auditor` | Looks for common vulnerabilities (injection, secrets, permissions) in code changes |
+| `docs-writer` | Writes or updates documentation from the code, in a fixed tone and format |
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: <a href="https://code.claude.com/docs/en/sub-agents" target="_blank" rel="noopener noreferrer">official Subagents reference</a>.
+</p>
+
+## Hooks: what has to happen no matter what
+
+A hook is a script (or HTTP endpoint, model prompt, or subagent) that fires automatically at a point in the lifecycle. The difference from `CLAUDE.md` is the key one: `CLAUDE.md` is a suggestion the model may or may not follow; a hook is **deterministic**.
+
+> If `CLAUDE.md` is a sign saying "please close the door on your way out", a hook is the mechanism that closes it by itself, every time.
+
+**The four handler types:**
+
+| Type | What it's for |
+|---|---|
+| `command` | Local scripts, quick validations, formatting, notifications |
+| `http` | Integration with external services, webhooks, team APIs |
+| `prompt` | Decisions that need semantic judgment, not a fixed rule |
+| `agent` | Complex validations that need to inspect files or code |
+
+**The events used most in professional workflows:**
+
+| Event | Fires | Typical use |
+|---|---|---|
+| `SessionStart` | When a session starts/resumes | Loading context, environment variables |
+| `UserPromptSubmit` | When a prompt is sent, before it's processed | Enriching or validating the prompt |
+| `PreToolUse` | Before a tool runs | Validate, block, or modify the input — the one most used for security |
+| `PostToolUse` | After a tool runs successfully | Lint, formatting, logging |
+| `PostToolUseFailure` | After a tool fails | Error logging, alerts |
+| `Stop` | When Claude finishes responding | Final tests, forcing it to continue |
+| `SubagentStop` | When a subagent finishes | Validating its output |
+| `Notification` | When Claude sends an alert | Desktop/Slack notifications |
+
+**Exit codes (for `command` hooks):**
+
+- **Exit 0** → success. `stdout` is parsed as JSON for control fields; on `UserPromptSubmit` and `SessionStart` it's added as context Claude can see.
+- **Exit 2** → blocking error. `stderr` is sent to Claude as an error, and it blocks the operation (on the events that support it, like `PreToolUse`, `Stop`, or `UserPromptSubmit`).
+- **Any other code** → non-blocking error. Watch out for this one: **exit code 1 does NOT block anything**, and it's a classic source of bugs. If your hook has to prevent an action, use `exit 2`.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/block-payments-writes.sh" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "npx eslint --fix $(jq -r '.tool_input.file_path')" }]
+      }
+    ]
+  }
+}
+```
+
+This is the subsystem that changes most often in Claude Code: as of September 2026 the official list is over 30 events (including `PreCompact`, `ConfigChange`, `FileChanged`, and `TaskCreated`, among more specific ones), and not all of them block through `exit 2`. Before leaning on a new hook for something critical, it's worth confirming the event's exact behavior in the [official documentation](https://code.claude.com/docs/en/hooks).
+
+Skills, subagents, and hooks specialize what happens **inside** a session. To connect Claude Code to tools that live outside your machine, the mechanism is [MCP](/en/ai-engineering/claude-code/mcp/).

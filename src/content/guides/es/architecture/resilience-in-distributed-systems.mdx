@@ -1,0 +1,209 @@
+---
+id: resilience-in-distributed-systems
+slug: resiliencia-en-sistemas-distribuidos
+order: 8
+topic: architecture
+section: operations
+title: "Resiliencia en sistemas distribuidos"
+description: "¿Cómo evitar que un fallo parcial se propague por todo el sistema? Mecanismos de resiliencia, cuándo usarlos y cuáles son sus límites."
+created: 2026-05-18
+lastUpdated: 2026-05-18
+---
+
+import MermaidDiagram from '../../../../components/mdx/MermaidDiagram.astro';
+
+Un sistema distribuido cambia por completo el modelo de fallos. En un proceso local, una función puede devolver un resultado o lanzar una excepción. En una interacción remota:
+
+<MermaidDiagram code={`flowchart LR
+    A["Service A"] --> N["Network"] --> B["Service B"]`} />
+
+puede suceder que la request nunca llegue, que llegue dos veces, que el Service B procese la operación pero la respuesta se pierda, que el Service B tarde demasiado o que solo una parte del sistema esté fallando.
+
+Un fallo parcial no se queda en el componente que falló. Si Payments espera sin límite a un proveedor caído, deja de atender checkout; si reintenta un cobro que ya se ejecutó, cobra dos veces. Los mecanismos de este artículo no evitan que algo falle: limitan el daño, hacen seguro reintentar y deciden qué se degrada cuando no se puede cumplir todo.
+
+## Timeout
+
+Un timeout (tiempo máximo de espera) evita que una dependencia bloquee recursos indefinidamente:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant P as Payment
+    participant Pr as Provider
+    P->>Pr: request
+    Note over P,Pr: ...
+    P--xPr: timeout`} />
+
+Pero:
+
+> Timeout no significa que la operación no haya ocurrido.
+
+Este detalle es crítico:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant C as Client
+    participant Pr as Provider
+    C->>Pr: charge()
+    Note over Pr: cobra la tarjeta
+    Pr--xC: respuesta perdida`} />
+
+El cliente ve un timeout. La tarjeta ya fue cobrada.
+
+## Retry
+
+Ante fallos transitorios, un reintento (*retry*) vuelve a enviar la misma operación:
+
+<MermaidDiagram code={`flowchart LR
+    R["Request"] --> F1["Fallo"] --> Rt1["Retry"] --> F2["Fallo"] --> Rt2["Retry"]`} />
+
+Un reintento robusto suele considerar backoff exponencial, jitter, cantidad máxima de intentos y un presupuesto de tiempo. Sin ese tope, un proveedor lento se convierte en una amplificación de carga: cada cliente reintenta y el proveedor recibe todavía más tráfico.
+
+**Reintento + operación no idempotente**
+
+Esto es peligroso:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant C as Client
+    participant Pr as Provider
+    C->>Pr: ChargeCard()
+    Note over C,Pr: timeout
+    C->>Pr: retry ChargeCard()
+    Note over Pr: cobrado dos veces`} />
+
+Por eso timeout, reintento e idempotencia deben diseñarse juntos.
+
+## Circuit breaker
+
+Permite dejar de enviar requests a una dependencia que está fallando:
+
+<MermaidDiagram code={`stateDiagram-v2
+    [*] --> CLOSED
+    CLOSED --> OPEN: supera el umbral de fallos
+    OPEN --> HALF_OPEN: probe tras cooldown
+    HALF_OPEN --> CLOSED: probe exitoso
+    HALF_OPEN --> OPEN: probe falla`} />
+
+Cuando está `OPEN`, el sistema puede fallar rápidamente en lugar de acumular timeouts y seguir saturando la dependencia.
+
+## Idempotencia
+
+Supongamos:
+
+```http
+POST /payments
+Idempotency-Key: abc123
+```
+
+En la primera request, el proveedor crea el payment pero la respuesta se pierde. En la segunda request, con el mismo `Idempotency-Key`, el sistema reconoce que esa operación ya fue procesada y devuelve el payment existente en lugar de crear uno nuevo:
+
+<MermaidDiagram code={`flowchart LR
+    K["Idempotency-Key: abc123"] --> E["Payment existente"]`} />
+
+Es fundamental para payments, orders, webhooks y message consumers.
+
+## Entrega al menos una vez (at-least-once)
+
+Muchos sistemas de mensajería entregan cada mensaje **al menos una vez**:
+
+<MermaidDiagram code={`sequenceDiagram
+    participant Broker
+    participant Consumer
+    Broker->>Consumer: mensaje
+    Note over Consumer: procesa
+    Note over Consumer: falla antes del ack
+    Broker->>Consumer: mensaje (reenviado)
+    Note over Consumer: mensaje duplicado`} />
+
+Por eso una estrategia práctica es combinar **entrega al menos una vez** con un **consumidor idempotente**.
+
+## Bulkhead
+
+El nombre viene de los mamparos de un barco: un compartimento inundado no debería hundir el resto. En software, se aíslan pools de recursos —conexiones, threads, semáforos— para que el fallo de un área no se lleve puesta a otra:
+
+<MermaidDiagram code={`flowchart TD
+    App["Application"] --> PP["Payment Pool"]
+    App --> OP["Order Pool"]
+    App --> NP["Notification Pool"]`} />
+
+Si Notifications se degrada, no debería consumir todos los recursos disponibles para Payments.
+
+## Rate limiting
+
+Controla el flujo *entrante* antes de que el sistema se sature:
+
+<MermaidDiagram code={`flowchart LR
+    C["Client"] --> RL["Rate Limiter"]
+    RL -->|permitido| A["Backend"]
+    RL -->|rechazado| R["429"]`} />
+
+Protege contra clientes abusivos, picos de tráfico y clientes que generan carga de más sin querer. Entre las implementaciones más conocidas están _token bucket_ y _leaky bucket_. A diferencia del load shedding, el rate limiting actúa en el borde: decide cuánto aceptar, no qué descartar cuando ya estamos saturados.
+
+## Backpressure
+
+Supongamos un producer a 20k msg/s y un consumer a 5k msg/s. La diferencia genera acumulación:
+
+<MermaidDiagram code={`flowchart LR
+    P["Producer<br/>20k msg/s"] --> Q["Queue<br/>(creciendo)"] --> C["Consumer<br/>5k msg/s"]`} />
+
+Backpressure consiste en que el consumidor o la cola frenen al productor cuando no dan abasto, en lugar de aceptar trabajo sin límite y dejar que la cola crezca sin tope.
+
+## Load shedding
+
+Cuando el sistema no puede procesar todo:
+
+<MermaidDiagram code={`flowchart TD
+    L["Carga entrante"] --> O["Sistema saturado"]
+    O -->|Crítico| Pr["Procesar"]
+    O -->|Opcional| Re["Rechazar"]`} />
+
+Es preferible rechazar algunas requests antes que permitir que todo el sistema colapse.
+
+## Cola de mensajes fallidos (DLQ)
+
+DLQ viene de *Dead Letter Queue*. Es la cola a la que van los mensajes que un consumer no pudo procesar:
+
+<MermaidDiagram code={`flowchart LR
+    Q["Queue"] --> C["Consumer"] -->|fallo + reintentos agotados| DLQ["DLQ"]`} />
+
+La DLQ permite inspeccionar mensajes, corregir problemas, reprocesarlos más tarde y evitar que un mensaje defectuoso bloquee la cola de forma permanente.
+
+## Saga
+
+Cuando una operación de negocio atraviesa varios servicios, no tenemos una única transacción ACID. Podemos implementar una Saga:
+
+<MermaidDiagram code={`flowchart LR
+    O["Create Order"] --> P["Authorize Payment"] --> I["Reserve Inventory"] --> S["Create Shipment"]`} />
+
+Si Inventory falla, se dispara una cadena de **acciones compensatorias**:
+
+<MermaidDiagram code={`flowchart LR
+    F["Reserve Inventory ✘"] --> RP["Release Payment"] --> CO["Cancel Order"]`} />
+
+## Degradación elegante (graceful degradation)
+
+No todos los componentes deberían tener el mismo nivel de criticidad:
+
+<MermaidDiagram code={`flowchart TD
+    Ch["Checkout"] --> Pay["Payment — critical"]
+    Ch --> Ord["Order — critical"]
+    Ch --> Rec["Recommendation — optional"]`} />
+
+Si Recommendations está caído, Checkout sigue disponible y solo se pierde la feature de Recommendations. La arquitectura mantiene disponible lo crítico.
+
+## Cómo analizar un fallo
+
+Un enfoque práctico es recorrer una serie de preguntas:
+
+<MermaidDiagram code={`flowchart TD
+    D["Falla la dependencia"] --> Q1["¿La request hace timeout?"]
+    Q1 --> Q2["¿Deberíamos reintentar?"]
+    Q2 --> Q3["¿Es seguro el reintento?"]
+    Q3 --> Q4["¿Debería abrirse el circuit?"]
+    Q4 --> Q5["¿Puede haber procesamiento duplicado?"]
+    Q5 --> Q6["¿Qué pasa con los mensajes en cola?"]
+    Q6 --> Q7["¿Se necesita compensación?"]
+    Q7 --> Q8["¿Qué experimenta el usuario?"]`} />
+
+**Herramientas**
+
+Dependiendo de la plataforma: Resilience4j, Envoy, Istio, AWS API Gateway, AWS SQS, Kafka, RabbitMQ, Kubernetes health probes. Las herramientas implementan mecanismos. No reemplazan el diseño de los modos de fallo.
+
+Ninguno de estos mecanismos sirve si no se verifica que funcionan. Un circuit breaker que nunca se abrió en un entorno controlado es una hipótesis, no una protección: hace falta ejercitarlo con [testing de performance](/testing/testing-de-performance/) bajo carga y con fallas inyectadas a propósito.

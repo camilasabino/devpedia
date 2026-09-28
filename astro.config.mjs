@@ -3,6 +3,12 @@ import { defineConfig, envField } from 'astro/config';
 import { loadEnv } from 'vite';
 
 import tailwindcss from '@tailwindcss/vite';
+import mdx from '@astrojs/mdx';
+
+// Code highlighting is shared with the portfolio, like the other shared primitives.
+import { jdkTypeTransformer, shikiThemeDark, shikiThemeLight } from '../src/lib/shiki-theme.ts';
+import { rehypeExternalLinks } from './src/lib/rehype-external-links.ts';
+import { rehypeGuideEnhancements } from './src/lib/rehype-guide-enhancements.ts';
 
 // Reads SITE_URL from the environment or from devpedia/.env. With an empty prefix,
 // loadEnv also returns every variable already set in the process environment. The mode
@@ -18,6 +24,10 @@ export default defineConfig({
 
   server: { port: 4322 },
 
+  // Two routes that generate the same URL fail the build instead of one silently
+  // replacing the other. Duplicate content ids are caught in src/content.config.ts.
+  prerenderConflictBehavior: 'error',
+
   env: {
     schema: {
       // Optional on purpose: when empty, no analytics script is rendered at all.
@@ -28,4 +38,18 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+
+  markdown: {
+    shikiConfig: {
+      themes: {
+        dark: shikiThemeDark,
+        light: shikiThemeLight,
+      },
+      defaultColor: 'dark',
+      transformers: [jdkTypeTransformer],
+    },
+    rehypePlugins: [rehypeExternalLinks, rehypeGuideEnhancements],
+  },
+
+  integrations: [mdx()],
 });

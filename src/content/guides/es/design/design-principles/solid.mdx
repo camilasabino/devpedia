@@ -1,0 +1,349 @@
+---
+id: solid
+slug: solid
+order: 3
+topic: design
+subtopic: design-principles
+title: "SOLID"
+description: "Cada principio busca evitar que un cambio pequeño termine exigiendo mucho trabajo. Aplicarlos a rajatabla puede agregar más complejidad de la que resuelve."
+created: 2026-05-28
+lastUpdated: 2026-05-28
+---
+
+import MermaidDiagram from '../../../../../components/mdx/MermaidDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+SOLID agrupa cinco principios para aumentar la cohesión, reducir el acoplamiento y facilitar que el sistema evolucione: **Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation** y **Dependency Inversion**.
+
+Suele presentarse como un conjunto de reglas para escribir "buen código". Esa lectura es demasiado simplista: son criterios para decidir sobre responsabilidades, abstracciones, dependencias y comportamiento. Su utilidad se ve cuando el sistema empieza a cambiar: ciertas decisiones hacen que agregar una feature nueva termine exigiendo mucho trabajo, o que un cambio pequeño obligue a modificar gran parte del codebase.
+
+Tampoco deberían aplicarse de forma mecánica: más interfaces, más clases y más abstracciones no es automáticamente una arquitectura mejor. SOLID se usa junto con los [principios generales de diseño](/diseno/principios/principios-generales-de-diseno/) — KISS, DRY, YAGNI, separación de responsabilidades y composición sobre herencia — no en lugar de ellos.
+
+## S — Single Responsibility Principle
+
+<small>(Principio de responsabilidad única)</small>
+
+> Una clase debería tener una única razón para cambiar.
+
+Esta formulación es más útil que decir simplemente que una clase debe "tener una sola responsabilidad". Lo central de SRP no es la cantidad de métodos de una clase, sino **qué fuerzas de cambio la afectan**.
+
+```java
+public class OrderService {
+
+    public void createOrder(Order order) {
+        // create order
+    }
+
+    public void sendConfirmationEmail(Order order) {
+        // send email
+    }
+
+    public byte[] generateInvoice(Order order) {
+        // generate PDF
+    }
+}
+```
+
+A primera vista todo parece relacionado con una orden, pero hay tres fuerzas de cambio independientes: la lógica de negocio puede cambiar por una nueva regla comercial, el envío de emails puede cambiar por un nuevo proveedor, y la generación de facturas puede cambiar por un nuevo formato de documento.
+
+<MermaidDiagram
+  caption="Antes: una clase acumula tres fuerzas de cambio. Después: cada fuerza de cambio tiene su propia clase."
+  code={`flowchart LR
+    subgraph antes["ANTES · una clase, tres razones para cambiar"]
+        direction TB
+        OS["OrderService"]
+        OS --- R1["Nueva regla comercial"]
+        OS --- R2["Nuevo proveedor de email"]
+        OS --- R3["Nuevo formato de factura"]
+    end
+    subgraph despues["DESPUÉS · una razón de cambio por clase"]
+        direction TB
+        A["OrderService"] --- B["Nueva regla comercial"]
+        C["EmailService"] --- D["Nuevo proveedor de email"]
+        E["InvoiceGenerator"] --- F["Nuevo formato de factura"]
+    end`} />
+
+**SRP y cohesión.** Una clase cohesiva agrupa comportamiento que pertenece al mismo concepto y tiende a cambiar en conjunto. Una clase con responsabilidades heterogéneas acumula dependencias y puede terminar convirtiéndose en un _god object_.
+
+**Pregunta práctica:** ¿puedo identificar distintos actores o fuerzas de cambio que modificarían esta clase por motivos diferentes? Si la respuesta es sí, probablemente haya una oportunidad de separar.
+
+**SRP no significa una clase por método.** Fragmentar `OrderService` en `CreateOrderService`, `ValidateOrderService`, `CalculateOrderTotalService` y `PersistOrderService` cuando todo eso es un único concepto cohesivo que siempre evoluciona junto puede agregar más complejidad que valor. El objetivo no es minimizar el tamaño de las clases — es maximizar la cohesión y aislar razones de cambio independientes.
+
+## O — Open/Closed Principle
+
+<small>(Principio abierto/cerrado)</small>
+
+> Las entidades de software deberían estar abiertas a la extensión, pero cerradas a la modificación.
+
+La idea es poder incorporar comportamiento nuevo sin modificar continuamente código estable.
+
+```java
+public void processPayment(Payment payment) {
+    if (payment.getMethod() == PaymentMethod.MERCADOPAGO) {
+        // Mercado Pago
+    } else if (payment.getMethod() == PaymentMethod.STRIPE) {
+        // Stripe
+    } else if (payment.getMethod() == PaymentMethod.PAYPAL) {
+        // PayPal
+    }
+}
+```
+
+Cada proveedor nuevo obliga a tocar esta lógica. Si representamos la variación como una abstracción:
+
+```java
+public interface PaymentProcessor {
+    void process(Payment payment);
+}
+```
+
+<MermaidDiagram
+  caption="Diagrama de clases: cada procesador concreto realiza la interfaz PaymentProcessor. Agregar uno nuevo no toca el código que la consume."
+  code={`classDiagram
+    class PaymentProcessor {
+        <<interface>>
+        +process(Payment) void
+    }
+    class MercadoPagoProcessor {
+        +process(Payment) void
+    }
+    class StripeProcessor {
+        +process(Payment) void
+    }
+    class NewProvider {
+        +process(Payment) void
+    }
+    class CheckoutService {
+        -processor PaymentProcessor
+    }
+    PaymentProcessor <|.. MercadoPagoProcessor
+    PaymentProcessor <|.. StripeProcessor
+    PaymentProcessor <|.. NewProvider : agregar no modifica nada
+    CheckoutService --> PaymentProcessor`} />
+
+<Callout variant="key" title="Hacia dónde apunta la flecha">
+La punta va **desde** la implementación **hacia** la abstracción, nunca al revés. Una flecha de `PaymentProcessor` a `StripeProcessor` diría que la interfaz conoce a sus implementaciones, que es justo lo contrario de lo que buscan OCP y DIP.
+</Callout>
+
+El código que coordina el procesamiento depende del `PaymentProcessor` sin conocer los detalles de cada proveedor. Agregar uno nuevo no requiere modificar la lógica central.
+
+**OCP y puntos de variación.** OCP no significa que una clase nunca deba modificarse — eso sería imposible. El objetivo es identificar qué partes tienen una probabilidad razonable de variar y aislar esa variabilidad ahí. Si el sistema usa un único proveedor y no hay evidencia de que vaya a cambiar, montar una arquitectura de plugins completa es una aplicación innecesaria del principio.
+
+**OCP y polimorfismo.** Suele implementarse con interfaces, polimorfismo, Strategy, inyección de dependencias, configuración o arquitecturas orientadas a eventos (*event-driven*) — pero no depende de ninguna técnica específica. Lo importante es que incorporar una variante nueva no obligue a tocar la lógica estable.
+
+**OCP no significa "agregar una interfaz a todo".** Si `UserRepository` tiene una única implementación, ninguna variación esperada y ningún límite arquitectónico que la justifique, la interfaz puede no aportar valor. OCP aporta cuando hay variabilidad real o un límite que conviene congelar; si no, la interfaz es costo sin beneficio.
+
+## L — Liskov Substitution Principle
+
+<small>(Principio de sustitución de Liskov)</small>
+
+> Los objetos de un subtipo deberían poder utilizarse donde se espera el tipo base, sin romper las garantías de ese tipo.
+
+En la práctica, un subtipo debe respetar el contrato de comportamiento de la abstracción que implementa.
+
+```java
+public interface Bird {
+    void fly();
+}
+
+public class Penguin implements Bird {
+    @Override
+    public void fly() {
+        throw new UnsupportedOperationException();
+    }
+}
+```
+
+El problema no es que un pingüino no vuele — es que `Bird` establece implícitamente una capacidad que `Penguin` no puede cumplir. Un diseño más adecuado:
+
+<MermaidDiagram
+  caption="Diagrama de clases: separar la capacidad de volar de la de ser ave, de modo que ningún subtipo herede una operación que no puede cumplir."
+  code={`classDiagram
+    class Bird {
+        <<interface>>
+        +eat() void
+        +move() void
+    }
+    class FlyingBird {
+        <<interface>>
+        +fly() void
+    }
+    class Penguin {
+        +move() void
+    }
+    class Eagle {
+        +fly() void
+    }
+    Bird <|-- FlyingBird
+    Bird <|.. Penguin
+    FlyingBird <|.. Eagle`} />
+
+```java
+public interface Bird {
+    void eat();
+}
+
+public interface FlyingBird extends Bird {
+    void fly();
+}
+```
+
+Ahora la abstracción representa capacidades que todos sus implementadores pueden cumplir.
+
+**LSP trata sobre contratos.** Una violación de LSP no implica necesariamente una implementación incorrecta — puede significar que la abstracción es incorrecta. Si `Repository.findById` forma parte del contrato y una implementación lanza `UnsupportedOperationException`, esa implementación no puede sustituir correctamente a las demás.
+
+**Las cuatro condiciones concretas.** LSP no es una intuición sobre jerarquías: Barbara Liskov y Jeannette Wing lo formularon como un conjunto de condiciones verificables sobre el contrato. Un subtipo debe cumplir las cuatro:
+
+| Condición | Qué significa | Cómo se rompe |
+|---|---|---|
+| Precondiciones no más fuertes | El subtipo no puede exigir más que el tipo base | `setQuantity(int)` acepta 1-100 en la base y solo 1-5 en el subtipo |
+| Postcondiciones no más débiles | El subtipo debe garantizar al menos lo mismo | La base garantiza que `save` deja el objeto persistido; el subtipo lo encola y puede perderlo |
+| Invariantes preservadas | Lo que siempre vale en la base sigue valiendo | La base garantiza `total >= 0`; el subtipo permite totales negativos |
+| History constraint (restricción de historia) | El subtipo no introduce mutaciones que la base no permitía | La base es inmutable y el subtipo agrega un setter |
+
+Solo la primera y la última son visibles en el tipo. Las otras dos viven en el comportamiento, y por eso LSP no se detecta con el compilador.
+
+<Callout variant="note" title="Sobre el ejemplo del pingüino">
+`Bird`/`Penguin` es el ejemplo canónico y sirve para ver el síntoma, pero en rigor ilustra un problema de **diseño de la interfaz**, muy cercano a [Interface Segregation](#i--interface-segregation-principle). Las violaciones de LSP que más daño hacen en producción son las otras: la que estrecha una precondición y la que debilita una postcondición, porque el código compila y quien llama se rompe sin haber sabido que cambió de implementación.
+</Callout>
+
+**Pregunta práctica:** ¿el código que usa el tipo base puede usar el subtipo sin saber que está trabajando con un subtipo? Si no, hay una posible violación de LSP.
+
+## I — Interface Segregation Principle
+
+<small>(Principio de segregación de interfaces)</small>
+
+> Los clientes no deberían verse obligados a depender de métodos que no utilizan.
+
+```java
+public interface Employee {
+    void work();
+    void eat();
+    void manage();
+    void generateReports();
+    void approveExpenses();
+}
+```
+
+Un empleado común no necesita `manage()`, `generateReports()` ni `approveExpenses()`. Una única interfaz obliga a cada implementación a definir métodos que quizás no usa.
+
+<MermaidDiagram
+  caption="Diagrama de clases: interfaces segregadas por capacidad. Un empleado sin gente a cargo implementa solo Worker."
+  code={`classDiagram
+    class Worker {
+        <<interface>>
+        +work() void
+    }
+    class Manager {
+        <<interface>>
+        +manage() void
+        +approveExpenses() void
+    }
+    class ReportGenerator {
+        <<interface>>
+        +generateReports() void
+    }
+    class Developer {
+        +work() void
+    }
+    class TeamLead {
+        +work() void
+        +manage() void
+        +approveExpenses() void
+        +generateReports() void
+    }
+    Worker <|.. Developer
+    Worker <|.. TeamLead
+    Manager <|.. TeamLead
+    ReportGenerator <|.. TeamLead`} />
+
+```java
+public interface Worker {
+    void work();
+}
+
+public interface Manager {
+    void manage();
+    void approveExpenses();
+}
+
+public interface ReportGenerator {
+    void generateReports();
+}
+```
+
+**El problema de las interfaces grandes.** Si se modifica `approveExpenses()`, todas las implementaciones de la interfaz pueden verse afectadas — incluso las que no tienen nada que ver con aprobar gastos. Esto suele producir implementaciones que lanzan `UnsupportedOperationException`, señal de que la abstracción agrupa responsabilidades que deberían estar separadas.
+
+**ISP y clientes.** Un `OrderRepository` con `findById`, `findAll`, `save`, `delete`, `generateReport` y `exportToCsv` obliga a un servicio que solo necesita consultar órdenes a depender de toda la interfaz. Si la separamos en `OrderReader` y `OrderWriter`, cada consumidor depende solo de la capacidad que necesita.
+
+**ISP no significa que todas las interfaces tengan que ser chicas.** Una interfaz de diez métodos no es automáticamente una violación. La cuestión es si esos métodos representan una capacidad cohesiva desde la perspectiva de los consumidores — la segregación debe responder a necesidades reales de los clientes, no a una obsesión por reducir la cantidad de métodos.
+
+## D — Dependency Inversion Principle
+
+<small>(Principio de inversión de dependencias)</small>
+
+> Los módulos de alto nivel no deberían depender de módulos de bajo nivel: ambos deberían depender de abstracciones. Las abstracciones no deberían depender de detalles; los detalles deberían depender de las abstracciones.
+
+```java
+public class OrderService {
+    private final MySqlOrderRepository repository;
+
+    public OrderService() {
+        this.repository = new MySqlOrderRepository();
+    }
+}
+```
+
+`OrderService` es lógica de alto nivel; `MySqlOrderRepository` es un detalle de infraestructura. La dependencia directa hace que el servicio conozca una decisión tecnológica específica. Si introducimos una abstracción:
+
+```java
+public interface OrderRepository {
+    Order findById(OrderId id);
+    void save(Order order);
+}
+
+public class OrderService {
+    private final OrderRepository repository;
+
+    public OrderService(OrderRepository repository) {
+        this.repository = repository;
+    }
+}
+
+public class MySqlOrderRepository implements OrderRepository {
+    // MySQL-specific implementation
+}
+```
+
+<MermaidDiagram
+  caption="Diagrama de clases: OrderService depende de la abstracción OrderRepository, y la implementación MySQL también. La dependencia hacia la infraestructura queda invertida."
+  code={`classDiagram
+    class OrderService {
+        -repository OrderRepository
+        +place(Order) void
+    }
+    class OrderRepository {
+        <<interface>>
+        +findById(OrderId) Order
+        +save(Order) void
+    }
+    class MySqlOrderRepository {
+        +findById(OrderId) Order
+        +save(Order) void
+    }
+    OrderService --> OrderRepository : depende de
+    OrderRepository <|.. MySqlOrderRepository : realiza`} />
+
+La política de alto nivel no depende del mecanismo que la implementa.
+
+**¿Por qué invertir la dependencia?** Separa la política (*policy*) del mecanismo (*mechanism*): la regla de negocio no queda atada a cómo se persiste. Se puede cambiar `MySqlOrderRepository` por `PostgresOrderRepository`, `MongoOrderRepository` o `InMemoryOrderRepository` sin tocar `OrderService`. Es especialmente útil cuando el componente de bajo nivel es volátil, externo, costoso de sustituir, difícil de testear, o una decisión de infraestructura que no debería contaminar el dominio.
+
+<Callout variant="note" title="Dependency Inversion ≠ Dependency Injection">
+    Se confunden seguido. Dependency Inversion es un principio de diseño; Dependency Injection es una técnica para proporcionar dependencias desde afuera del objeto, por ejemplo mediante constructor injection.
+
+    Frameworks como Spring facilitan la inyección, pero DI no implica aplicar DIP automáticamente. Lo importante es la dirección de las dependencias.
+</Callout>
+
+Muchos de los patrones del catálogo GoF dan estructura concreta a estos principios: [Strategy](/diseno/patrones/strategy/) es Open/Closed por composición, [Adapter](/diseno/patrones/adapter/) envuelve un tipo incompatible detrás del contrato que quien llama ya espera, y casi todos apoyan Dependency Inversion. El [tema de patrones](/diseno/patrones/) recorre ese catálogo uno por uno.
+
+[Cómo revisar un diseño de software](/diseno/principios/como-revisar-un-diseno-de-software/) traduce estos principios a preguntas concretas sobre un componente real.

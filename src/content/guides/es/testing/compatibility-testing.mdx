@@ -1,0 +1,43 @@
+---
+id: compatibility-testing
+slug: testing-de-compatibilidad
+order: 13
+topic: testing
+section: non-functional
+title: "Testing de compatibilidad"
+description: "Cómo verificar que el software funciona en los entornos previstos y que sus cambios mantienen la compatibilidad necesaria con versiones anteriores."
+created: 2026-08-19
+lastUpdated: 2026-08-19
+---
+
+import Callout from '../../../../components/mdx/Callout.astro';
+
+## Qué es
+
+El testing de compatibilidad verifica que el software funcione correctamente en los entornos soportados: sistemas operativos, navegadores, dispositivos, tamaños de pantalla, versiones de base de datos, versiones del runtime, entornos cloud, condiciones de red. El widget de reserva que ReservaResto embebe en la web de cada restaurante podría funcionar perfecto en Chrome sobre macOS y romperse en Safari sobre iOS, por ejemplo con el date picker.
+
+## Matriz de compatibilidad
+
+Una herramienta simple, pero efectiva: definir explícitamente qué se soporta, **con versiones y con niveles de soporte**. Una matriz donde todas las filas dicen "sí" no es una especificación: es la misma vaguedad de un "tiene que andar en todos lados", escrita en una tabla.
+
+| Entorno | Versiones soportadas | Nivel | Cómo se verifica |
+|---|---|---|---|
+| Chrome / Edge | Últimas 2 estables | Completo | Suite E2E en cada release |
+| Firefox | Últimas 2 estables | Completo | Suite E2E en cada release |
+| Safari macOS | 16+ | Completo | Suite E2E en cada release |
+| Safari iOS | 16+ | Completo | Suite E2E + prueba manual del date picker |
+| Chrome Android | Últimas 2 estables | Completo | Suite E2E |
+| Safari iOS | 15 | Degradado | Smoke test: reservar tiene que funcionar |
+| Internet Explorer | — | No soportado | Se muestra un aviso y no se testea |
+
+Cada fila responde tres preguntas que un "sí" no responde: **hasta qué versión**, **qué significa soportar** (¿todo funciona, o solo el camino crítico?) y **quién lo verifica**. Ese último dato es el que convierte la matriz en algo accionable: sin él, la matriz es una intención.
+
+<Callout variant="note" title="El nivel «degradado» es el que más conviene declarar">
+Declarar explícitamente que en un entorno viejo solo se garantiza el flujo principal evita las dos salidas malas: prometer soporte completo en todo (imposible de sostener) o cortar de golpe (pierde usuarios reales). También le da al equipo un criterio claro para triage: un bug visual en Safari 15 no bloquea un release; uno que impide reservar, sí.
+</Callout>
+
+## Compatibilidad hacia atrás
+
+Existe otro tipo de compatibilidad que aparece en sistemas y APIs: si ReservaResto expone una API pública para que partners hoteleros integren reservas, un cambio aparentemente inocuo en el contrato de la API puede romper las integraciones de los partners que todavía usan la versión anterior (`v1` de un endpoint de booking contra clientes que ya migraron a `v2`, por ejemplo). Por eso el testing de compatibilidad es particularmente relevante en APIs públicas, sistemas distribuidos, arquitecturas dirigidas por eventos (*event-driven*), bibliotecas compartidas y migraciones de base de datos.
+
+De la unidad aislada al sistema completo, y de lo funcional a los atributos de calidad, cada nivel responde una pregunta distinta. El test más útil sigue siendo el más barato que puede detectar el defecto que te importa.

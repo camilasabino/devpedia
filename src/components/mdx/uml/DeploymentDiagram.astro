@@ -1,0 +1,74 @@
+---
+import DiagramFigure from '../DiagramFigure.astro';
+
+// UML deployment notation: nodes are 3D boxes with a «device» or «executionEnvironment»
+// stereotype, artifacts sit inside them with the «artifact» stereotype, and the
+// connections between nodes are communication paths.
+//
+// The caption is the diagram's accessible name, so it follows the language of the
+// page it is rendered into (these figures are embedded from MDX and cannot be
+// handed a `lang` prop).
+import { langFromPath } from '../../../i18n';
+
+const CAPTION = {
+  es: 'Diagrama de despliegue UML: dos availability zones, cada una con un execution environment que aloja el artifact payments.jar, y una base de datos compartida.',
+  en: 'UML deployment diagram: two availability zones, each with an execution environment hosting the payments.jar artifact, and one shared database.',
+} as const;
+
+const caption = CAPTION[langFromPath(Astro.url.pathname)];
+---
+
+<DiagramFigure
+  caption={caption}
+  viewBox="0 0 660 330"
+>
+  <!-- Load balancer -->
+  <g transform="translate(255 14)">
+    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  </g>
+
+  <text x="324" y="42" text-anchor="middle" class="uml-stereotype">«device»</text>
+  <text x="324" y="58" text-anchor="middle">Load Balancer</text>
+
+  <!-- AZ A -->
+  <g transform="translate(60 140)">
+    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  </g>
+
+  <text x="129" y="166" text-anchor="middle" class="uml-stereotype">«executionEnvironment»</text>
+  <text x="129" y="180" text-anchor="middle">AZ A · App Server</text>
+  <rect x="74" y="188" width="130" height="22" rx="2" class="uml-shape" />
+  <text x="139" y="203" text-anchor="middle" class="uml-label">«artifact» payments.jar</text>
+
+  <!-- AZ B -->
+  <g transform="translate(450 140)">
+    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  </g>
+
+  <text x="519" y="166" text-anchor="middle" class="uml-stereotype">«executionEnvironment»</text>
+  <text x="519" y="180" text-anchor="middle">AZ B · App Server</text>
+  <rect x="464" y="188" width="130" height="22" rx="2" class="uml-shape" />
+  <text x="529" y="203" text-anchor="middle" class="uml-label">«artifact» payments.jar</text>
+
+  <!-- Database -->
+  <g transform="translate(255 248)">
+    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  </g>
+
+  <text x="324" y="276" text-anchor="middle" class="uml-stereotype">«device»</text>
+  <text x="324" y="292" text-anchor="middle">PostgreSQL (primary)</text>
+
+  <!-- Communication paths -->
+  <path d="M262 92 L176 146" class="uml-line" />
+  <text x="196" y="112" text-anchor="middle" class="uml-label">HTTPS</text>
+  <path d="M398 92 L484 146" class="uml-line" />
+  <text x="452" y="112" text-anchor="middle" class="uml-label">HTTPS</text>
+  <path d="M184 218 L266 256" class="uml-line" />
+  <text x="204" y="252" text-anchor="middle" class="uml-label">TCP 5432</text>
+  <path d="M476 218 L394 256" class="uml-line" />
+  <text x="448" y="252" text-anchor="middle" class="uml-label">TCP 5432</text>
+</DiagramFigure>

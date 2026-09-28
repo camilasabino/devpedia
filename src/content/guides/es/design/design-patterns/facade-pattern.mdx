@@ -1,0 +1,114 @@
+---
+id: facade-pattern
+slug: facade
+order: 14
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Facade"
+description: "Cómo ofrecer una interfaz simple para un subsistema complejo y evitar que sus clientes tengan que coordinar cada componente."
+created: 2026-06-26
+lastUpdated: 2026-06-26
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Facade** es un patrón estructural que ofrece una interfaz simplificada sobre un subsistema complejo compuesto por varias clases.
+
+## El problema
+
+Confirmar una compra en AndesShop involucra varios subsistemas: verificar stock, procesar el pago, calcular el costo de envío, reservar la etiqueta con el transportista, registrar el pedido en la base de datos y enviar la notificación de confirmación. Si el controlador del checkout llama directamente a cada uno de esos seis subsistemas, en el orden correcto y manejando los errores de cada uno, ese controlador termina conociendo los detalles internos de todo el sistema — y cualquier otro punto de entrada que también necesite confirmar una compra (una app móvil, un endpoint interno para pedidos telefónicos) tiene que repetir la misma orquestación.
+
+## La solución
+
+Facade agrupa esa orquestación detrás de una única clase con una interfaz simple, típicamente un solo método. El código cliente llama a `checkout.placeOrder(cart)` y no necesita saber que, por detrás, eso dispara seis pasos coordinados. El subsistema completo sigue existiendo y se puede seguir usando directamente si hace falta un control más fino — Facade no lo reemplaza, solo ofrece un atajo para el caso común.
+
+<ClassDiagram
+  caption="Estructura de Facade: lo que define al patrón no son las cinco dependencias de la fachada, sino que el cliente tenga una sola."
+  diagram={`    class Checkout {
+        <<client>>
+    }
+    class CheckoutFacade {
+        +placeOrder(Cart) OrderConfirmation
+    }
+    class InventoryService {
+        +reserve(Cart) void
+    }
+    class PaymentService {
+        +charge(Money) PaymentResult
+    }
+    class ShippingService {
+        +schedule(Order) void
+    }
+    class OrderRepository {
+        +save(Order) void
+    }
+    class NotificationService {
+        +confirm(Order) void
+    }
+
+    Checkout --> "1" CheckoutFacade : única dependencia
+    CheckoutFacade ..> InventoryService
+    CheckoutFacade ..> PaymentService
+    CheckoutFacade ..> ShippingService
+    CheckoutFacade ..> OrderRepository
+    CheckoutFacade ..> NotificationService`}
+/>
+
+## Ejemplo en Java
+
+```java
+class CheckoutFacade {
+    private final InventoryService inventory;
+    private final PaymentService payments;
+    private final ShippingService shipping;
+    private final OrderRepository orders;
+    private final NotificationService notifications;
+
+    public CheckoutFacade(InventoryService inventory, PaymentService payments,
+                           ShippingService shipping, OrderRepository orders,
+                           NotificationService notifications) {
+        this.inventory = inventory;
+        this.payments = payments;
+        this.shipping = shipping;
+        this.orders = orders;
+        this.notifications = notifications;
+    }
+
+    public OrderConfirmation placeOrder(Cart cart) {
+        inventory.reserve(cart.getItems());
+        PaymentResult payment = payments.charge(cart.getTotal(), cart.getPaymentToken());
+        ShippingLabel label = shipping.createLabel(cart.getShippingAddress());
+        Order order = orders.save(cart, payment, label);
+        notifications.sendOrderConfirmation(order);
+        return new OrderConfirmation(order.getId());
+    }
+}
+```
+
+```java
+// Client code: un solo llamado, sin conocer los seis pasos de adentro
+OrderConfirmation confirmation = checkoutFacade.placeOrder(cart);
+```
+
+## Cuándo usarlo
+
+- Cuando querés dar un punto de entrada simple a un subsistema complejo, sin ocultar el subsistema para quien necesite un control más fino.
+- Cuando el código cliente está acoplado a demasiadas clases internas de un subsistema, y eso dificulta cambiar ese subsistema sin romper el código que lo consume.
+
+## Cuándo evitarlo
+
+Si el subsistema ya es simple, o si distintos clientes necesitan controlar los pasos de forma muy distinta entre sí, una fachada única termina o bien quedándose corta, o bien acumulando parámetros para cubrir todos los casos — perdiendo la simplicidad que la justificaba.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|El cliente llama a un método y no conoce las clases internas del subsistema|Puede convertirse en un "objeto todopoderoso" acoplado a todos los servicios que orquesta|
+|Reduce la duplicación de orquestación entre distintos puntos de entrada|No reemplaza al subsistema: para casos que necesiten control fino, sigue haciendo falta usarlo directamente|
+
+## Relación con otros patrones
+
+- A diferencia de **[Adapter](/diseno/patrones/adapter/)**, que hace compatible una interfaz existente, Facade define una interfaz completamente nueva y más simple.
+- Se suele implementar como **[Singleton](/diseno/patrones/singleton/)**, ya que en general alcanza con una sola instancia de la fachada.
+- **[Mediator](/diseno/patrones/mediator/)** también centraliza comunicación entre varias clases, pero Mediator coordina comunicación _entre pares_ que ya se conocen entre sí; Facade simplemente ofrece una entrada simple hacia un subsistema.

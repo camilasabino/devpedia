@@ -1,0 +1,140 @@
+---
+id: template-method-pattern
+slug: template-method
+order: 26
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Template Method"
+description: "Cómo definir la secuencia de un algoritmo en una clase base y permitir que las subclases adapten determinados pasos."
+created: 2026-07-21
+lastUpdated: 2026-07-21
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+**Template Method** es un patrón de comportamiento que define el esqueleto de un algoritmo en una clase base, delegando en las subclases la implementación de algunos de sus pasos.
+
+## El problema
+
+AndesShop genera distintos tipos de reportes internos: un reporte diario de ventas, un reporte de inventario, un reporte de devoluciones. Los tres siguen la misma secuencia general — obtener los datos, armar un encabezado, formatear el cuerpo, agregar un pie con totales, y exportarlo — pero cada uno obtiene y formatea datos distintos. Si cada tipo de reporte implementa esa secuencia completa por su cuenta, los pasos comunes (encabezado, exportación, estructura general) terminan duplicados en cada clase de reporte, y un cambio en esa estructura común hay que replicarlo en todas.
+
+## La solución
+
+Template Method define el algoritmo completo una sola vez, en una clase base, como una secuencia fija de llamadas a métodos — algunos ya implementados (los pasos comunes), otros abstractos (los pasos que varían). Cada subclase concreta solo implementa los pasos que le son propios; el orden y la estructura general quedan fijos en la clase base y no se pueden alterar por accidente.
+
+<ClassDiagram
+  caption="Estructura de Template Method: la clase base fija el esqueleto en un método final y delega solo los pasos variables."
+  diagram={`    class ReportGenerator {
+        <<abstract>>
+        +generate() String
+        #fetchData() List~Row~*
+        #formatBody(List~Row~) String*
+        #buildHeader() String
+        #buildFooter() String
+    }
+    class DailySalesReport {
+        #fetchData() List~Row~
+        #formatBody(List~Row~) String
+    }
+    class InventoryReport {
+        #fetchData() List~Row~
+        #formatBody(List~Row~) String
+        #buildFooter() String
+    }
+    ReportGenerator <|-- DailySalesReport
+    ReportGenerator <|-- InventoryReport
+    note for ReportGenerator "generate() es el template method: es final y fija el orden.\nLos métodos en cursiva son abstractos; buildHeader y buildFooter son hooks con default."`}
+/>
+
+## Ejemplo en Java
+
+```java
+abstract class ReportGenerator {
+    // El Template Method: fija la secuencia, no se puede reordenar desde las subclases
+    public final String generate() {
+        StringBuilder report = new StringBuilder();
+        report.append(buildHeader());
+        report.append(formatBody(fetchData()));
+        report.append(buildFooter());
+        return report.toString();
+    }
+
+    protected abstract List<?> fetchData();
+    protected abstract String formatBody(List<?> data);
+
+    // Pasos comunes, ya resueltos en la clase base
+    protected String buildHeader() { return "=== AndesShop Report ===\n"; }
+    protected String buildFooter() { return "=== End of report ===\n"; }
+}
+
+class DailySalesReport extends ReportGenerator {
+    private final SalesRepository salesRepository;
+
+    public DailySalesReport(SalesRepository salesRepository) {
+        this.salesRepository = salesRepository;
+    }
+
+    protected List<?> fetchData() {
+        return salesRepository.findForToday();
+    }
+    protected String formatBody(List<?> data) {
+        return "Sales today: " + data.size() + " orders\n";
+    }
+}
+
+class InventoryReport extends ReportGenerator {
+    private final InventoryRepository inventoryRepository;
+
+    public InventoryReport(InventoryRepository inventoryRepository) {
+        this.inventoryRepository = inventoryRepository;
+    }
+
+    protected List<?> fetchData() {
+        return inventoryRepository.findLowStock();
+    }
+    protected String formatBody(List<?> data) {
+        return "Low stock items: " + data.size() + "\n";
+    }
+}
+```
+
+```java
+ReportGenerator report = new DailySalesReport(salesRepository);
+System.out.println(report.generate()); // encabezado + cuerpo propio + pie, siempre en ese orden
+```
+
+## Cuándo usarlo
+
+- Cuando varias clases implementan un algoritmo con la misma estructura general, pero difieren en pasos puntuales.
+- Cuando querés controlar en qué puntos exactos del algoritmo las subclases pueden introducir variaciones, sin darles control sobre la secuencia completa.
+
+## Cuándo evitarlo
+
+Si las variantes no comparten una secuencia real, forzarlas al mismo esqueleto termina en métodos abstractos vacíos o irrelevantes en algunas subclases.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Los pasos comunes (encabezado, exportación, orden) viven una sola vez en la clase base|Las subclases quedan atadas a la estructura fija que define la clase base|
+|El flujo general se lee entero en `generate()`, no repartido en cada reporte|Si la jerarquía crece, hay que saltar entre la base y varias subclases para entender un solo reporte|
+|Una variante nueva solo implementa los pasos abstractos; no reescribe la secuencia||
+
+## Relación con otros patrones
+
+- Se apoya frecuentemente en **[Factory Method](/diseno/patrones/factory-method/)** como uno de sus pasos abstractos.
+- Comparte con **[Strategy](/diseno/patrones/strategy/)** el objetivo de variar parte de un comportamiento, pero lo hace con herencia en vez de composición — Strategy suele preferirse cuando se necesita cambiar el algoritmo en tiempo de ejecución.
+
+<Callout variant="key" title="El Template Method va final">
+Es la regla que define al patrón, y la que más seguido se omite. Si una subclase puede sobrescribir `generate()`, puede cambiar el orden de los pasos o saltearse alguno — y entonces la clase base ya no garantiza nada sobre el algoritmo. En Java eso se expresa con `final`; el equivalente en otros lenguajes es no dejar ese método como punto de extensión.
+
+La contracara es que los pasos que **sí** se redefinen deben ser `protected`, no `public`: son puntos de extensión para las subclases, no parte de la API que consume el cliente.
+</Callout>
+
+<Callout variant="note" title="Template Method o Strategy">
+Los dos permiten variar parte de un algoritmo. Template Method lo hace con **herencia**, en tiempo de compilación: la variante se elige al elegir la subclase, y solo se puede variar lo que la base dejó abstracto. [Strategy](/diseno/patrones/strategy/) lo hace con **composición**, en tiempo de ejecución: el objeto puede cambiar de estrategia mientras vive.
+
+Por el sesgo hacia [composición sobre herencia](/diseno/principios/principios-generales-de-diseno/#composición-sobre-herencia), Strategy suele ser la opción por defecto. Template Method sigue siendo mejor cuando los pasos son muchos, están fuertemente ligados entre sí, y el orden debe quedar fijo en un solo lugar.
+</Callout>

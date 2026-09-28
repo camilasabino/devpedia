@@ -1,0 +1,121 @@
+---
+id: claude-code-mcp
+slug: mcp
+order: 7
+topic: ai-engineering
+subtopic: claude-code
+section: extension
+title: "MCP: connecting external tools"
+description: "How to connect Claude Code to tools and data sources through MCP, and what to check when configuring a server."
+created: 2026-09-02
+lastUpdated: 2026-09-02
+---
+
+**MCP ([Model Context Protocol](https://modelcontextprotocol.io/introduction))** is the standard way to connect Claude Code to external tools — databases, browsers, APIs, your backlog — without leaving the session. It's an open protocol, not something specific to Claude Code: that's why the same MCP server you connect here also works in other compatible clients.
+
+## Management commands
+
+```bash
+# Add a server (stdio transport, the default)
+claude mcp add <name> -- <command>
+
+# Add a remote server (HTTP transport, the recommended one;
+# SSE still works, but it's legacy)
+claude mcp add --transport http <name> <url>
+
+# With environment variables
+claude mcp add -e API_KEY=xxx <name> -- <command>
+
+claude mcp list                        # list servers and their status
+claude mcp get <name>                  # inspect one in particular
+claude mcp remove <name>
+claude mcp add-from-claude-desktop     # import from Claude Desktop
+```
+
+## The three scopes
+
+Choosing the right scope avoids both leaking credentials and forcing the whole team to reconfigure the same thing.
+
+**`--scope local`** _(default)_
+
+- Stored in `~/.claude.json`, under the project's path.
+- Only you see it, only in this project.
+- Use it for experimental servers or sensitive credentials you don't want to share.
+
+**`--scope project`**
+
+- Stored in `.mcp.json` at the project root (versioned with Git).
+- The whole team sees it.
+- Use it for the servers everyone on the team needs.
+
+**`--scope user`**
+
+- Stored in `~/.claude.json` (global).
+- Only you see it, but across all of your projects.
+- Use it for personal tools you always use (search, notes, etc.).
+
+MCP's **local** scope is stored in `~/.claude.json` (the user's home) — not to be confused with the project's general local configuration, which lives in `.claude/settings.local.json`. If the same server name exists in several scopes, the resolution order is **local → project → user**.
+
+## Shared configuration: `.mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "postgres-staging": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "$STAGING_DB_URL"]
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp",
+      "headers": { "Authorization": "Bearer $LINEAR_TOKEN" }
+    }
+  }
+}
+```
+
+The values of `command`, `args`, `url`, and `headers` accept `$VAR` and `${VAR}`, which expand from your shell when the session starts.
+
+## Common MCP servers
+
+Three examples covering quite different use cases:
+
+- **GitHub** — exposes a repo's issues, PRs, reviews, and CI as tools: create/comment on PRs, read diffs, trigger workflows, all without leaving the session.
+- **Playwright** — drives a real browser (click, scroll, screenshot, read the DOM), useful for testing a UI you just built or for targeted scraping.
+- **Postgres** — gives read-only access (or limited write access, depending on how the user is configured) to a database, so Claude can explore the schema or validate a query before it goes into code.
+
+```bash
+claude mcp add github --transport http https://api.githubcopilot.com/mcp -e GITHUB_TOKEN=$GITHUB_TOKEN
+claude mcp add playwright -- npx -y @playwright/mcp
+claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres "$STAGING_DB_URL"
+```
+
+## Tool search: why the token cost doesn't grow with every server you connect
+
+Unlike other MCP clients that load **all** the tool definitions from **all** connected servers up front, Claude Code discovers them on demand: it only loads the schema of the tool it's actually going to use. In practice this cuts context consumption by an order of magnitude: the cost grows with real usage, not with how many servers you added. How many are active still matters: each one is a subprocess.
+
+## MCP security checklist
+
+1. **Audit before installing.** Read the source code of any MCP server before running it. Prefer the vendor's official servers over community forks.
+2. **Principle of least privilege.** Read-only users for databases, tokens with minimal permissions, limited filesystem access.
+3. **Control the scopes.** Only promote servers you completely trust to `user`, since they become available across all your projects.
+4. **Never commit secrets.** Credentials go in environment variables (`$VARIABLE`), never written into `.mcp.json`.
+5. **Watch out for prompt injection.** Servers that bring in content from untrusted sources (scraping, emails, chat messages) can expose you to malicious instructions hidden in that content.
+6. **Limit active servers.** Each one starts a subprocess; more than 5-6 at once can slow your environment down. Use `/mcp disable` for whatever you aren't using.
+
+## In-session management
+
+```
+/mcp                 # open the management panel
+/mcp enable <name>
+/mcp disable <name>
+/mcp enable all
+/mcp disable all
+```
+
+`/mcp` also handles OAuth 2.1 authentication for remote servers that require it, walking you through the browser flow.
+
+<p className="mt-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+  Related documentation: <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer">official MCP reference for Claude Code</a> and the{' '}
+  <a href="https://modelcontextprotocol.io/introduction" target="_blank" rel="noopener noreferrer">protocol specification</a> if you want to understand what's on the other side of each server.
+</p>

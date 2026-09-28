@@ -1,0 +1,42 @@
+---
+id: behavioral-patterns
+slug: patrones-de-comportamiento
+order: 4
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Patrones de comportamiento"
+description: "Cómo distribuir responsabilidades y coordinar objetos sin volver difíciles de mantener sus interacciones."
+created: 2026-06-08
+lastUpdated: 2026-06-08
+---
+
+Los patrones de comportamiento resuelven **cómo se reparten responsabilidades entre objetos y cómo se comunican entre sí**, sin que esa comunicación se vuelva un enredo de referencias cruzadas difícil de seguir.
+
+Señales de que el problema entra en esta categoría:
+
+- Una solicitud tiene que pasar por una cadena de posibles manejadores sin que quien la envía sepa cuál la va a resolver.
+- Necesitás tratar una acción (y su posible deshacer) como un objeto que se puede guardar, encolar o loguear.
+- Tenés que evaluar reglas de un lenguaje chico —condiciones de negocio configurables, filtros— que se combinan entre sí de formas que no podés enumerar.
+- Necesitás recorrer una colección sin exponer cómo está estructurada internamente.
+- Un grupo de objetos se comunica directamente entre todos, formando una red de dependencias difícil de mantener.
+- Necesitás guardar y restaurar el estado interno de un objeto sin romper su encapsulamiento.
+- Muchos objetos necesitan enterarse cuando algo le pasa a otro, suscribiéndose a sus eventos sin que el emisor los conozca uno por uno.
+- El comportamiento de un objeto tiene que cambiar según su estado interno, y eso se está resolviendo con condicionales que crecen sin parar.
+- Necesitás poder intercambiar un algoritmo por otro en tiempo de ejecución.
+- Varias clases comparten el mismo esqueleto de algoritmo, pero difieren en algunos pasos puntuales.
+- Necesitás agregar operaciones nuevas a una jerarquía de clases sin modificar esas clases.
+
+Los once patrones de esta categoría:
+
+- **[Chain of Responsibility](/diseno/patrones/chain-of-responsibility/)** — pasa una solicitud a lo largo de una cadena de manejadores hasta que uno la resuelve.
+- **[Command](/diseno/patrones/command/)** — convierte una solicitud en un objeto independiente, que se puede guardar, encolar o deshacer.
+- **[Interpreter](/diseno/patrones/interpreter/)** — representa la gramática de un lenguaje chico como una jerarquía de clases que sabe evaluarse a sí misma.
+- **[Iterator](/diseno/patrones/iterator/)** — recorre una colección sin exponer su representación interna.
+- **[Mediator](/diseno/patrones/mediator/)** — reduce las dependencias caóticas entre objetos, centralizando la comunicación en un mediador.
+- **[Memento](/diseno/patrones/memento/)** — guarda y restaura el estado previo de un objeto sin exponer los detalles de su implementación.
+- **[Observer](/diseno/patrones/observer/)** — notifica automáticamente a varios objetos sobre eventos que le ocurren al objeto que observan, sin que él los conozca uno por uno.
+- **[State](/diseno/patrones/state/)** — permite que un objeto cambie su comportamiento cuando cambia su estado interno.
+- **[Strategy](/diseno/patrones/strategy/)** — encapsula algoritmos intercambiables detrás de una misma interfaz.
+- **[Template Method](/diseno/patrones/template-method/)** — define el esqueleto de un algoritmo en una clase base, dejando que las subclases redefinan pasos puntuales.
+- **[Visitor](/diseno/patrones/visitor/)** — separa un algoritmo de los objetos sobre los que opera, para poder agregar operaciones nuevas sin modificar esas clases.

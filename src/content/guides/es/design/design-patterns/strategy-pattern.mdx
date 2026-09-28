@@ -1,0 +1,116 @@
+---
+id: strategy-pattern
+slug: strategy
+order: 25
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Strategy"
+description: "Cómo encapsular variantes de un algoritmo e intercambiarlas sin modificar el código que las utiliza."
+created: 2026-07-20
+lastUpdated: 2026-07-20
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Strategy** es un patrón de comportamiento que define una familia de algoritmos intercambiables, encapsula cada uno por separado, y permite elegir cuál usar en tiempo de ejecución.
+
+## El problema
+
+AndesShop calcula el costo de envío de un pedido de distintas formas según el método elegido: envío estándar (un costo fijo según el peso), envío express (un costo mayor, más un recargo por urgencia), y retiro en sucursal (sin costo). Si esa lógica vive en un único método `calculateShippingCost()` con un `switch` sobre el tipo de envío, cada método de envío nuevo agranda ese `switch` — y si en algún otro punto del sistema hace falta el mismo cálculo (por ejemplo, para mostrar una cotización antes de confirmar la compra), el `switch` completo se termina duplicando.
+
+## La solución
+
+Strategy extrae cada algoritmo de cálculo a su propia clase, y todas implementan la misma interfaz. El código que necesita calcular el envío recibe la estrategia a usar (en vez de decidir internamente con un `switch`) y simplemente la ejecuta — sin saber cuál implementación concreta está usando.
+
+<ClassDiagram
+  caption="Estructura de Strategy: el contexto delega el cálculo en una estrategia intercambiable que elige el código cliente."
+  diagram={`    class ShippingCostStrategy {
+        <<interface>>
+        +calculate(Order) Money
+    }
+    class StandardShipping {
+        +calculate(Order) Money
+    }
+    class ExpressShipping {
+        +calculate(Order) Money
+    }
+    class StorePickup {
+        +calculate(Order) Money
+    }
+    class ShippingQuote {
+        <<context>>
+        -strategy ShippingCostStrategy
+        +quote(Order) Money
+    }
+    ShippingCostStrategy <|.. StandardShipping
+    ShippingCostStrategy <|.. ExpressShipping
+    ShippingCostStrategy <|.. StorePickup
+    ShippingQuote --> "1" ShippingCostStrategy : strategy elegida por el cliente`}
+/>
+
+## Ejemplo en Java
+
+```java
+interface ShippingCostStrategy {
+    double calculate(Order order);
+}
+
+class StandardShipping implements ShippingCostStrategy {
+    public double calculate(Order order) {
+        return order.getTotalWeight() * 2.5;
+    }
+}
+
+class ExpressShipping implements ShippingCostStrategy {
+    public double calculate(Order order) {
+        return order.getTotalWeight() * 2.5 + 15.0;
+    }
+}
+
+class StorePickup implements ShippingCostStrategy {
+    public double calculate(Order order) {
+        return 0.0;
+    }
+}
+
+class Order {
+    private ShippingCostStrategy shippingStrategy;
+
+    public void setShippingStrategy(ShippingCostStrategy strategy) {
+        this.shippingStrategy = strategy;
+    }
+
+    public double getShippingCost() {
+        return shippingStrategy.calculate(this); // no sabe cuál implementación es
+    }
+}
+```
+
+```java
+Order order = new Order();
+order.setShippingStrategy(new ExpressShipping());
+System.out.println(order.getShippingCost());
+```
+
+## Cuándo usarlo
+
+- Cuando tenés varias variantes de un mismo algoritmo y querés poder intercambiarlas en tiempo de ejecución.
+- Cuando notás un mismo condicional grande repetido en varios lugares del código para elegir entre variantes de un cálculo o comportamiento.
+
+## Cuándo evitarlo
+
+Si solo hay una o dos variantes que casi nunca cambian, un método con un condicional simple es más directo que crear una jerarquía de clases para cada una.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|Se pueden intercambiar algoritmos en tiempo de ejecución, sin un `switch` en cada lugar que los usa|El código cliente tiene que conocer las estrategias disponibles para poder elegir entre ellas|
+|Cada algoritmo queda en su clase, y se puede testear sin armar el resto del pedido|Agrega una interfaz común y una clase nueva por cada variante|
+|Sumar un algoritmo nuevo no toca los existentes||
+
+## Relación con otros patrones
+
+- Comparte estructura con **[State](/diseno/patrones/state/)**, aunque la intención es distinta: la estrategia la elige quien usa el objeto; el estado lo determinan transiciones internas del propio objeto.
+- **[Template Method](/diseno/patrones/template-method/)** resuelve un problema parecido (variar parte de un algoritmo) pero con herencia en vez de composición: Template Method fija el algoritmo en una clase base y deja que las subclases redefinan pasos puntuales.

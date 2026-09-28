@@ -1,0 +1,129 @@
+---
+id: iterator-pattern
+slug: iterator
+order: 20
+topic: design
+subtopic: design-patterns
+section: behavioral
+title: "Iterator"
+description: "Cómo recorrer una colección sin exponer su estructura interna ni acoplar el recorrido a una implementación concreta."
+created: 2026-07-09
+lastUpdated: 2026-07-09
+---
+
+import ClassDiagram from '../../../../../components/mdx/ClassDiagram.astro';
+
+**Iterator** es un patrón de comportamiento que permite recorrer los elementos de una colección sin exponer su representación interna.
+
+## El problema
+
+El catálogo de AndesShop empieza guardando los productos en una simple `List`. Con el tiempo, para acelerar las búsquedas por categoría, se reorganiza internamente en un árbol de categorías; y para el catálogo destacado de temporada, se mantiene además una estructura ordenada por popularidad. Si el código que recorre el catálogo depende de que sea siempre una `List` (usando índices, por ejemplo), cada cambio en la estructura interna rompe todo el código que la recorre.
+
+## La solución
+
+Iterator extrae la lógica de recorrido a un objeto separado, que expone una interfaz simple y uniforme (`hasNext()` / `next()`) sin importar cómo esté organizada la colección por dentro. El código cliente recorre a través del iterador y nunca accede directamente a la estructura interna — así, esa estructura puede cambiar sin que el código que la recorre se entere.
+
+<ClassDiagram
+  caption="Estructura de Iterator: el agregado sabe crear su iterador, y el cliente recorre sin conocer la estructura interna de la colección."
+  diagram={`    class ProductCollection {
+        <<interface · aggregate>>
+        +createIterator() ProductIterator
+    }
+    class CatalogTree {
+        -root Category
+        +createIterator() ProductIterator
+    }
+    class ProductIterator {
+        <<interface>>
+        +hasNext() boolean
+        +next() Product
+    }
+    class CatalogTreeIterator {
+        -pending Deque~CatalogNode~
+        +hasNext() boolean
+        +next() Product
+    }
+    class StockReport {
+        <<client>>
+    }
+    ProductCollection <|.. CatalogTree
+    ProductIterator <|.. CatalogTreeIterator
+    CatalogTree ..> CatalogTreeIterator : «create»
+    CatalogTreeIterator --> "1" CatalogTree : recorre
+    StockReport ..> ProductCollection
+    StockReport ..> ProductIterator`}
+/>
+
+## Ejemplo en Java
+
+```java
+// Java ya define esta interfaz en java.util.Iterator — acá se muestra el mecanismo
+interface ProductIterator {
+    boolean hasNext();
+    Product next();
+}
+
+// El recorrido conoce la estructura interna (un árbol), el cliente no.
+// Recorre nivel por nivel (breadth-first): por eso usa colas (Queue) de punta a
+// punta, en vez de una pila — mezclar semántica de pila (push/pop) con un
+// agregado masivo como addAll suele terminar en un orden de recorrido distinto
+// al que el nombre de las variables sugiere.
+class CatalogTreeIterator implements ProductIterator {
+    private final Queue<Category> pendingCategories = new LinkedList<>();
+    private final Queue<Product> buffer = new LinkedList<>();
+
+    public CatalogTreeIterator(Category root) {
+        pendingCategories.offer(root);
+        advance();
+    }
+
+    private void advance() {
+        while (buffer.isEmpty() && !pendingCategories.isEmpty()) {
+            Category current = pendingCategories.poll();
+            buffer.addAll(current.getDirectProducts());
+            pendingCategories.addAll(current.getSubcategories());
+        }
+    }
+
+    public boolean hasNext() {
+        return !buffer.isEmpty();
+    }
+
+    public Product next() {
+        Product product = buffer.poll();
+        advance();
+        return product;
+    }
+}
+```
+
+```java
+// Client code: recorre sin saber que por dentro hay un árbol
+ProductIterator iterator = new CatalogTreeIterator(trekkingCategory);
+while (iterator.hasNext()) {
+    Product product = iterator.next();
+    System.out.println(product.getName());
+}
+```
+
+## Cuándo usarlo
+
+- Cuando tu colección tiene una estructura interna compleja (árboles, grafos, colecciones combinadas) y querés ocultarla del código que solo necesita recorrerla.
+- Cuando necesitás varias formas distintas de recorrer la misma colección (por categoría, por popularidad, por precio) sin ensuciar la clase de la colección con cada una de ellas.
+
+## Cuándo evitarlo
+
+Una colección simple (una lista plana, por ejemplo) que ya se recorre bien con las herramientas estándar del lenguaje no necesita un iterador propio.
+
+## Ventajas y desventajas
+
+|Ventajas|Desventajas|
+|---|---|
+|El código que recorre no se rompe si el catálogo pasa de lista a árbol|Puede ser excesivo para colecciones simples que ya se recorren bien con las herramientas del lenguaje|
+|Varios recorridos distintos (por categoría, por popularidad) sobre la misma colección al mismo tiempo|Cada nuevo tipo de recorrido implica una clase de iterador nueva|
+|Árbol, lista o estructura ordenada se recorren con la misma interfaz `hasNext()` / `next()`||
+
+## Relación con otros patrones
+
+- Se usa junto con **[Composite](/diseno/patrones/composite/)** para recorrer estructuras de árbol sin exponer sus niveles internos.
+- **[Memento](/diseno/patrones/memento/)** a veces se combina con Iterator para poder capturar y restaurar el punto exacto de un recorrido.

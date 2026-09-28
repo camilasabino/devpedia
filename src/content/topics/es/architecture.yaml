@@ -1,0 +1,19 @@
+id: architecture
+slug: arquitectura
+order: 1
+title: Arquitectura
+description: >-
+  Diseño y evolución de sistemas, desde sus requisitos y estructura
+  hasta su operación en producción.
+icon: server
+sections:
+  - id: fundamentals
+    title: Fundamentos
+  - id: domain-and-structure
+    title: Dominio y estructura
+  - id: communication-and-data
+    title: Comunicación y datos
+  - id: operations
+    title: Operación
+  - id: decisions
+    title: Decisiones

@@ -1,0 +1,34 @@
+---
+id: structural-patterns
+slug: patrones-estructurales
+order: 3
+topic: design
+subtopic: design-patterns
+section: structural
+title: "Patrones estructurales"
+description: "Cómo combinar clases y objetos para adaptar interfaces, extender comportamientos y simplificar el uso de componentes complejos."
+created: 2026-06-05
+lastUpdated: 2026-06-05
+---
+
+Los patrones estructurales resuelven **cómo ensamblar clases y objetos en estructuras más grandes**, manteniendo esas estructuras flexibles y eficientes aunque las piezas individuales cambien.
+
+Señales de que el problema entra en esta categoría:
+
+- Necesitás que dos interfaces incompatibles trabajen juntas sin modificar ninguna de las dos.
+- Una abstracción y su implementación están mezcladas en la misma jerarquía de clases, y cambiar una obliga a tocar la otra.
+- Necesitás tratar de forma uniforme a un objeto individual y a una composición de esos objetos (por ejemplo, un archivo y una carpeta que contiene archivos).
+- Necesitás sumarle responsabilidades a un objeto puntual sin generar una explosión de subclases para cada combinación posible.
+- Un subsistema tiene tantas piezas y dependencias internas que el código que lo usa se vuelve difícil de seguir.
+- Tenés una enorme cantidad de objetos muy parecidos entre sí, y eso está consumiendo memoria de más.
+- Necesitás controlar o interceptar el acceso a un objeto sin que quien lo usa lo note.
+
+Los siete patrones de esta categoría:
+
+- **[Adapter](/diseno/patrones/adapter/)** — hace que dos interfaces incompatibles puedan trabajar juntas, traduciendo las llamadas de una a la otra.
+- **[Bridge](/diseno/patrones/bridge/)** — separa una abstracción de su implementación para que ambas puedan evolucionar por separado.
+- **[Composite](/diseno/patrones/composite/)** — compone objetos en estructuras de árbol y los trata de forma uniforme, sean hojas o composiciones.
+- **[Decorator](/diseno/patrones/decorator/)** — agrega responsabilidades a un objeto en tiempo de ejecución, envolviéndolo en otro objeto compatible.
+- **[Facade](/diseno/patrones/facade/)** — expone una interfaz simple sobre un subsistema complejo.
+- **[Flyweight](/diseno/patrones/flyweight/)** — comparte el estado común entre muchos objetos similares para ahorrar memoria.
+- **[Proxy](/diseno/patrones/proxy/)** — coloca un sustituto delante de un objeto para controlar el acceso a él.

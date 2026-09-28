@@ -1,0 +1,339 @@
+---
+id: solid
+slug: solid
+order: 3
+topic: design
+subtopic: design-principles
+title: "SOLID"
+description: "Each principle is there to keep a small change from demanding a lot of work. Applying them to the letter can add more complexity than it resolves."
+created: 2026-05-28
+lastUpdated: 2026-05-28
+---
+
+import MermaidDiagram from '../../../../../components/mdx/MermaidDiagram.astro';
+import Callout from '../../../../../components/mdx/Callout.astro';
+
+SOLID groups five principles for increasing cohesion, reducing coupling, and making it easier for a system to evolve: **Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation**, and **Dependency Inversion**.
+
+It's often presented as a set of rules for writing "good code". That reading is too simplistic: they're criteria for deciding about responsibilities, abstractions, dependencies, and behavior. Their usefulness shows up once the system starts changing: certain decisions make adding a new feature end up demanding a lot of work, or make a small change force you to modify a large part of the codebase.
+
+They shouldn't be applied mechanically either: more interfaces, more classes, and more abstractions isn't automatically a better architecture. SOLID is used together with the [general design principles](/en/design/principles/general-design-principles/) — KISS, DRY, YAGNI, separation of concerns, and composition over inheritance — not in their place.
+
+## S — Single Responsibility Principle
+
+> A class should have only one reason to change.
+
+This formulation is more useful than simply saying a class should "have a single responsibility". What's central to SRP isn't how many methods a class has, it's **which forces of change act on it**.
+
+```java
+public class OrderService {
+
+    public void createOrder(Order order) {
+        // create order
+    }
+
+    public void sendConfirmationEmail(Order order) {
+        // send email
+    }
+
+    public byte[] generateInvoice(Order order) {
+        // generate PDF
+    }
+}
+```
+
+At first glance everything looks order-related, but there are three independent forces of change: the business logic can change because of a new commercial rule, sending email can change because of a new provider, and invoice generation can change because of a new document format.
+
+<MermaidDiagram
+  caption="Before: one class accumulates three forces of change. After: each force of change has its own class."
+  code={`flowchart LR
+    subgraph before["BEFORE · one class, three reasons to change"]
+        direction TB
+        OS["OrderService"]
+        OS --- R1["New commercial rule"]
+        OS --- R2["New email provider"]
+        OS --- R3["New invoice format"]
+    end
+    subgraph after["AFTER · one reason to change per class"]
+        direction TB
+        A["OrderService"] --- B["New commercial rule"]
+        C["EmailService"] --- D["New email provider"]
+        E["InvoiceGenerator"] --- F["New invoice format"]
+    end`} />
+
+**SRP and cohesion.** A cohesive class groups behavior that belongs to the same concept and tends to change together. A class with heterogeneous responsibilities accumulates dependencies and can end up turning into a _god object_.
+
+**Practical question:** can I identify different actors or forces of change that would modify this class for different reasons? If the answer is yes, there's probably an opportunity to separate.
+
+**SRP doesn't mean one class per method.** Splitting `OrderService` into `CreateOrderService`, `ValidateOrderService`, `CalculateOrderTotalService`, and `PersistOrderService` when all of that is one cohesive concept that always evolves together can add more complexity than value. The goal isn't to minimize class size — it's to maximize cohesion and isolate independent reasons to change.
+
+## O — Open/Closed Principle
+
+> Software entities should be open for extension, but closed for modification.
+
+The idea is to be able to bring in new behavior without continually modifying stable code.
+
+```java
+public void processPayment(Payment payment) {
+    if (payment.getMethod() == PaymentMethod.MERCADOPAGO) {
+        // Mercado Pago
+    } else if (payment.getMethod() == PaymentMethod.STRIPE) {
+        // Stripe
+    } else if (payment.getMethod() == PaymentMethod.PAYPAL) {
+        // PayPal
+    }
+}
+```
+
+Every new provider forces you to touch this logic. If we represent the variation as an abstraction:
+
+```java
+public interface PaymentProcessor {
+    void process(Payment payment);
+}
+```
+
+<MermaidDiagram
+  caption="Class diagram: each concrete processor realizes the PaymentProcessor interface. Adding a new one doesn't touch the code that consumes it."
+  code={`classDiagram
+    class PaymentProcessor {
+        <<interface>>
+        +process(Payment) void
+    }
+    class MercadoPagoProcessor {
+        +process(Payment) void
+    }
+    class StripeProcessor {
+        +process(Payment) void
+    }
+    class NewProvider {
+        +process(Payment) void
+    }
+    class CheckoutService {
+        -processor PaymentProcessor
+    }
+    PaymentProcessor <|.. MercadoPagoProcessor
+    PaymentProcessor <|.. StripeProcessor
+    PaymentProcessor <|.. NewProvider : adding one changes nothing
+    CheckoutService --> PaymentProcessor`} />
+
+<Callout variant="key" title="Which way the arrow points">
+The arrowhead goes **from** the implementation **to** the abstraction, never the other way around. An arrow from `PaymentProcessor` to `StripeProcessor` would say the interface knows about its implementations, which is exactly the opposite of what OCP and DIP are after.
+</Callout>
+
+The code that coordinates the processing depends on `PaymentProcessor` without knowing each provider's details. Adding a new one doesn't require modifying the central logic.
+
+**OCP and points of variation.** OCP doesn't mean a class should never be modified — that would be impossible. The goal is to identify which parts have a reasonable chance of varying and isolate that variability there. If the system uses a single provider and there's no evidence it's going to change, building out a full plugin architecture is an unnecessary application of the principle.
+
+**OCP and polymorphism.** It's usually implemented with interfaces, polymorphism, Strategy, dependency injection, configuration, or event-driven architectures — but it doesn't depend on any specific technique. What matters is that bringing in a new variant doesn't force you to touch the stable logic.
+
+**OCP doesn't mean "put an interface on everything".** If `UserRepository` has a single implementation, no expected variation, and no architectural boundary to justify it, the interface may add nothing. OCP pays off when there's real variability or a boundary worth freezing; otherwise the interface is cost without benefit.
+
+## L — Liskov Substitution Principle
+
+> Objects of a subtype should be usable wherever the base type is expected, without breaking that type's guarantees.
+
+In practice, a subtype has to honor the behavioral contract of the abstraction it implements.
+
+```java
+public interface Bird {
+    void fly();
+}
+
+public class Penguin implements Bird {
+    @Override
+    public void fly() {
+        throw new UnsupportedOperationException();
+    }
+}
+```
+
+The problem isn't that a penguin can't fly — it's that `Bird` implicitly establishes a capability `Penguin` can't fulfill. A more suitable design:
+
+<MermaidDiagram
+  caption="Class diagram: separating the ability to fly from being a bird, so no subtype inherits an operation it can't fulfill."
+  code={`classDiagram
+    class Bird {
+        <<interface>>
+        +eat() void
+        +move() void
+    }
+    class FlyingBird {
+        <<interface>>
+        +fly() void
+    }
+    class Penguin {
+        +move() void
+    }
+    class Eagle {
+        +fly() void
+    }
+    Bird <|-- FlyingBird
+    Bird <|.. Penguin
+    FlyingBird <|.. Eagle`} />
+
+```java
+public interface Bird {
+    void eat();
+}
+
+public interface FlyingBird extends Bird {
+    void fly();
+}
+```
+
+Now the abstraction represents capabilities that all of its implementers can fulfill.
+
+**LSP is about contracts.** An LSP violation doesn't necessarily mean the implementation is wrong — it can mean the abstraction is wrong. If `Repository.findById` is part of the contract and one implementation throws `UnsupportedOperationException`, that implementation can't correctly substitute for the others.
+
+**The four concrete conditions.** LSP isn't an intuition about hierarchies: Barbara Liskov and Jeannette Wing formulated it as a set of checkable conditions on the contract. A subtype has to meet all four:
+
+| Condition | What it means | How it breaks |
+|---|---|---|
+| Preconditions no stronger | The subtype can't demand more than the base type | `setQuantity(int)` accepts 1-100 in the base and only 1-5 in the subtype |
+| Postconditions no weaker | The subtype has to guarantee at least the same | The base guarantees `save` leaves the object persisted; the subtype queues it and can lose it |
+| Invariants preserved | What always holds in the base keeps holding | The base guarantees `total >= 0`; the subtype allows negative totals |
+| History constraint | The subtype doesn't introduce mutations the base didn't allow | The base is immutable and the subtype adds a setter |
+
+Only the first and the last are visible in the type. The other two live in the behavior, which is why LSP isn't something the compiler catches.
+
+<Callout variant="note" title="About the penguin example">
+`Bird`/`Penguin` is the canonical example and it's good for seeing the symptom, but strictly speaking it illustrates an **interface design** problem, very close to [Interface Segregation](#i--interface-segregation-principle). The LSP violations that do the most damage in production are the other ones: narrowing a precondition and weakening a postcondition, because the code compiles and the caller breaks without ever knowing the implementation changed.
+</Callout>
+
+**Practical question:** can the code that uses the base type use the subtype without knowing it's working with a subtype? If not, there's a possible LSP violation.
+
+## I — Interface Segregation Principle
+
+> Clients should not be forced to depend on methods they do not use.
+
+```java
+public interface Employee {
+    void work();
+    void eat();
+    void manage();
+    void generateReports();
+    void approveExpenses();
+}
+```
+
+A regular employee doesn't need `manage()`, `generateReports()`, or `approveExpenses()`. A single interface forces every implementation to define methods it may never use.
+
+<MermaidDiagram
+  caption="Class diagram: interfaces segregated by capability. An employee with no reports implements only Worker."
+  code={`classDiagram
+    class Worker {
+        <<interface>>
+        +work() void
+    }
+    class Manager {
+        <<interface>>
+        +manage() void
+        +approveExpenses() void
+    }
+    class ReportGenerator {
+        <<interface>>
+        +generateReports() void
+    }
+    class Developer {
+        +work() void
+    }
+    class TeamLead {
+        +work() void
+        +manage() void
+        +approveExpenses() void
+        +generateReports() void
+    }
+    Worker <|.. Developer
+    Worker <|.. TeamLead
+    Manager <|.. TeamLead
+    ReportGenerator <|.. TeamLead`} />
+
+```java
+public interface Worker {
+    void work();
+}
+
+public interface Manager {
+    void manage();
+    void approveExpenses();
+}
+
+public interface ReportGenerator {
+    void generateReports();
+}
+```
+
+**The problem with large interfaces.** If `approveExpenses()` changes, every implementation of the interface can be affected — including the ones that have nothing to do with approving expenses. That usually produces implementations throwing `UnsupportedOperationException`, a sign that the abstraction groups responsibilities that should be separate.
+
+**ISP and clients.** An `OrderRepository` with `findById`, `findAll`, `save`, `delete`, `generateReport`, and `exportToCsv` forces a service that only needs to query orders to depend on the whole interface. If we split it into `OrderReader` and `OrderWriter`, each consumer depends only on the capability it needs.
+
+**ISP doesn't mean every interface has to be small.** A ten-method interface isn't automatically a violation. The question is whether those methods represent a cohesive capability from the consumers' point of view — the segregation has to answer real client needs, not an obsession with reducing the method count.
+
+## D — Dependency Inversion Principle
+
+> High-level modules should not depend on low-level modules; both should depend on abstractions. Abstractions should not depend on details; details should depend on abstractions.
+
+```java
+public class OrderService {
+    private final MySqlOrderRepository repository;
+
+    public OrderService() {
+        this.repository = new MySqlOrderRepository();
+    }
+}
+```
+
+`OrderService` is high-level logic; `MySqlOrderRepository` is an infrastructure detail. The direct dependency makes the service know about a specific technology decision. If we introduce an abstraction:
+
+```java
+public interface OrderRepository {
+    Order findById(OrderId id);
+    void save(Order order);
+}
+
+public class OrderService {
+    private final OrderRepository repository;
+
+    public OrderService(OrderRepository repository) {
+        this.repository = repository;
+    }
+}
+
+public class MySqlOrderRepository implements OrderRepository {
+    // MySQL-specific implementation
+}
+```
+
+<MermaidDiagram
+  caption="Class diagram: OrderService depends on the OrderRepository abstraction, and so does the MySQL implementation. The dependency toward infrastructure is inverted."
+  code={`classDiagram
+    class OrderService {
+        -repository OrderRepository
+        +place(Order) void
+    }
+    class OrderRepository {
+        <<interface>>
+        +findById(OrderId) Order
+        +save(Order) void
+    }
+    class MySqlOrderRepository {
+        +findById(OrderId) Order
+        +save(Order) void
+    }
+    OrderService --> OrderRepository : depends on
+    OrderRepository <|.. MySqlOrderRepository : realizes`} />
+
+The high-level policy doesn't depend on the mechanism that implements it.
+
+**Why invert the dependency?** It separates policy from mechanism: the business rule isn't tied to how things are persisted. You can swap `MySqlOrderRepository` for `PostgresOrderRepository`, `MongoOrderRepository`, or `InMemoryOrderRepository` without touching `OrderService`. It's especially useful when the low-level component is volatile, external, expensive to replace, hard to test, or an infrastructure decision that shouldn't contaminate the domain.
+
+<Callout variant="note" title="Dependency Inversion ≠ Dependency Injection">
+    These get confused often. Dependency Inversion is a design principle; Dependency Injection is a technique for supplying dependencies from outside the object, for example through constructor injection.
+
+    Frameworks like Spring make injection easier, but DI doesn't automatically mean you're applying DIP. What matters is the direction of the dependencies.
+</Callout>
+
+Many of the patterns in the GoF catalog give these principles a concrete structure: [Strategy](/en/design/patterns/strategy/) is Open/Closed by composition, [Adapter](/en/design/patterns/adapter/) wraps an incompatible type behind the contract the caller already expects, and almost all of them support Dependency Inversion. The [patterns topic](/en/design/patterns/) walks through that catalog one by one.
+
+[How to review a software design](/en/design/principles/how-to-review-a-software-design/) turns these principles into concrete questions about a real component.

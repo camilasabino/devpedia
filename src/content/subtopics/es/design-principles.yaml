@@ -1,0 +1,9 @@
+id: design-principles
+slug: principios
+order: 1
+topic: design
+title: Principios
+description: >-
+  Principios y heurísticas para diseñar software más simple,
+  mantenible y adaptable.
+icon: check
