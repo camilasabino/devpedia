@@ -5,3 +5,24 @@ export const SITE_DESCRIPTION = 'A handbook for Software Engineering';
 export const SITE_URL = import.meta.env.SITE;
 export const AUTHOR = 'Camila Sabino';
 export const AUTHOR_URL = 'https://camilasabino.dev';
+export const AUTHOR_GITHUB_URL = 'https://github.com/camilasabino';
+
+/**
+ * Social preview used by every page without a more specific image. Root-relative, so
+ * it resolves against SITE_URL like every other URL.
+ */
+export const DEFAULT_OG_IMAGE = {
+  path: '/og/devpedia.png',
+  width: 1200,
+  height: 630,
+  type: 'image/png',
+  alt: `${SITE_NAME}: ${SITE_DESCRIPTION}`,
+} as const;
+
+/** Document title of both home pages. */
+export const HOME_TITLE = `${SITE_NAME} — ${SITE_DESCRIPTION}`;
+
+/** Document title of every other page. */
+export function pageTitle(title: string): string {
+  return `${title} | ${SITE_NAME}`;
+}

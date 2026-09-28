@@ -3,10 +3,12 @@
 // section, in pedagogical order. The knowledge-hub design comes in a later milestone.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Breadcrumb from './Breadcrumb.astro';
-import { SITE_NAME } from '../config';
+import { SITE_NAME, SITE_URL, pageTitle } from '../config';
 import { plural, ui, type Lang } from '../i18n';
 import { getContent } from '../lib/content';
 import type { GuideData, TopicData } from '../lib/content-model';
+import { breadcrumbJsonLd, imageType } from '../lib/seo';
+import { coverOf } from '../lib/topic-visuals';
 
 interface Props {
   lang: Lang;
@@ -36,13 +38,22 @@ const groups: { title?: string; guides: GuideData[] }[] = [
 ].filter((group) => group.guides.length > 0);
 
 const crumbs = subtopic ? [{ label: topic.title, href: index.pathOf(lang, 'topic', topic.id)! }] : [];
+const trail = [
+  { name: SITE_NAME, path: copy.homePath },
+  ...crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href })),
+  { name: node.title, path: index.pathOf(lang, kind, id)! },
+];
+const imagePath = coverOf(topic.id, subtopic?.id);
+const image = { path: imagePath, width: 1200, height: 630, type: imageType(imagePath) };
 ---
 
 <BaseLayout
   lang={lang}
-  title={`${node.title} | ${SITE_NAME}`}
+  title={pageTitle(node.title)}
   description={node.description}
   alternates={index.alternatesOf(kind, id)}
+  image={image}
+  jsonLd={[breadcrumbJsonLd(trail, SITE_URL)]}
 >
   <Breadcrumb lang={lang} crumbs={crumbs} />
   <h1 class="mt-6 font-display text-4xl font-bold text-neutral-50 light:text-neutral-900">{node.title}</h1>

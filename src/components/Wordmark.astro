@@ -1,0 +1,21 @@
+---
+// The DevPedia wordmark: the open-book mark from the favicon plus the name, with
+// "Pedia" in the accent color. Decorative mark; the name is the accessible text.
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<span class={`inline-flex items-center gap-2 font-display font-bold tracking-tight ${className}`}>
+  <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" class="h-[1.25em] w-[1.25em] shrink-0 text-accent-400 light:text-accent-600">
+    <path
+      d="M16 10.5C13.2 8.6 9.6 8 6.5 8.4v14.4c3.1-.4 6.7.2 9.5 2.1 2.8-1.9 6.4-2.5 9.5-2.1V8.4c-3.1-.4-6.7.2-9.5 2.1Z"
+      stroke="currentColor"
+      stroke-width="2.4"
+      stroke-linejoin="round"></path>
+    <path d="M16 10.5v14.4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path>
+  </svg>
+  <span>Dev<span class="text-accent-400 light:text-accent-700">Pedia</span></span>
+</span>

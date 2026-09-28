@@ -1,0 +1,29 @@
+---
+// Provisional home, shared by both editions. The home redesign comes in a later milestone.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TopicList from './TopicList.astro';
+import { HOME_TITLE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '../config';
+import { ui, type Lang } from '../i18n';
+import { websiteJsonLd } from '../lib/seo';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = ui[lang];
+const jsonLd = [websiteJsonLd({ siteUrl: SITE_URL, lang, homePath: copy.homePath, description: copy.home.description })];
+---
+
+<BaseLayout
+  lang={lang}
+  title={HOME_TITLE}
+  description={copy.home.description}
+  alternates={{ es: ui.es.homePath, en: ui.en.homePath }}
+  jsonLd={jsonLd}
+>
+  <h1 class="font-display text-4xl font-bold text-neutral-50 light:text-neutral-900 sm:text-5xl">{SITE_NAME}</h1>
+  <p class="mt-3 font-mono text-sm text-accent-400 light:text-accent-700" lang="en">{SITE_DESCRIPTION}</p>
+  <p class="mt-8 text-neutral-400 light:text-neutral-600">{copy.home.status}</p>
+  <TopicList lang={lang} />
+</BaseLayout>

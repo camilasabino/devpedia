@@ -1,0 +1,79 @@
+---
+// DevPedia's header: wordmark, the two product destinations (topics and search), the
+// language switcher and the theme toggle. The Search button opens <Search>.
+import Flag from '../../../src/components/Flag.astro';
+import Icon from '../../../src/components/Icon.astro';
+import ThemeToggle from '../../../src/components/ThemeToggle.astro';
+import Wordmark from './Wordmark.astro';
+import { languages, ui, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  /** Root-relative path of the equivalent page in each language. */
+  alternates: Record<Lang, string>;
+}
+
+const { lang, alternates } = Astro.props;
+const copy = ui[lang];
+
+const navItemClass =
+  'flex h-11 items-center gap-1.5 rounded-md px-2 font-mono text-xs text-neutral-400 light:text-neutral-600 transition-colors hover:text-accent-400 light:hover:text-accent-700 sm:h-9 sm:px-2.5';
+
+const langSwitcherClass = (code: Lang) =>
+  `flex h-11 items-center gap-1.5 rounded-md px-1.5 font-mono text-xs transition-colors sm:h-auto sm:px-2 sm:py-1 ${
+    lang === code
+      ? 'bg-accent-500/15 light:bg-accent-600/15 text-accent-300 light:text-accent-700 ring-1 ring-accent-400/40 light:ring-accent-600/40'
+      : 'text-neutral-500 light:text-neutral-600 hover:text-neutral-300 light:hover:text-neutral-600'
+  }`;
+---
+
+<header
+  class="sticky top-0 z-40 border-b border-white/10 light:border-black/10 bg-[color-mix(in_srgb,var(--surface-bg)_85%,transparent)] backdrop-blur-md"
+>
+  <div class="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2 sm:gap-4 sm:px-6">
+    <a
+      href={copy.homePath}
+      class="rounded-md text-lg text-neutral-100 light:text-neutral-900 transition-opacity hover:opacity-85 sm:text-xl"
+    >
+      <Wordmark />
+    </a>
+    <div class="flex items-center gap-1 sm:gap-3">
+      <nav aria-label={copy.nav.label}>
+        <ul class="flex items-center">
+          <li>
+            <a href={`${copy.homePath}#topics`} class={navItemClass}>{copy.nav.topics}</a>
+          </li>
+          <li>
+            <button
+              id="search-trigger"
+              type="button"
+              aria-label={copy.search.triggerLabel}
+              aria-haspopup="dialog"
+              class={`${navItemClass} cursor-pointer`}
+            >
+              <Icon name="search" class="h-4 w-4" />
+              <span class="hidden sm:inline" aria-hidden="true">{copy.nav.search}</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      <nav aria-label={copy.languageSwitcher} class="flex items-center gap-0.5 sm:gap-1">
+        {
+          languages.map((code) => (
+            <a
+              href={alternates[code]}
+              hreflang={code}
+              lang={code}
+              aria-current={lang === code ? 'page' : undefined}
+              class={langSwitcherClass(code)}
+            >
+              <Flag code={code} class="hidden h-3 w-4 shrink-0 sm:block" />
+              {code.toUpperCase()}
+            </a>
+          ))
+        }
+      </nav>
+      <ThemeToggle lang={lang} />
+    </div>
+  </div>
+</header>

@@ -1,0 +1,47 @@
+---
+// DevPedia's own footer: the product, its descriptor and its author, secondary.
+import Icon from '../../../src/components/Icon.astro';
+import Wordmark from './Wordmark.astro';
+import { AUTHOR, AUTHOR_GITHUB_URL, AUTHOR_URL, SITE_DESCRIPTION } from '../config';
+import { ui, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const copy = ui[lang];
+---
+
+<footer class="mt-auto border-t border-white/10 light:border-black/10 bg-[color-mix(in_srgb,var(--surface-bg)_85%,transparent)]">
+  <div
+    class="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6"
+  >
+    <div>
+      <a href={copy.homePath} class="rounded-md text-lg text-neutral-100 light:text-neutral-900 transition-opacity hover:opacity-85">
+        <Wordmark />
+      </a>
+      <p class="mt-2 font-mono text-xs text-neutral-500 light:text-neutral-600" lang="en">{SITE_DESCRIPTION}</p>
+    </div>
+    <div class="flex items-center gap-4 text-sm text-neutral-500 light:text-neutral-600">
+      <p>
+        {copy.footer.createdBy}{' '}
+        <a
+          href={AUTHOR_URL}
+          class="text-neutral-300 light:text-neutral-800 underline decoration-accent-400/40 underline-offset-4 transition-colors hover:text-accent-400 light:hover:text-accent-700"
+        >
+          {AUTHOR}
+        </a>
+      </p>
+      <a
+        href={AUTHOR_GITHUB_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={copy.footer.githubLabel}
+        class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 light:border-black/10 text-neutral-400 light:text-neutral-600 transition-colors hover:border-accent-400/40 light:hover:border-accent-600/40 hover:text-accent-400 light:hover:text-accent-700"
+      >
+        <Icon name="github" class="h-4 w-4" />
+      </a>
+    </div>
+  </div>
+</footer>

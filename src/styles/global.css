@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../../../src/styles/theme.css";
+@import "../../../src/styles/surfaces.css";
 
 /* Shared primitives live in the portfolio's src/ tree, outside this project's root,
    so Tailwind has to be told to scan them. List only the ones DevPedia renders. */
@@ -8,57 +9,38 @@
 @source "../../../src/components/ThemeToggle.astro";
 
 :root {
-  --surface-bg: #050607;
-  /* Provisional: copied from the portfolio's global.css so the migrated guides and
-     their MDX components render. The shared token extraction is planned for M3. */
   --guide-measure: 64ch;
-  --surface-card-from: #16181c;
-  --surface-card-to: #101215;
-  --surface-card-hover-from: #191b20;
-  --surface-card-hover-to: #121417;
-  --border-subtle: rgba(255, 255, 255, 0.1);
-  --border-faint: rgba(255, 255, 255, 0.06);
-  --overlay-faint: rgba(255, 255, 255, 0.02);
-  --overlay-subtle: rgba(255, 255, 255, 0.05);
-  --overlay-inset: rgba(255, 255, 255, 0.04);
-  --text-body: var(--color-neutral-300);
-  --text-heading: var(--color-neutral-50);
-  --text-muted: var(--color-neutral-300);
-  --text-accent: var(--color-accent-400);
-  --diagram-surface: #0f1114;
 }
 
-:root[data-theme="light"] {
-  --surface-bg: #fafafa;
-  --surface-card-from: #ffffff;
-  --surface-card-to: #f4f4f5;
-  --surface-card-hover-from: #ffffff;
-  --surface-card-hover-to: #eceef0;
-  --border-subtle: rgba(0, 0, 0, 0.1);
-  --border-faint: rgba(0, 0, 0, 0.06);
-  --overlay-faint: rgba(0, 0, 0, 0.02);
-  --overlay-subtle: rgba(0, 0, 0, 0.04);
-  --overlay-inset: rgba(0, 0, 0, 0.04);
-  --text-body: var(--color-neutral-700);
-  --text-heading: var(--color-neutral-900);
-  --text-muted: var(--color-neutral-600);
-  --text-accent: var(--color-accent-700);
-  --diagram-surface: #ffffff;
+html {
+  scroll-behavior: smooth;
+  /* The header is sticky; without this, jumping to an anchor hides the target under it. */
+  scroll-padding-top: 5rem;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Graph-paper grid, the same pattern as the portfolio: a fixed, low-contrast
+   background, never colored shapes behind the text. */
 body {
+  display: flex;
   min-height: 100dvh;
+  flex-direction: column;
   background-color: var(--surface-bg);
+  background-image:
+    linear-gradient(var(--surface-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--surface-grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-attachment: fixed;
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-accent-400);
-  outline-offset: 2px;
-  border-radius: 0.25rem;
-}
-
-:root[data-theme="light"] :focus-visible {
-  outline-color: var(--color-accent-700);
+::selection {
+  background-color: var(--color-accent-500);
+  color: var(--selection-fg);
 }
 
 .card-surface {
