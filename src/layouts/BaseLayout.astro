@@ -1,0 +1,133 @@
+---
+import '../styles/global.css';
+import { GA_MEASUREMENT_ID } from 'astro:env/client';
+import Flag from '../../../src/components/Flag.astro';
+import ThemeToggle from '../../../src/components/ThemeToggle.astro';
+import { SITE_NAME, SITE_URL } from '../config';
+import { languages, ui, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  /** Root-relative path of the equivalent page in each language. */
+  alternates: Record<Lang, string>;
+}
+
+const { lang, title, description, alternates } = Astro.props;
+const copy = ui[lang];
+const canonicalUrl = new URL(Astro.url.pathname, SITE_URL).toString();
+const alternateUrl = (code: Lang) => new URL(alternates[code], SITE_URL).toString();
+// Analytics only runs on the production origin, so previews and local builds are never measured.
+const analyticsHost = new URL(SITE_URL).hostname;
+
+const langSwitcherClass = (code: Lang) =>
+  `flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-xs transition-colors ${
+    lang === code
+      ? 'bg-accent-500/15 light:bg-accent-600/15 text-accent-300 light:text-accent-700 ring-1 ring-accent-400/40 light:ring-accent-600/40'
+      : 'text-neutral-500 light:text-neutral-600 hover:text-neutral-300 light:hover:text-neutral-600'
+  }`;
+---
+
+<!doctype html>
+<html lang={copy.htmlLang}>
+  <head>
+    <script is:inline>
+      if (localStorage.getItem('theme') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="canonical" href={canonicalUrl} />
+    {languages.map((code) => <link rel="alternate" hreflang={code} href={alternateUrl(code)} />)}
+    <link rel="alternate" hreflang="x-default" href={alternateUrl('es')} />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={copy.ogLocale} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    {
+      import.meta.env.PROD && GA_MEASUREMENT_ID && (
+        <script is:inline define:vars={{ gaId: GA_MEASUREMENT_ID, analyticsHost }}>
+          (() => {
+            if (window.location.hostname !== analyticsHost) return;
+            try {
+              if (localStorage.getItem('analytics-excluded') === 'true') return;
+            } catch {
+              return;
+            }
+            if (window.gtag) return;
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = function () {
+              window.dataLayer.push(arguments);
+            };
+            window.gtag('js', new Date());
+            window.gtag('config', gaId);
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gaId);
+            document.head.appendChild(script);
+          })();
+        </script>
+      )
+    }
+  </head>
+  <body class="font-sans text-neutral-300 light:text-neutral-700 antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-accent-500 focus:px-3 focus:py-2 focus:text-neutral-950"
+    >
+      {copy.skipToContent}
+    </a>
+    <header class="border-b border-white/10 light:border-black/10">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <a
+          href={copy.homePath}
+          class="font-display text-lg font-semibold text-neutral-100 light:text-neutral-900 transition-colors hover:text-accent-400 light:hover:text-accent-700"
+        >
+          {SITE_NAME}
+        </a>
+        <div class="flex items-center gap-3">
+          <nav aria-label={copy.languageSwitcher} class="flex items-center gap-1">
+            {
+              languages.map((code) => (
+                <a
+                  href={alternates[code]}
+                  hreflang={code}
+                  lang={code}
+                  aria-current={lang === code ? 'page' : undefined}
+                  class={langSwitcherClass(code)}
+                >
+                  <Flag code={code} class="h-3 w-4 shrink-0" />
+                  {code.toUpperCase()}
+                </a>
+              ))
+            }
+          </nav>
+          <ThemeToggle lang={lang} />
+        </div>
+      </div>
+    </header>
+    <main id="main" class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+      <slot />
+    </main>
+  </body>
+</html>

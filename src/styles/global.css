@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@import "../../../src/styles/theme.css";
+
+/* Shared primitives live in the portfolio's src/ tree, outside this project's root,
+   so Tailwind has to be told to scan them. List only the ones DevPedia renders. */
+@source "../../../src/components/Icon.astro";
+@source "../../../src/components/Flag.astro";
+@source "../../../src/components/ThemeToggle.astro";
+
+:root {
+  --surface-bg: #050607;
+}
+
+:root[data-theme="light"] {
+  --surface-bg: #fafafa;
+}
+
+body {
+  min-height: 100dvh;
+  background-color: var(--surface-bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-400);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+:root[data-theme="light"] :focus-visible {
+  outline-color: var(--color-accent-700);
+}
