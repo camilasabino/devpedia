@@ -5,8 +5,7 @@ import { loadEnv } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 
-// Code highlighting is shared with the portfolio, like the other shared primitives.
-import { jdkTypeTransformer, shikiThemeDark, shikiThemeLight } from '../src/lib/shiki-theme.ts';
+import { jdkTypeTransformer, shikiThemeDark, shikiThemeLight } from './src/lib/shiki-theme.ts';
 import { rehypeExternalLinks } from './src/lib/rehype-external-links.ts';
 import { rehypeGuideEnhancements } from './src/lib/rehype-guide-enhancements.ts';
 
