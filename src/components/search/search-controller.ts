@@ -238,7 +238,6 @@ export function initializeSearch(): void {
       return;
     }
 
-    // Only shown if Pagefind is still loading or the search takes a moment.
     const loadingTimer = window.setTimeout(() => {
       if (token === requestToken) {
         showNode(message(config.loading));
@@ -296,7 +295,6 @@ export function initializeSearch(): void {
     void ensurePagefind();
   }
 
-  // Close button, Escape (the dialog's own `cancel`) and the backdrop all end here.
   function onClose() {
     flushSearch();
     requestToken += 1;
@@ -400,7 +398,6 @@ export function initializeSearch(): void {
     }
   });
 
-  // The full list replaces the preview; move focus to its first result.
   fullButton.addEventListener('click', () => {
     void search(lastQuery, { full: true }).then(() => {
       flushSearch();

@@ -19,10 +19,8 @@ export const DEFAULT_OG_IMAGE = {
   alt: `${SITE_NAME}: ${SITE_DESCRIPTION}`,
 } as const;
 
-/** Document title of both home pages. */
 export const HOME_TITLE = `${SITE_NAME} — ${SITE_DESCRIPTION}`;
 
-/** Document title of every other page. */
 export function pageTitle(title: string): string {
   return `${title} | ${SITE_NAME}`;
 }

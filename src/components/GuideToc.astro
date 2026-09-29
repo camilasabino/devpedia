@@ -1,9 +1,6 @@
 ---
-// Table of contents of a guide, built from the headings its body actually renders.
-// `sidebar` is the sticky column next to the guide on wide screens; `inline` is the
-// collapsed block above the body below `lg`, so it never takes a screenful on mobile.
-// Both are plain anchor lists that work without JavaScript; the script only adds the
-// current-section highlight and closes the inline block after a jump.
+// Anchor lists work without JavaScript. The script only adds the current-section
+// highlight and closes the inline block after a jump.
 import Icon from './Icon.astro';
 import { ui, type Lang } from '@/i18n';
 import type { TocHeading } from '@/lib/guide';
@@ -16,8 +13,6 @@ interface Props {
 
 const { lang, headings, variant } = Astro.props;
 const copy = ui[lang].guide.toc;
-// Sections (h2) and subsections (h3) differ in weight, size, tone and indent, so the
-// outline reads as a two-level tree. Both share the same current-section indicator.
 const linkBase =
   'block border-l-2 border-transparent leading-snug hover:text-neutral-100 aria-[current=location]:border-accent-400 aria-[current=location]:text-accent-400 light:hover:text-neutral-900 light:aria-[current=location]:border-accent-700 light:aria-[current=location]:text-accent-700';
 const sectionLink = `${linkBase} py-1.5 pl-3 text-sm font-medium text-neutral-200 light:text-neutral-800`;

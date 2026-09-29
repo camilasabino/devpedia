@@ -18,7 +18,6 @@ export function absoluteUrl(path: string, siteUrl: string | URL): string {
 
 const author = (): JsonLd => ({ '@type': 'Person', name: AUTHOR, url: AUTHOR_URL });
 
-/** The product itself, on each edition's home page. */
 export function websiteJsonLd(input: {
   siteUrl: string | URL;
   lang: Lang;
@@ -36,7 +35,6 @@ export function websiteJsonLd(input: {
   };
 }
 
-/** A guide: a maintained technical explanation that belongs to DevPedia. */
 export function techArticleJsonLd(input: {
   siteUrl: string | URL;
   lang: Lang;

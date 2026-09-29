@@ -29,13 +29,6 @@ const searchTriggerClass =
 ---
 
 <header class="sticky top-0 z-40 border-b border-white/10 light:border-black/10 bg-[color-mix(in_srgb,var(--surface-bg)_85%,transparent)] backdrop-blur-md">
-  {/*
-    DOM order = focus order: brand → search → topics → locale → theme.
-    Inner shell matches main/footer: max-w-5xl, mx-auto, px-4 sm:px-6.
-    Mobile: 2-col grid (brand + utilities on row 1, full-width search on row 2).
-    Desktop (sm+): single flex row; search stays next to the brand with a 320–384px
-    cap; sm:ml-auto pins Temas/locale/theme to the content's right edge.
-  */}
   <div class="mx-auto grid w-full max-w-5xl grid-cols-[1fr_auto] items-center gap-x-1.5 gap-y-2 px-4 py-2 sm:flex sm:gap-4 sm:px-6">
     <a
       href={copy.homePath}

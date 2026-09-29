@@ -73,7 +73,6 @@ export function pageOf(view: ViewEvent): { id: string; kind: PageKind } {
     : { id: view.params.id, kind: view.params.kind };
 }
 
-/** Attributes that make a clickable element send `event` when it is activated. */
 export function trackAttributes<E extends AnalyticsEvent>(
   event: E,
   params: EventParams[E],
@@ -81,7 +80,6 @@ export function trackAttributes<E extends AnalyticsEvent>(
   return { 'data-track': event, 'data-track-params': JSON.stringify(params) };
 }
 
-/** Attributes that make `<body>` send its view event once, when the page loads. */
 export function viewAttributes(view: ViewEvent | undefined): Record<string, string> {
   return view
     ? { 'data-track-view': view.event, 'data-track-params': JSON.stringify(view.params) }

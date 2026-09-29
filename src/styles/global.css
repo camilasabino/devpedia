@@ -412,7 +412,6 @@ body {
   font-style: var(--shiki-light-font-style, inherit);
 }
 
-/* Matches Pagefind highlights inside search result excerpts. */
 #search-results mark {
   border-radius: 0.2rem;
   background: rgba(45, 212, 191, 0.2);

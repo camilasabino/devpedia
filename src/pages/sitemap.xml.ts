@@ -4,8 +4,6 @@ import { languages, ui } from '@/i18n';
 import { getContent } from '@/lib/content';
 import { sitemapXml, type SitemapEntry } from '@/lib/seo';
 
-// Every canonical DevPedia URL in both editions: the homes, then each topic,
-// subtopic and guide, with their counterparts resolved by conceptual id.
 export const GET: APIRoute = async () => {
   const { index } = await getContent();
   const homes = { es: ui.es.homePath, en: ui.en.homePath };
