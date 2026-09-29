@@ -12,14 +12,18 @@ export const ui = {
     nav: {
       label: 'Principal',
       topics: 'Temas',
-      search: 'Buscar',
+    },
+    localeToggle: {
+      title: 'Switch to English',
+      label: 'Switch language to English',
     },
     footer: {
       createdBy: 'Creado por',
       githubLabel: 'GitHub de Camila Sabino',
     },
     search: {
-      triggerLabel: 'Buscar guías y temas',
+      triggerLabel: 'Buscar en DevPedia',
+      triggerText: 'Buscar en DevPedia…',
       dialogLabel: 'Buscar en DevPedia',
       inputLabel: 'Buscar guías y temas',
       placeholder: 'Buscar guías y temas…',
@@ -111,14 +115,18 @@ export const ui = {
     nav: {
       label: 'Main',
       topics: 'Topics',
-      search: 'Search',
+    },
+    localeToggle: {
+      title: 'Cambiar a español',
+      label: 'Cambiar idioma a español',
     },
     footer: {
       createdBy: 'Created by',
       githubLabel: "Camila Sabino's GitHub",
     },
     search: {
-      triggerLabel: 'Search guides and topics',
+      triggerLabel: 'Search DevPedia',
+      triggerText: 'Search DevPedia…',
       dialogLabel: 'Search DevPedia',
       inputLabel: 'Search guides and topics',
       placeholder: 'Search guides and topics…',
