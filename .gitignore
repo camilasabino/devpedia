@@ -6,10 +6,14 @@ dist/
 # dependencies
 node_modules/
 
-# environment variables
+# environment variables (.env.example stays tracked)
 .env
-.env.production
+.env.*
+!.env.example
 .dev.vars
+
+# test coverage
+coverage/
 
 # OS
 .DS_Store

@@ -1,90 +1,112 @@
 # DevPedia
 
-_A handbook for Software Engineering_
+A handbook for Software Engineering
 
-DevPedia is a structured, evolving handbook for learning Software Engineering concepts in depth and revisiting them later as practical reference. Guides are organized by knowledge structure (topic, subtopic, section), not by publication date, and every guide exists in Spanish and English.
+DevPedia is a bilingual handbook for studying Software Engineering in depth and coming back to it as reference. Guides are grouped by subject so they can be studied and consulted later.
 
-Created by Camila Sabino ([camilasabino.dev](https://camilasabino.dev)). The product definition lives in [`docs/specs/devpedia-spec.md`](docs/specs/devpedia-spec.md).
+**[Explore DevPedia →](https://devpedia.camilasabino.dev)**
 
-## Stack
+Live in production and actively maintained.
 
-- Astro 7 (static output, no adapter), MDX, Tailwind CSS v4 through `@tailwindcss/vite`.
-- Shiki with a custom dual theme (`src/lib/shiki-theme.ts`) and two rehype plugins, run through `unified()` from `@astrojs/markdown-remark`.
-- Mermaid, rendered client-side and lazily.
-- Pagefind for search, indexed after the build.
-- Optional GA4 with a small typed event contract.
-- Vitest for unit tests, `@astrojs/check` for type checking.
-- Cloudflare Workers static assets for hosting (no Worker script, no bindings).
+![DevPedia, a handbook for Software Engineering](public/og/devpedia.png)
 
-## Content model
+## About
+
+Spanish is served at `/` and English under `/en/`. Both editions cover the same topics, subtopics and guides.
 
 ```text
 Topic → optional Subtopic → Guide
 ```
 
-Topics and subtopics can declare `sections` to group their guides. Each node has three independent fields:
+A topic or subtopic can group its guides into sections. The handbook is organized for learning and lookup, not as a chronological blog. Each guide is a technical article: explanation, code, tables and diagrams.
 
-- `id`: stable conceptual identity, English kebab-case, identical in both languages. It pairs the ES and EN editions and drives hreflang and analytics.
-- `slug`: localized URL segment.
-- `order`: pedagogical position among siblings.
+Search follows the edition you are reading. A Spanish page searches the Spanish guides; an English page searches the English ones.
 
-The build validates the whole model (pairing, references, unique ids/slugs/orders, section usage, structure shared by both editions) and fails on any broken rule.
+Created by [Camila Sabino](https://camilasabino.dev).
 
-## i18n
+## Content model
 
-Spanish at `/`, English under `/en/`. Both editions share the same topics, subtopics, sections and guides, paired by `id`. Routes: `/<topic>/`, `/<topic>/<guide>/`, `/<topic>/<subtopic>/`, `/<topic>/<subtopic>/<guide>/`.
+Every topic, subtopic and guide keeps three fields separate:
 
-## Structure
+- **id** — stable conceptual identity. English kebab-case, the same in both languages. It pairs the Spanish and English editions, and it drives language alternates and analytics. It does not change, and it is not derived from the URL.
+- **slug** — the localized URL segment for that edition. Published slugs stay stable.
+- **order** — pedagogical position among sibling guides. It is not an identity.
 
-```text
-src/
-  config.ts          SITE_NAME, SITE_DESCRIPTION, SITE_URL, AUTHOR…
-  content/           topics/ and subtopics/ (YAML), guides/ (MDX), each split into es/ and en/
-  components/        Layout pieces, pages, MDX components (mdx/)
-  i18n/              Interface strings per language
-  lib/               Pure logic: content model and validation, sequence, SEO, search context, analytics
-  pages/             Routes, sitemap.xml, robots.txt
-  styles/            global.css plus design tokens (theme.css, surfaces.css)
-public/              Favicons, OG image, topic covers
-test/                Unit tests (they also load and validate the real content)
-scripts/             Post-build checkers (links, leftover Spanish in the English edition)
-docs/                Product spec, editorial guides, i18n record, implementation status
-```
+## Architecture
 
-## Development
+DevPedia is a static [Astro](https://astro.build) site. Topics and subtopics are YAML content collections; guides are MDX.
+
+`src/lib/content-model.ts` defines that model, builds paths and indexes both editions in `ContentIndex`. `src/lib/content-validation.ts` checks the structure: pairing, references, unique ids, slugs and orders, and sections. `src/lib/content.ts` loads the collections at build time and fails the build when validation fails. The same checks run in tests against the real files.
+
+Localized routes are generated from that index. [Pagefind](https://pagefind.app) indexes the built site for search. [Cloudflare](https://www.cloudflare.com) serves the static output.
+
+## Tech stack
+
+| Area              | Choice                                |
+| ----------------- | ------------------------------------- |
+| Framework         | Astro 7, static output                |
+| Content           | MDX and YAML content collections      |
+| Search            | Pagefind                              |
+| Styling           | Tailwind CSS v4                       |
+| Testing / quality | Vitest, Astro check, ESLint, Prettier |
+| Infrastructure    | Cloudflare static assets              |
+| Analytics         | Google Analytics 4, optional          |
+
+## Local development
+
+Node `22.22.3` (see `.nvmrc`). `engines` allows `>=22.22.3`.
 
 ```bash
+nvm use
 npm install
+npm run dev
+```
+
+The dev server runs at <http://localhost:4322>.
+
+A `.env` file is optional. With none, `SITE_URL` defaults to `https://devpedia.camilasabino.dev` and analytics stays off. Copy `.env.example` to `.env` only to override those values.
+
+- `SITE_URL` — canonical origin. Optional. Canonical URLs, hreflang, Open Graph, JSON-LD, the sitemap and `robots.txt` are built from it.
+- `GA_MEASUREMENT_ID` — optional Google Analytics 4 measurement id (`G-XXXXXXXXXX`). Empty or unset means the site ships no analytics script and makes no request to Google.
+
+Search is available after a production build, because Pagefind indexes `dist/`:
+
+```bash
+npm run build && npm run preview
+```
+
+## Commands
+
+```bash
 npm run dev            # http://localhost:4322
+npm run build          # static site in dist/, then the Pagefind index
+npm test               # Vitest
+npm run lint           # ESLint
+npm run format:check   # Prettier
+npm run check          # astro check
+npm run verify         # the full local quality gate
 ```
 
-Search only works on a build (`npm run build && npm run preview`), because Pagefind indexes `dist/` after the build.
+`verify` runs format, lint, typecheck, tests and the production build, then `check:links` (internal links and heading anchors) and `check:en-language` (Spanish left in the English edition).
 
-## Tests and checks
+## Testing and quality
 
-```bash
-npm run check              # astro check
-npm test                   # Vitest
-npm run check:links        # internal links and anchors in dist/ (after the build)
-npm run check:en-language  # leftover Spanish in the English edition (after the build)
-```
+Vitest covers the content model, routing, SEO, search and analytics. The content-model tests load the real topics, subtopics and guides. `astro check` typechecks the project. ESLint and Prettier cover syntax, unused code, braces and formatting. Prettier does not reformat `src/content/**`.
 
-There is no lint or formatting script.
+Husky runs lint and format checks before a commit, checks the message with commitlint, and on push lints again and checks the commits being pushed. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
 
-## Environment
-
-Read at build time from the environment or `.env` (see `.env.example`):
-
-- `SITE_URL`: canonical origin, default `https://devpedia.camilasabino.dev`. Canonicals, hreflang, Open Graph URLs, JSON-LD, sitemap, robots and the analytics hostname check derive from it, so moving to another domain only needs this value and a deployment change.
-- `GA_MEASUREMENT_ID`: optional GA4 id. Empty means no analytics script and no request to Google.
-
-## Build
-
-```bash
-npm run build          # astro build → dist/, then pagefind --site dist
-npm run preview
-```
+These checks run locally. Continuous integration is not configured in this repository yet.
 
 ## Deployment
 
-Cloudflare Workers Builds, static assets only. `wrangler.jsonc` sets `name: devpedia`, `assets.directory: ./dist` and the custom domain `devpedia.camilasabino.dev`. Build command `npm run build`, deploy command `npx wrangler deploy` (Wrangler is a devDependency, so the version is pinned by the lockfile). Set `GA_MEASUREMENT_ID`, and `SITE_URL` if the domain changes, as build variables.
+`npm run build` writes a static site to `dist/` and Pagefind indexes that directory. Cloudflare serves those files as static assets. `wrangler.jsonc` names the project `devpedia`, points `assets.directory` at `./dist`, and attaches the custom domain `devpedia.camilasabino.dev`.
+
+Production builds read the same `SITE_URL` and `GA_MEASUREMENT_ID` variables.
+
+## Status
+
+Live in production and actively maintained.
+
+## License
+
+All rights reserved. No open-source license is granted for reuse or redistribution.

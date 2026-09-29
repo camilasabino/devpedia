@@ -34,13 +34,13 @@ Commit messages follow Conventional Commits (`type: subject`). Husky runs `lint`
 
 ## Content model
 
-`src/content.config.ts`, `src/lib/content-model.ts`: Topic → optional Subtopic → Guide, with optional `sections` to group guides inside a topic or subtopic. Files: `src/content/{topics,subtopics}/{es,en}/*.yaml` and `src/content/guides/{es,en}/<topic>/[<subtopic>/]<id>.mdx`. `id`, `slug` and `order` are separate on purpose:
+`src/content.config.ts` defines the content collections. `src/lib/content-model.ts` holds the types, path construction and `ContentIndex`. `src/lib/content-validation.ts` holds `validateContentModel`. Topic → optional Subtopic → Guide, with optional `sections` to group guides inside a topic or subtopic. Files: `src/content/{topics,subtopics}/{es,en}/*.yaml` and `src/content/guides/{es,en}/<topic>/[<subtopic>/]<id>.mdx`. `id`, `slug` and `order` are separate on purpose:
 
 - `id`: stable conceptual identity, English kebab-case, the same in both languages. It pairs ES/EN, drives hreflang and analytics, and never changes. Do not derive it from the slug or the path.
 - `slug`: localized URL segment only. Keep published slugs stable.
 - `order`: pedagogical position among siblings, never identity.
 
-`src/lib/content.ts` runs `validateContentModel` at build time and fails on any broken rule (pairing, references, unique ids/slugs/orders, section usage, Claude Code under AI Engineering…); `test/content-model.test.ts` runs the same rules on the real files.
+`src/lib/content.ts` loads both editions, runs `validateContentModel`, and fails the build on any broken rule (pairing, references, unique ids/slugs/orders, section usage, Claude Code under AI Engineering…). `test/content-model.test.ts` runs the same rules on the real files.
 
 ## Routing
 
@@ -68,4 +68,4 @@ Static assets on Cloudflare Workers Builds: `wrangler.jsonc` (`name: devpedia`, 
 
 ## Editorial
 
-Antes de crear, editar o revisar guías o temas en español (`src/content/**/es/`), leé `docs/EDITORIAL_GUIDELINES.md`. Para la edición en inglés (`src/content/**/en/`), la guía es `docs/EN_EDITORIAL_GUIDE.md`. `docs/I18N_PROGRESS.md` registra cómo se emparejan las dos ediciones y las decisiones abiertas. No dupliques esos criterios acá.
+Antes de crear, editar o revisar guías o temas en español (`src/content/**/es/`), leé `docs/EDITORIAL_GUIDELINES.md`. Para la edición en inglés (`src/content/**/en/`), la guía es `docs/EN_EDITORIAL_GUIDE.md`. No dupliques esos criterios acá.

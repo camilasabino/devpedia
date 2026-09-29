@@ -5,8 +5,7 @@ Spanish original, not a literal translation. This guide is the companion to
 `EDITORIAL_GUIDELINES.md`, which stays the authority for the Spanish edition and
 for anything about structure, guide shape, the content model and frontmatter, or
 technical accuracy. Read this one before writing or reviewing anything under
-`src/content/**/en/`. `I18N_PROGRESS.md` records how the two editions are
-paired and the translation decisions taken so far.
+`src/content/**/en/`.
 
 ## The target reader
 
@@ -55,6 +54,9 @@ architecture?`, `Factory Method`, `SOLID`, `Test-Driven Development`.
   teaching function.
 - The author's identity, the example domain (AndesShop, Payments), and its
   cultural context. Nothing gets Americanized to fit the new audience.
+
+`created` and `lastUpdated` may differ between editions. Reading time uses the
+same rates in both languages; matching word counts is not a goal.
 
 ## What you may change
 
@@ -174,6 +176,11 @@ breaks or spacing only — never the content or the relations.
 **Hand-authored UML** (`src/components/mdx/uml/`) is shared by both languages and
 already uses English domain identifiers; only its caption is per-language.
 
+**SOLID headings.** Spanish follows each principle heading with a `<small>` gloss
+of its English name. English omits that gloss, because it would repeat the
+heading. The heading anchors stay identical in both editions
+(`#s--single-responsibility-principle` and the rest). Cross-links depend on them.
+
 ## Links
 
 Internal links must point at the English URL of the same page (`/en/…`),
@@ -189,7 +196,8 @@ never translated.
 Use the original English wording only when it can be verified in the source. Do
 not present a back-translation as a verified English quotation. When the original
 wording cannot be verified, keep the attribution and mark the quote discreetly as
-a translation, or log it in `I18N_PROGRESS.md` for review.
+a translation. Do not correct an apparent error in the Spanish source by changing
+the English; that belongs in the Spanish edition, under `EDITORIAL_GUIDELINES.md`.
 
 ## Definition of done
 
