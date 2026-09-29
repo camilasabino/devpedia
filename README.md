@@ -2,6 +2,8 @@
 
 A handbook for Software Engineering
 
+[![CI](https://github.com/camilasabino/devpedia/actions/workflows/ci.yml/badge.svg)](https://github.com/camilasabino/devpedia/actions/workflows/ci.yml)
+
 DevPedia is a bilingual handbook for studying Software Engineering in depth and coming back to it as reference. Guides are grouped by subject so they can be studied and consulted later.
 
 **[Explore DevPedia →](https://devpedia.camilasabino.dev)**
@@ -95,7 +97,7 @@ Vitest covers the content model, routing, SEO, search and analytics. The content
 
 Husky runs lint and format checks before a commit, checks the message with commitlint, and on push lints again and checks the commits being pushed. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/).
 
-These checks run locally. Continuous integration is not configured in this repository yet.
+GitHub Actions runs the same `verify` gate on pull requests and on pushes to `main`. Pull requests also lint the commits they introduce.
 
 ## Deployment
 

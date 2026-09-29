@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  commitlint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate pull request commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          base="${BASE_SHA:?}"
+          head="${HEAD_SHA:?}"
+
+          if ! git cat-file -e "${base}^{commit}" >/dev/null 2>&1; then
+            git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          fi
+
+          if ! git cat-file -e "${head}^{commit}" >/dev/null 2>&1; then
+            git fetch --no-tags origin "+refs/pull/${PR_NUMBER}/head:refs/remotes/pull/${PR_NUMBER}/head"
+          fi
+
+          git cat-file -e "${base}^{commit}" >/dev/null
+          git cat-file -e "${head}^{commit}" >/dev/null
+
+          if ! git merge-base "${base}" "${head}" >/dev/null 2>&1; then
+            echo "commitlint: ${base} and ${head} do not share history" >&2
+            exit 1
+          fi
+
+          # First commit that introduced commitlint. History before it stays
+          # out of the check, including when it is reachable from the PR range.
+          adoption="$(git log --diff-filter=A --format=%H -- commitlint.config.js | tail -n 1)"
+          if [ -z "${adoption}" ]; then
+            echo "commitlint: could not find the commit that added commitlint.config.js" >&2
+            exit 1
+          fi
+
+          commits_file="$(mktemp)"
+          selected_file="$(mktemp)"
+          trap 'rm -f "${commits_file}" "${selected_file}"' EXIT
+
+          # Exclusive of the base SHA, so commits already on main are not linted.
+          git rev-list --reverse "${base}..${head}" >"${commits_file}"
+
+          skipped=0
+          while IFS= read -r commit; do
+            [ -n "${commit}" ] || continue
+            if git merge-base --is-ancestor "${commit}" "${adoption}^" >/dev/null 2>&1; then
+              echo "Skipping ${commit}: predates commitlint"
+              skipped=$((skipped + 1))
+              continue
+            fi
+            printf '%s\n' "${commit}" >>"${selected_file}"
+          done <"${commits_file}"
+
+          if [ ! -s "${selected_file}" ]; then
+            echo "No pull request commits to lint after ${base}"
+            exit 0
+          fi
+
+          if [ "${skipped}" -eq 0 ]; then
+            npx --no-install commitlint --from "${base}" --to "${head}" --verbose
+            exit 0
+          fi
+
+          while IFS= read -r commit; do
+            [ -n "${commit}" ] || continue
+            npx --no-install commitlint --from "${commit}^" --to "${commit}" --verbose
+          done <"${selected_file}"
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
