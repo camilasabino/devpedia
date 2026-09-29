@@ -20,9 +20,9 @@ const caption = CAPTION[langFromPath(Astro.url.pathname)];
 
 <DiagramFigure caption={caption} viewBox="0 0 660 330">
   <!-- Load balancer -->
-  <g transform="translate(255 14)">
-    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
-    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  <g transform="translate(237 14)">
+    <path d="M0 12 L12 0 H186 V62 L174 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H174 V74 M174 12 L186 0" class="uml-line" />
   </g>
 
   <text x="324" y="42" text-anchor="middle" class="uml-stereotype">
@@ -33,43 +33,43 @@ const caption = CAPTION[langFromPath(Astro.url.pathname)];
   </text>
 
   <!-- AZ A -->
-  <g transform="translate(60 140)">
-    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
-    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  <g transform="translate(30 140)">
+    <path d="M0 12 L12 0 H186 V62 L174 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H174 V74 M174 12 L186 0" class="uml-line" />
   </g>
 
-  <text x="129" y="166" text-anchor="middle" class="uml-stereotype">
+  <text x="117" y="166" text-anchor="middle" class="uml-stereotype">
     «executionEnvironment»
   </text>
-  <text x="129" y="180" text-anchor="middle">
+  <text x="117" y="180" text-anchor="middle">
     AZ A · App Server
   </text>
-  <rect x="74" y="188" width="130" height="22" rx="2" class="uml-shape" />
-  <text x="139" y="203" text-anchor="middle" class="uml-label">
+  <rect x="33" y="188" width="168" height="22" rx="2" class="uml-shape" />
+  <text x="117" y="203" text-anchor="middle" class="uml-label">
     «artifact» payments.jar
   </text>
 
   <!-- AZ B -->
-  <g transform="translate(450 140)">
-    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
-    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  <g transform="translate(444 140)">
+    <path d="M0 12 L12 0 H186 V62 L174 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H174 V74 M174 12 L186 0" class="uml-line" />
   </g>
 
-  <text x="519" y="166" text-anchor="middle" class="uml-stereotype">
+  <text x="531" y="166" text-anchor="middle" class="uml-stereotype">
     «executionEnvironment»
   </text>
-  <text x="519" y="180" text-anchor="middle">
+  <text x="531" y="180" text-anchor="middle">
     AZ B · App Server
   </text>
-  <rect x="464" y="188" width="130" height="22" rx="2" class="uml-shape" />
-  <text x="529" y="203" text-anchor="middle" class="uml-label">
+  <rect x="447" y="188" width="168" height="22" rx="2" class="uml-shape" />
+  <text x="531" y="203" text-anchor="middle" class="uml-label">
     «artifact» payments.jar
   </text>
 
   <!-- Database -->
-  <g transform="translate(255 248)">
-    <path d="M0 12 L12 0 H150 V62 L138 74 H0 Z" class="uml-shape" />
-    <path d="M0 12 H138 V74 M138 12 L150 0" class="uml-line" />
+  <g transform="translate(237 248)">
+    <path d="M0 12 L12 0 H186 V62 L174 74 H0 Z" class="uml-shape" />
+    <path d="M0 12 H174 V74 M174 12 L186 0" class="uml-line" />
   </g>
 
   <text x="324" y="276" text-anchor="middle" class="uml-stereotype">
@@ -80,20 +80,20 @@ const caption = CAPTION[langFromPath(Astro.url.pathname)];
   </text>
 
   <!-- Communication paths -->
-  <path d="M262 92 L176 146" class="uml-line" />
-  <text x="196" y="112" text-anchor="middle" class="uml-label">
+  <path d="M270 90 L200 150" class="uml-line" />
+  <text x="220" y="114" text-anchor="middle" class="uml-label">
     HTTPS
   </text>
-  <path d="M398 92 L484 146" class="uml-line" />
-  <text x="452" y="112" text-anchor="middle" class="uml-label">
+  <path d="M378 90 L460 150" class="uml-line" />
+  <text x="430" y="114" text-anchor="middle" class="uml-label">
     HTTPS
   </text>
-  <path d="M184 218 L266 256" class="uml-line" />
-  <text x="204" y="252" text-anchor="middle" class="uml-label">
+  <path d="M160 216 L260 254" class="uml-line" />
+  <text x="190" y="250" text-anchor="middle" class="uml-label">
     TCP 5432
   </text>
-  <path d="M476 218 L394 256" class="uml-line" />
-  <text x="448" y="252" text-anchor="middle" class="uml-label">
+  <path d="M500 216 L400 254" class="uml-line" />
+  <text x="470" y="250" text-anchor="middle" class="uml-label">
     TCP 5432
   </text>
 </DiagramFigure>

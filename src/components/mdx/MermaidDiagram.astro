@@ -65,6 +65,8 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
 <style>
   .diagram-figure {
     margin-block: 2em;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .diagram-frame {
@@ -72,6 +74,8 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
     border: 1px solid var(--border-subtle);
     background: var(--diagram-surface);
     padding: 1rem;
+    max-width: 100%;
+    min-width: 0;
   }
 
   @media (min-width: 640px) {
@@ -80,20 +84,21 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
     }
   }
 
-  /* Mermaid scales the SVG down to the column width, so the whole diagram stays in
-     view; when that makes it noticeably smaller than its natural size, DiagramZoom
-     offers an enlarged, scrollable view. */
   .diagram-canvas {
     overflow-x: auto;
     overscroll-behavior-inline: contain;
+    max-width: 100%;
+    min-width: 0;
     -webkit-overflow-scrolling: touch;
   }
 
   .diagram-canvas :global(svg) {
     display: block;
-    margin-inline: auto;
-    max-width: 100%;
+    width: 100%;
+    max-width: var(--diagram-intrinsic, none);
+    min-width: calc(var(--diagram-intrinsic, 0px) * var(--diagram-min-scale, 1));
     height: auto;
+    margin-inline: auto;
   }
 
   /* Safety net: if a label is ever measured wider than its box, show the overflow
@@ -140,6 +145,13 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
 </style>
 
 <script>
+  import {
+    fitDiagramSvg,
+    mermaidDiagramConfig,
+    tuneDiagramSvg,
+    wrapClassDiagramNotes,
+  } from '@/lib/diagram-theme';
+
   // Mermaid is ~164 KB before the per-diagram-type chunk, so it is imported only
   // when a diagram is about to enter the viewport. Pages with no diagram never pay
   // for it, and pages with one pay for it after the article is already readable.
@@ -148,38 +160,8 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
   if (sources.length > 0) {
     let mermaidPromise: Promise<typeof import('mermaid').default> | null = null;
 
-    const isLight = () => document.documentElement.getAttribute('data-theme') === 'light';
-
-    const themeVariables = () =>
-      isLight()
-        ? {
-            fontFamily: 'var(--font-mono)',
-            fontSize: '13px',
-            primaryColor: '#ffffff',
-            primaryTextColor: '#18181b',
-            primaryBorderColor: '#a1a1aa',
-            lineColor: '#71717a',
-            classText: '#18181b',
-            background: 'transparent',
-            mainBkg: '#ffffff',
-            secondaryColor: '#f4f4f5',
-            tertiaryColor: '#f4f4f5',
-            edgeLabelBackground: '#f4f4f5',
-          }
-        : {
-            fontFamily: 'var(--font-mono)',
-            fontSize: '13px',
-            primaryColor: 'rgba(255,255,255,0.04)',
-            primaryTextColor: '#fafafa',
-            primaryBorderColor: 'rgba(255,255,255,0.22)',
-            lineColor: '#a1a1aa',
-            classText: '#fafafa',
-            background: 'transparent',
-            mainBkg: 'rgba(255,255,255,0.04)',
-            secondaryColor: 'rgba(255,255,255,0.04)',
-            tertiaryColor: 'rgba(255,255,255,0.04)',
-            edgeLabelBackground: '#101215',
-          };
+    const themeName = () =>
+      document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 
     // Mermaid sizes each node box by measuring its label at render time. The webfont
     // loads lazily, so measuring before it arrives sizes boxes for the fallback font
@@ -190,8 +172,8 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
         return Promise.resolve();
       }
       const loaded = Promise.all([
-        document.fonts.load('400 13px "JetBrains Mono"'),
-        document.fonts.load('600 13px "JetBrains Mono"'),
+        document.fonts.load('400 15px "JetBrains Mono"'),
+        document.fonts.load('600 15px "JetBrains Mono"'),
       ]).then(() => undefined);
       const timeout = new Promise<void>((resolve) => setTimeout(resolve, 3000));
       return Promise.race([loaded, timeout]);
@@ -200,18 +182,7 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
     async function loadMermaid() {
       if (!mermaidPromise) {
         mermaidPromise = import('mermaid').then(({ default: mermaid }) => {
-          mermaid.initialize({
-            startOnLoad: false,
-            theme: 'base',
-            securityLevel: 'strict',
-            htmlLabels: false,
-            flowchart: { htmlLabels: false },
-            themeVariables: themeVariables(),
-            c4: {
-              c4ShapeMargin: 60,
-              diagramMarginY: 30,
-            },
-          });
+          mermaid.initialize(mermaidDiagramConfig(themeName()));
           return mermaid;
         });
       }
@@ -228,11 +199,16 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
 
       try {
         const [mermaid] = await Promise.all([loadMermaid(), monoFontReady()]);
-        const { svg } = await mermaid.render(`${id}-svg`, source.textContent ?? '');
+        const { svg } = await mermaid.render(
+          `${id}-svg`,
+          wrapClassDiagramNotes(source.textContent ?? ''),
+        );
         target.innerHTML = svg;
 
         const el = target.querySelector('svg');
         if (el) {
+          tuneDiagramSvg(el, themeName());
+          fitDiagramSvg(el);
           // Give the diagram a real accessible name instead of letting a screen
           // reader walk every node label with no structure.
           el.setAttribute('role', 'img');

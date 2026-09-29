@@ -26,7 +26,7 @@ const { steps, loopLabel } = Astro.props;
             {step.label}
           </span>
           {step.detail && (
-            <span class="font-mono text-xs text-neutral-500 light:text-neutral-600">
+            <span class="font-mono text-xs text-neutral-300 light:text-neutral-600">
               {step.detail}
             </span>
           )}
@@ -34,7 +34,7 @@ const { steps, loopLabel } = Astro.props;
         {i < steps.length - 1 && (
           <Icon
             name="arrowRight"
-            class="mx-auto h-4 w-4 shrink-0 rotate-90 text-neutral-500 light:text-neutral-600 sm:mx-0 sm:rotate-0"
+            class="mx-auto h-4 w-4 shrink-0 rotate-90 text-neutral-400 light:text-neutral-600 sm:mx-0 sm:rotate-0"
           />
         )}
       </>

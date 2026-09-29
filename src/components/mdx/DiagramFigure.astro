@@ -1,4 +1,5 @@
 ---
+import { DIAGRAM_MIN_FONT_PX, UML_FONT_PX } from '@/lib/diagram-theme';
 import DiagramZoom from './DiagramZoom.astro';
 
 interface Props {
@@ -9,12 +10,20 @@ interface Props {
 }
 
 const { caption, viewBox } = Astro.props;
+const intrinsicWidth = viewBox.trim().split(/[\s,]+/)[2];
+const minScale = DIAGRAM_MIN_FONT_PX / UML_FONT_PX;
 ---
 
 <figure class="diagram-figure">
   <div class="diagram-frame">
     <div class="diagram-canvas">
-      <svg viewBox={viewBox} role="img" aria-label={caption} xmlns="http://www.w3.org/2000/svg">
+      <svg
+        viewBox={viewBox}
+        role="img"
+        aria-label={caption}
+        xmlns="http://www.w3.org/2000/svg"
+        style={`--diagram-intrinsic: ${intrinsicWidth}px; --diagram-min-scale: ${minScale}`}
+      >
         <slot />
       </svg>
     </div>
@@ -26,6 +35,8 @@ const { caption, viewBox } = Astro.props;
 <style>
   .diagram-figure {
     margin-block: 2em;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .diagram-frame {
@@ -33,6 +44,8 @@ const { caption, viewBox } = Astro.props;
     border: 1px solid var(--border-subtle);
     background: var(--diagram-surface);
     padding: 1rem;
+    max-width: 100%;
+    min-width: 0;
   }
 
   @media (min-width: 640px) {
@@ -44,13 +57,16 @@ const { caption, viewBox } = Astro.props;
   .diagram-canvas {
     overflow-x: auto;
     overscroll-behavior-inline: contain;
+    max-width: 100%;
+    min-width: 0;
     -webkit-overflow-scrolling: touch;
   }
 
   svg {
     display: block;
     width: 100%;
-    min-width: 34rem;
+    max-width: var(--diagram-intrinsic, none);
+    min-width: calc(var(--diagram-intrinsic, 0px) * var(--diagram-min-scale, 1));
     height: auto;
     margin-inline: auto;
     /* Every shape inherits these, so the diagram follows the theme instead of
@@ -109,23 +125,23 @@ const { caption, viewBox } = Astro.props;
 
   svg :global(text) {
     fill: var(--uml-text);
-    font-size: 11px;
+    font-size: 12px;
   }
 
   svg :global(.uml-label) {
     fill: var(--uml-muted);
-    font-size: 9.5px;
+    font-size: 11px;
   }
 
   svg :global(.uml-stereotype) {
     fill: var(--uml-muted);
-    font-size: 9px;
+    font-size: 10px;
     font-style: italic;
   }
 
   svg :global(.uml-title) {
     fill: var(--uml-accent);
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.06em;
   }
 
