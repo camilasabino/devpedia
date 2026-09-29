@@ -5,7 +5,7 @@
   "version": "0.0.1",
   "description": "DevPedia — A handbook for Software Engineering",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.22.3"
   },
   "scripts": {
     "dev": "astro dev",
@@ -14,8 +14,14 @@
     "check": "astro check",
     "astro": "astro",
     "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "npm run format:check && npm run lint && npm run check && npm test && npm run build && npm run check:links && npm run check:en-language",
     "check:links": "node scripts/check-links.mjs",
-    "check:en-language": "node scripts/check-en-language.mjs"
+    "check:en-language": "node scripts/check-en-language.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.1",
@@ -28,8 +34,19 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-astro": "^3.2.1",
+    "globals": "^17.12.0",
+    "husky": "^9.1.7",
     "pagefind": "^1.5.2",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.1.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
     "vitest": "^4.1.11",
     "wrangler": "^4.143.0",
     "yaml": "^2.9.1"

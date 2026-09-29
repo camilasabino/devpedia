@@ -1,6 +1,6 @@
 ---
 import DiagramZoom from './DiagramZoom.astro';
-import { langFromPath, ui } from '../../i18n';
+import { langFromPath, ui } from '@/i18n';
 
 interface Props {
   // Full raw Mermaid source, including the diagram-type declaration line
@@ -186,7 +186,9 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
     // and the real glyphs then overflow and get clipped. Wait for it first (bounded,
     // so a blocked font request cannot leave the diagram unrendered).
     function monoFontReady() {
-      if (!document.fonts) return Promise.resolve();
+      if (!document.fonts) {
+        return Promise.resolve();
+      }
       const loaded = Promise.all([
         document.fonts.load('400 13px "JetBrains Mono"'),
         document.fonts.load('600 13px "JetBrains Mono"'),
@@ -219,7 +221,9 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
     async function renderDiagram(source: HTMLPreElement) {
       const id = source.dataset.diagramId;
       const target = document.querySelector<HTMLDivElement>(`[data-diagram-target="${id}"]`);
-      if (!id || !target || target.dataset.rendered === 'true') return;
+      if (!id || !target || target.dataset.rendered === 'true') {
+        return;
+      }
       target.dataset.rendered = 'true';
 
       try {
@@ -246,21 +250,29 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (!entry.isIntersecting) continue;
+            if (!entry.isIntersecting) {
+              continue;
+            }
             const source = entry.target.querySelector<HTMLPreElement>('.mermaid-source');
             observer.unobserve(entry.target);
-            if (source) void renderDiagram(source);
+            if (source) {
+              void renderDiagram(source);
+            }
           }
         },
-        { rootMargin: '400px 0px' }
+        { rootMargin: '400px 0px' },
       );
 
       for (const source of sources) {
         const frame = source.closest('.diagram-frame');
-        if (frame) observer.observe(frame);
+        if (frame) {
+          observer.observe(frame);
+        }
       }
     } else {
-      for (const source of sources) void renderDiagram(source);
+      for (const source of sources) {
+        void renderDiagram(source);
+      }
     }
 
     // Re-render on theme change: Mermaid bakes colors into the SVG, so a diagram
@@ -268,7 +280,9 @@ const id = `mermaid-${(hash >>> 0).toString(36)}`;
     new MutationObserver(() => {
       mermaidPromise = null;
       for (const source of sources) {
-        const target = document.querySelector<HTMLDivElement>(`[data-diagram-target="${source.dataset.diagramId}"]`);
+        const target = document.querySelector<HTMLDivElement>(
+          `[data-diagram-target="${source.dataset.diagramId}"]`,
+        );
         if (target?.dataset.rendered === 'true') {
           delete target.dataset.rendered;
           void renderDiagram(source);

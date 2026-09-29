@@ -2,10 +2,7 @@ const CONTAINED_LENGTH_RATIO = 0.7;
 const TYPO_RATIO = 0.25;
 
 export function normalizeSearchText(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '');
+  return value.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
 }
 
 export function tokenizeSearchText(value: string): string[] {
@@ -16,9 +13,16 @@ export function tokenizeSearchText(value: string): string[] {
 }
 
 export function termMatchesCandidate(queryTerm: string, candidate: string): boolean {
-  if (!queryTerm || !candidate) return false;
-  if (candidate.includes(queryTerm)) return true;
-  if (queryTerm.includes(candidate) && candidate.length / queryTerm.length >= CONTAINED_LENGTH_RATIO) {
+  if (!queryTerm || !candidate) {
+    return false;
+  }
+  if (candidate.includes(queryTerm)) {
+    return true;
+  }
+  if (
+    queryTerm.includes(candidate) &&
+    candidate.length / queryTerm.length >= CONTAINED_LENGTH_RATIO
+  ) {
     return true;
   }
   const maxEdits = Math.max(1, Math.floor(queryTerm.length * TYPO_RATIO));
@@ -30,7 +34,9 @@ export function pagefindResultMatchesQuery(
   data: { excerpt?: string; content?: string; meta?: { title?: string } },
 ): boolean {
   const terms = tokenizeSearchText(query).filter((term) => term.length >= 2);
-  if (terms.length === 0) return true;
+  if (terms.length === 0) {
+    return true;
+  }
 
   const excerpt = stripTags(data.excerpt ?? '');
   const candidates = [
@@ -38,9 +44,13 @@ export function pagefindResultMatchesQuery(
     ...tokenizeSearchText(data.meta?.title ?? ''),
     ...tokenizeSearchText(data.content ?? ''),
   ];
-  if (candidates.length === 0) return false;
+  if (candidates.length === 0) {
+    return false;
+  }
 
-  return terms.every((term) => candidates.some((candidate) => termMatchesCandidate(term, candidate)));
+  return terms.every((term) =>
+    candidates.some((candidate) => termMatchesCandidate(term, candidate)),
+  );
 }
 
 function stripTags(value: string): string {
@@ -48,9 +58,15 @@ function stripTags(value: string): string {
 }
 
 function levenshtein(a: string, b: string): number {
-  if (a === b) return 0;
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
+  if (a === b) {
+    return 0;
+  }
+  if (a.length === 0) {
+    return b.length;
+  }
+  if (b.length === 0) {
+    return a.length;
+  }
 
   const row = Array.from({ length: b.length + 1 }, (_, index) => index);
   for (let i = 1; i <= a.length; i++) {

@@ -2,8 +2,8 @@
 // Previous / next guide in the reading sequence of the guide's parent (see
 // `guideSequence`). A missing side is left empty; the sequence never wraps around.
 import Icon from './Icon.astro';
-import { format, ui, type Lang } from '../i18n';
-import { trackAttributes } from '../lib/analytics';
+import { format, ui, type Lang } from '@/i18n';
+import { trackAttributes } from '@/lib/analytics';
 
 interface Link {
   /** Conceptual id of the linked guide. */
@@ -28,32 +28,37 @@ const card =
   'card-surface flex min-h-full flex-col gap-1.5 p-4 hover:border-accent-400/40 light:hover:border-accent-600/40 sm:p-5';
 ---
 
-{
-  (previous || next) && (
-    <nav aria-label={format(copy.label, { parent: parentTitle })} class="grid gap-3 sm:grid-cols-2 sm:gap-4">
-      {previous && (
-        <a href={previous.href} rel="prev" class={card}>
-          <span class="flex items-center gap-1.5 font-mono text-xs text-neutral-500 light:text-neutral-600">
-            <Icon name="arrowLeft" class="h-3.5 w-3.5" decorative />
-            {copy.previous}
-          </span>
-          <span class="font-display font-semibold text-neutral-100 light:text-neutral-800">{previous.title}</span>
-        </a>
-      )}
-      {next && (
-        <a
-          href={next.href}
-          rel="next"
-          class={`${card} text-right sm:col-start-2`}
-          {...trackAttributes('next_guide_click', { from_id: guideId, to_id: next.id, lang })}
-        >
-          <span class="flex items-center justify-end gap-1.5 font-mono text-xs text-neutral-500 light:text-neutral-600">
-            {copy.next}
-            <Icon name="arrowRight" class="h-3.5 w-3.5" decorative />
-          </span>
-          <span class="font-display font-semibold text-neutral-100 light:text-neutral-800">{next.title}</span>
-        </a>
-      )}
-    </nav>
-  )
-}
+{(previous || next) && (
+  <nav
+    aria-label={format(copy.label, { parent: parentTitle })}
+    class="grid gap-3 sm:grid-cols-2 sm:gap-4"
+  >
+    {previous && (
+      <a href={previous.href} rel="prev" class={card}>
+        <span class="flex items-center gap-1.5 font-mono text-xs text-neutral-500 light:text-neutral-600">
+          <Icon name="arrowLeft" class="h-3.5 w-3.5" decorative />
+          {copy.previous}
+        </span>
+        <span class="font-display font-semibold text-neutral-100 light:text-neutral-800">
+          {previous.title}
+        </span>
+      </a>
+    )}
+    {next && (
+      <a
+        href={next.href}
+        rel="next"
+        class={`${card} text-right sm:col-start-2`}
+        {...trackAttributes('next_guide_click', { from_id: guideId, to_id: next.id, lang })}
+      >
+        <span class="flex items-center justify-end gap-1.5 font-mono text-xs text-neutral-500 light:text-neutral-600">
+          {copy.next}
+          <Icon name="arrowRight" class="h-3.5 w-3.5" decorative />
+        </span>
+        <span class="font-display font-semibold text-neutral-100 light:text-neutral-800">
+          {next.title}
+        </span>
+      </a>
+    )}
+  </nav>
+)}

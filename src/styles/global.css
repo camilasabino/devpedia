@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "./theme.css";
-@import "./surfaces.css";
+@import 'tailwindcss';
+@import './theme.css';
+@import './surfaces.css';
 
 /* Project documentation is prose, not markup: keep its words out of the class scan. */
 @source not "../../docs";
@@ -53,7 +53,11 @@ body {
   border: 1px solid var(--border-subtle);
   background: linear-gradient(180deg, var(--surface-card-from), var(--surface-card-to));
   box-shadow: 0 1px 0 var(--overlay-inset) inset;
-  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    background 0.35s ease;
 }
 
 .card-surface:hover {
@@ -311,19 +315,19 @@ body {
   --callout-accent: var(--color-violet-400);
 }
 
-:root[data-theme="light"] .callout-note {
+:root[data-theme='light'] .callout-note {
   --callout-border: rgba(13, 148, 136, 0.3);
   --callout-bg: rgba(13, 148, 136, 0.07);
   --callout-accent: var(--color-accent-700);
 }
 
-:root[data-theme="light"] .callout-warning {
+:root[data-theme='light'] .callout-warning {
   --callout-border: rgba(180, 83, 9, 0.3);
   --callout-bg: rgba(217, 119, 6, 0.09);
   --callout-accent: var(--color-amber-700);
 }
 
-:root[data-theme="light"] .callout-key {
+:root[data-theme='light'] .callout-key {
   --callout-border: rgba(109, 40, 217, 0.3);
   --callout-bg: rgba(139, 92, 246, 0.09);
   --callout-accent: var(--color-violet-700);
@@ -402,8 +406,8 @@ body {
   font-style: var(--shiki-dark-font-style, inherit);
 }
 
-:root[data-theme="light"] .prose-guide pre.astro-code,
-:root[data-theme="light"] .prose-guide pre.astro-code span {
+:root[data-theme='light'] .prose-guide pre.astro-code,
+:root[data-theme='light'] .prose-guide pre.astro-code span {
   color: var(--shiki-light) !important;
   font-style: var(--shiki-light-font-style, inherit);
 }

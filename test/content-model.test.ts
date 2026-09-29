@@ -4,7 +4,7 @@ import {
   validateContentModel,
   type ContentModel,
   type Lang,
-} from '../src/lib/content-model';
+} from '@/lib/content-model';
 import { bodies, cloneModel, frontmatter, loadModel, SOURCES } from './real-content';
 
 describe('DevPedia content model', () => {
@@ -34,7 +34,9 @@ describe('DevPedia content model', () => {
       ...index.topics(lang).map((topic) => index.pathOf(lang, 'topic', topic.id)),
       ...index
         .topics(lang)
-        .flatMap((topic) => index.subtopicsOf(lang, topic.id).map((s) => index.pathOf(lang, 'subtopic', s.id))),
+        .flatMap((topic) =>
+          index.subtopicsOf(lang, topic.id).map((s) => index.pathOf(lang, 'subtopic', s.id)),
+        ),
     ];
     expect(hubs('es')).toEqual([
       '/arquitectura/',
@@ -92,15 +94,25 @@ describe('DevPedia content model', () => {
         'teams-and-workflows': [10, 11],
       });
       expect(sectionOrders(lang, 'design', 'design-principles')).toEqual({ '-': [1, 2, 3, 4] });
-      expect(Object.keys(sectionOrders(lang, 'design', 'design-patterns')).sort()).toEqual(
-        ['-', 'behavioral', 'creational', 'reference', 'structural'],
-      );
+      expect(Object.keys(sectionOrders(lang, 'design', 'design-patterns')).sort()).toEqual([
+        '-',
+        'behavioral',
+        'creational',
+        'reference',
+        'structural',
+      ]);
     }
   });
 
   it('uses the agreed guide slugs', () => {
-    const paths = (id: string) => [index.pathOf('es', 'guide', id), index.pathOf('en', 'guide', id)];
-    expect(paths('architectural-drivers')).toEqual(['/arquitectura/drivers-de-arquitectura/', '/en/architecture/architectural-drivers/']);
+    const paths = (id: string) => [
+      index.pathOf('es', 'guide', id),
+      index.pathOf('en', 'guide', id),
+    ];
+    expect(paths('architectural-drivers')).toEqual([
+      '/arquitectura/drivers-de-arquitectura/',
+      '/en/architecture/architectural-drivers/',
+    ]);
     expect(paths('what-are-software-design-principles')).toEqual([
       '/diseno/principios/que-son-los-principios-de-diseno/',
       '/en/design/principles/what-are-software-design-principles/',
@@ -109,8 +121,14 @@ describe('DevPedia content model', () => {
       '/diseno/patrones/patrones-que-suelen-confundirse/',
       '/en/design/patterns/commonly-confused-patterns/',
     ]);
-    expect(paths('test-doubles')).toEqual(['/testing/dobles-de-test/', '/en/testing/test-doubles/']);
-    expect(paths('usability-testing')).toEqual(['/testing/testing-de-usabilidad/', '/en/testing/usability-testing/']);
+    expect(paths('test-doubles')).toEqual([
+      '/testing/dobles-de-test/',
+      '/en/testing/test-doubles/',
+    ]);
+    expect(paths('usability-testing')).toEqual([
+      '/testing/testing-de-usabilidad/',
+      '/en/testing/usability-testing/',
+    ]);
     expect(paths('claude-code-prompting')).toEqual([
       '/ai-engineering/claude-code/como-escribir-buenos-prompts/',
       '/en/ai-engineering/claude-code/how-to-write-good-prompts/',
@@ -119,7 +137,10 @@ describe('DevPedia content model', () => {
       '/ai-engineering/claude-code/permisos/',
       '/en/ai-engineering/claude-code/permissions/',
     ]);
-    expect(paths('claude-code-mcp')).toEqual(['/ai-engineering/claude-code/mcp/', '/en/ai-engineering/claude-code/mcp/']);
+    expect(paths('claude-code-mcp')).toEqual([
+      '/ai-engineering/claude-code/mcp/',
+      '/en/ai-engineering/claude-code/mcp/',
+    ]);
     expect(paths('claude-code-security')).toEqual([
       '/ai-engineering/claude-code/seguridad/',
       '/en/ai-engineering/claude-code/security/',
@@ -139,15 +160,24 @@ describe('DevPedia content model', () => {
   });
 
   it('gives every route a unique URL', () => {
-    const all = (['es', 'en'] as const).flatMap((lang) => index.routes(lang).map((route) => route.path));
+    const all = (['es', 'en'] as const).flatMap((lang) =>
+      index.routes(lang).map((route) => route.path),
+    );
     expect(new Set(all).size).toBe(all.length);
   });
 
   it('never links to the old blog', () => {
     for (const lang of ['es', 'en'] as const) {
       for (const { path, body } of bodies(lang)) {
-        const links = [...body.matchAll(/\]\((\/(?:en\/)?blog\/[^)]*)\)|href=["'](\/(?:en\/)?blog\/[^"']*)["']/g)];
-        expect(links.map((m) => m[1] ?? m[2]), path).toEqual([]);
+        const links = [
+          ...body.matchAll(
+            /\]\((\/(?:en\/)?blog\/[^)]*)\)|href=["'](\/(?:en\/)?blog\/[^"']*)["']/g,
+          ),
+        ];
+        expect(
+          links.map((m) => m[1] ?? m[2]),
+          path,
+        ).toEqual([]);
       }
     }
   });
@@ -159,7 +189,9 @@ describe('DevPedia content model', () => {
         for (const match of body.matchAll(/\]\((\/[^)\s#]*)(?:#[^)\s]*)?\)/g)) {
           const target = match[1];
           expect(known.has(target), `${path} links to unknown page ${target}`).toBe(true);
-          expect(target.startsWith('/en/'), `${path} links to the other edition: ${target}`).toBe(lang === 'en');
+          expect(target.startsWith('/en/'), `${path} links to the other edition: ${target}`).toBe(
+            lang === 'en',
+          );
         }
       }
     }
@@ -172,14 +204,19 @@ describe('DevPedia content validation', () => {
     mutate(model);
     return validateContentModel(model);
   };
-  const guide = (model: ContentModel, lang: Lang, id: string) => model[lang].guides.find((g) => g.id === id)!;
+  const guide = (model: ContentModel, lang: Lang, id: string) =>
+    model[lang].guides.find((g) => g.id === id)!;
 
   it('requires ids', () => {
-    expect(errorsAfter((m) => (guide(m, 'es', 'solid').id = ''))).toContain('[es] guide "": missing id');
+    expect(errorsAfter((m) => (guide(m, 'es', 'solid').id = ''))).toContain(
+      '[es] guide "": missing id',
+    );
   });
 
   it('rejects ids that are not kebab-case', () => {
-    expect(errorsAfter((m) => (m.en.topics[0].id = 'Software_Architecture')).join('\n')).toMatch(/is not kebab-case/);
+    expect(errorsAfter((m) => (m.en.topics[0].id = 'Software_Architecture')).join('\n')).toMatch(
+      /is not kebab-case/,
+    );
   });
 
   it('rejects duplicate ids', () => {
@@ -199,7 +236,9 @@ describe('DevPedia content validation', () => {
       guide(m, 'en', 'builder-pattern').section = 'structural';
     });
     expect(errors).toContain('guide "solid": order differs between editions (es: 3, en: 9)');
-    expect(errors).toContain('guide "builder-pattern": section differs between editions (es: creational, en: structural)');
+    expect(errors).toContain(
+      'guide "builder-pattern": section differs between editions (es: creational, en: structural)',
+    );
   });
 
   it('rejects unknown topic, subtopic and section references', () => {
@@ -209,12 +248,18 @@ describe('DevPedia content validation', () => {
       guide(m, 'es', 'data-architecture').section = 'data';
     });
     expect(errors).toContain('[es] guide "solid": unknown topic "design-principles"');
-    expect(errors).toContain('[es] guide "what-is-testing": subtopic "claude-code" belongs to topic "ai-engineering", not "testing"');
-    expect(errors).toContain('[es] guide "data-architecture": section "data" is not declared by "architecture"');
+    expect(errors).toContain(
+      '[es] guide "what-is-testing": subtopic "claude-code" belongs to topic "ai-engineering", not "testing"',
+    );
+    expect(errors).toContain(
+      '[es] guide "data-architecture": section "data" is not declared by "architecture"',
+    );
   });
 
   it('rejects declared sections with no guides', () => {
-    const errors = errorsAfter((m) => (guide(m, 'es', 'how-to-communicate-architecture-decisions').section = 'operations'));
+    const errors = errorsAfter(
+      (m) => (guide(m, 'es', 'how-to-communicate-architecture-decisions').section = 'operations'),
+    );
     expect(errors).toContain('[es] topic "architecture": section "decisions" has no guides');
   });
 
@@ -223,7 +268,9 @@ describe('DevPedia content validation', () => {
       guide(m, 'es', 'data-architecture').slug = 'domain-driven-design';
       guide(m, 'en', 'system-testing').order = 7;
     });
-    expect(errors).toContain('[es] topic "architecture": duplicate guide slug "domain-driven-design"');
+    expect(errors).toContain(
+      '[es] topic "architecture": duplicate guide slug "domain-driven-design"',
+    );
     expect(errors).toContain('[en] topic "testing": duplicate guide order 7');
   });
 
@@ -240,19 +287,25 @@ describe('DevPedia content validation', () => {
         g.slug = 'claude-code';
       }
     });
-    expect(errors).toContain('[es] guide "what-is-claude-code": slug "claude-code" collides with a subtopic of "ai-engineering"');
+    expect(errors).toContain(
+      '[es] guide "what-is-claude-code": slug "claude-code" collides with a subtopic of "ai-engineering"',
+    );
   });
 
   it('rejects a Spanish topic slug that shadows the English edition', () => {
-    expect(errorsAfter((m) => (m.es.topics.find((t) => t.id === 'testing')!.slug = 'en'))).toContain(
-      '[es] topic "testing": slug "en" is reserved',
-    );
+    expect(
+      errorsAfter((m) => (m.es.topics.find((t) => t.id === 'testing')!.slug = 'en')),
+    ).toContain('[es] topic "testing": slug "en" is reserved');
   });
 
   it('keeps Claude Code under AI Engineering', () => {
     const errors = errorsAfter((m) => {
-      for (const lang of ['es', 'en'] as const) m[lang].subtopics.find((s) => s.id === 'claude-code')!.topic = 'design';
+      for (const lang of ['es', 'en'] as const) {
+        m[lang].subtopics.find((s) => s.id === 'claude-code')!.topic = 'design';
+      }
     });
-    expect(errors).toContain('[es] subtopic "claude-code" must live under topic "ai-engineering", not "design"');
+    expect(errors).toContain(
+      '[es] subtopic "claude-code" must live under topic "ai-engineering", not "design"',
+    );
   });
 });

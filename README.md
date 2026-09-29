@@ -1,6 +1,6 @@
 # DevPedia
 
-*A handbook for Software Engineering*
+_A handbook for Software Engineering_
 
 DevPedia is a structured, evolving handbook for learning Software Engineering concepts in depth and revisiting them later as practical reference. Guides are organized by knowledge structure (topic, subtopic, section), not by publication date, and every guide exists in Spanish and English.
 

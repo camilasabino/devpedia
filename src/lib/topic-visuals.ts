@@ -48,7 +48,9 @@ export const SUBTOPIC_COVERS: Readonly<Record<string, string>> = {
 
 export function topicVisual(topicId: string): TopicVisual {
   const visual = TOPIC_VISUALS[topicId];
-  if (!visual) throw new Error(`No visual configuration for topic "${topicId}" in topic-visuals.ts`);
+  if (!visual) {
+    throw new Error(`No visual configuration for topic "${topicId}" in topic-visuals.ts`);
+  }
   return visual;
 }
 

@@ -3,20 +3,20 @@
 // description, last update and reading time, table of contents, body, sharing and the
 // previous/next guide. The body is the page; everything around it stays secondary.
 import { render } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
 import Icon from './Icon.astro';
 import Breadcrumb from './Breadcrumb.astro';
 import GuidePager from './GuidePager.astro';
 import GuideShare from './GuideShare.astro';
 import GuideToc from './GuideToc.astro';
-import { SITE_NAME, SITE_URL, pageTitle } from '../config';
-import { format, ui, type Lang } from '../i18n';
-import { getContent } from '../lib/content';
-import { formatMonthYear, guideSequence, readingMinutes, tocEntries } from '../lib/guide';
-import { absoluteUrl, breadcrumbJsonLd, imageType, techArticleJsonLd } from '../lib/seo';
-import { guideView } from '../lib/analytics';
-import { searchContext } from '../lib/search';
-import { coverOf, topicVisual } from '../lib/topic-visuals';
+import { SITE_NAME, SITE_URL, pageTitle } from '@/config';
+import { format, ui, type Lang } from '@/i18n';
+import { getContent } from '@/lib/content';
+import { formatMonthYear, guideSequence, readingMinutes, tocEntries } from '@/lib/guide';
+import { absoluteUrl, breadcrumbJsonLd, imageType, techArticleJsonLd } from '@/lib/seo';
+import { guideView } from '@/lib/analytics';
+import { searchContext } from '@/lib/search';
+import { coverOf, topicVisual } from '@/lib/topic-visuals';
 
 interface Props {
   lang: Lang;
@@ -95,79 +95,87 @@ const sectionLabel = section && section.title !== guide.title ? section : undefi
   {/* The side column is kept even without a table of contents, so the body sits at the
       same position and width on every guide. */}
   <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_14rem] lg:items-start lg:gap-x-12">
-    {
-      toc.length > 0 && (
-        <aside class="hidden lg:col-start-2 lg:row-start-1 lg:block lg:self-stretch">
-          <div class="sticky top-24 max-h-[calc(100dvh-8rem)] overflow-y-auto pb-4">
-            <GuideToc lang={lang} headings={toc} variant="sidebar" />
-          </div>
-        </aside>
-      )
-    }
+    {toc.length > 0 && (
+      <aside class="hidden lg:col-start-2 lg:row-start-1 lg:block lg:self-stretch">
+        <div class="sticky top-24 max-h-[calc(100dvh-8rem)] overflow-y-auto pb-4">
+          <GuideToc lang={lang} headings={toc} variant="sidebar" />
+        </div>
+      </aside>
+    )}
 
     <div class="min-w-0 lg:col-start-1 lg:row-start-1">
       <Breadcrumb lang={lang} crumbs={crumbs} current={guide.title} />
 
       {/* Search result metadata. Kept outside the indexed element, whose text is searchable. */}
-      <span hidden data-pagefind-meta="context">{searchContext(index, lang, 'guide', id, copy.search.topicLabel)}</span>
+      <span hidden data-pagefind-meta="context">
+        {searchContext(index, lang, 'guide', id, copy.search.topicLabel)}
+      </span>
       <span hidden data-pagefind-meta={`id:${id}`}></span>
       <span hidden data-pagefind-meta="kind:guide"></span>
       {/* Search indexes the title, the description and the body; the rest of the article
           (context line, dates, table of contents, sharing) is chrome. */}
       <article class="mt-8" data-pagefind-body>
         <header>
-          <p data-pagefind-ignore class="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600">
-            <Icon name={topic.icon} class={`h-4 w-4 ${visual.text}`} decorative />
-            {
-              sectionLabel && (
-                <>
-                  <a
-                    href={`${parentPath}#${sectionLabel.id}`}
-                    class={`inline-flex min-h-6 items-center hover:underline ${visual.text}`}
-                  >
-                    {sectionLabel.title}
-                  </a>
-                  <span aria-hidden="true">·</span>
-                </>
-              )
-            }
-            {
-              sequence.total > 1 && (
-                <span>{format(copy.guide.position, { position: sequence.position, total: sequence.total })}</span>
-              )
-            }
-          </p>
-          <h1
-            class="mt-3 font-display text-3xl font-bold leading-tight tracking-tight text-balance break-words text-neutral-50 light:text-neutral-900 sm:text-4xl lg:text-[2.625rem]"
+          <p
+            data-pagefind-ignore
+            class="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-neutral-500 light:text-neutral-600"
           >
+            <Icon name={topic.icon} class={`h-4 w-4 ${visual.text}`} decorative />
+            {sectionLabel && (
+              <>
+                <a
+                  href={`${parentPath}#${sectionLabel.id}`}
+                  class={`inline-flex min-h-6 items-center hover:underline ${visual.text}`}
+                >
+                  {sectionLabel.title}
+                </a>
+                <span aria-hidden="true">·</span>
+              </>
+            )}
+            {sequence.total > 1 && (
+              <span>
+                {format(copy.guide.position, {
+                  position: sequence.position,
+                  total: sequence.total,
+                })}
+              </span>
+            )}
+          </p>
+          <h1 class="mt-3 font-display text-3xl font-bold leading-tight tracking-tight text-balance break-words text-neutral-50 light:text-neutral-900 sm:text-4xl lg:text-[2.625rem]">
             {guide.title}
           </h1>
           <p class="mt-4 max-w-[var(--guide-measure)] text-lg leading-relaxed text-neutral-300 light:text-neutral-700">
             {guide.description}
           </p>
-          <p data-pagefind-ignore class="mt-5 flex flex-wrap items-center gap-x-2 font-mono text-xs text-neutral-500 light:text-neutral-600">
+          <p
+            data-pagefind-ignore
+            class="mt-5 flex flex-wrap items-center gap-x-2 font-mono text-xs text-neutral-500 light:text-neutral-600"
+          >
             <span>
               {copy.guide.updated}{' '}
-              <time datetime={guide.lastUpdated.toISOString().slice(0, 10)}>{formatMonthYear(guide.lastUpdated, lang)}</time>
+              <time datetime={guide.lastUpdated.toISOString().slice(0, 10)}>
+                {formatMonthYear(guide.lastUpdated, lang)}
+              </time>
             </span>
             <span aria-hidden="true">·</span>
             <span>{format(copy.guide.readingTime, { minutes })}</span>
           </p>
         </header>
 
-        {
-          toc.length > 0 && (
-            <div class="mt-8 lg:hidden" data-pagefind-ignore>
-              <GuideToc lang={lang} headings={toc} variant="inline" />
-            </div>
-          )
-        }
+        {toc.length > 0 && (
+          <div class="mt-8 lg:hidden" data-pagefind-ignore>
+            <GuideToc lang={lang} headings={toc} variant="inline" />
+          </div>
+        )}
 
         <div class="prose-guide mt-10" data-heading-anchor-label={copy.guide.headingAnchor}>
           <Content />
         </div>
 
-        <footer data-pagefind-ignore class="mt-14 border-t border-white/10 pt-6 light:border-black/10">
+        <footer
+          data-pagefind-ignore
+          class="mt-14 border-t border-white/10 pt-6 light:border-black/10"
+        >
           <GuideShare lang={lang} id={id} title={guide.title} url={absoluteUrl(path, SITE_URL)} />
         </footer>
       </article>
@@ -198,7 +206,10 @@ const sectionLabel = section && section.title !== guide.title ? section : undefi
       anchor.href = `#${heading.id}`;
       anchor.className = 'heading-anchor';
       anchor.textContent = '#';
-      anchor.setAttribute('aria-label', label.replace('{heading}', heading.textContent?.trim() ?? ''));
+      anchor.setAttribute(
+        'aria-label',
+        label.replace('{heading}', heading.textContent?.trim() ?? ''),
+      );
       heading.append(anchor);
       // Lets the table of contents move focus to the section it jumps to.
       heading.tabIndex = -1;

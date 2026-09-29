@@ -33,11 +33,16 @@ const FUNCTION_WORDS =
 
 function walk(dir, filter) {
   const out = [];
-  if (!existsSync(dir)) return out;
+  if (!existsSync(dir)) {
+    return out;
+  }
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
-    if (statSync(path).isDirectory()) out.push(...walk(path, filter));
-    else if (filter(name)) out.push(path);
+    if (statSync(path).isDirectory()) {
+      out.push(...walk(path, filter));
+    } else if (filter(name)) {
+      out.push(path);
+    }
   }
   return out;
 }
@@ -56,7 +61,9 @@ function scanText(label, text) {
       (word) => !ALLOWED.has(word) && (ACCENTED.test(word) || FUNCTION_WORDS.test(` ${word} `)),
     );
     if (suspicious.length > 0) {
-      findings.push(`${label}:${index + 1}  ${[...new Set(suspicious)].join(', ')}  |  ${line.trim().slice(0, 110)}`);
+      findings.push(
+        `${label}:${index + 1}  ${[...new Set(suspicious)].join(', ')}  |  ${line.trim().slice(0, 110)}`,
+      );
     }
   }
 }
@@ -79,7 +86,9 @@ for (const path of renderedPages) {
 
 if (findings.length > 0) {
   console.error(`${findings.length} line(s) with possible Spanish left in the English editions:`);
-  for (const finding of findings) console.error(`  - ${finding}`);
+  for (const finding of findings) {
+    console.error(`  - ${finding}`);
+  }
   process.exit(1);
 }
 

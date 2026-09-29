@@ -5,8 +5,8 @@ import Flag from './Flag.astro';
 import Icon from './Icon.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import Wordmark from './Wordmark.astro';
-import { languages, ui, type Lang } from '../i18n';
-import { trackAttributes, type PageKind } from '../lib/analytics';
+import { languages, ui, type Lang } from '@/i18n';
+import { trackAttributes, type PageKind } from '@/lib/analytics';
 
 interface Props {
   lang: Lang;
@@ -30,9 +30,7 @@ const langSwitcherClass = (code: Lang) =>
   }`;
 ---
 
-<header
-  class="sticky top-0 z-40 border-b border-white/10 light:border-black/10 bg-[color-mix(in_srgb,var(--surface-bg)_85%,transparent)] backdrop-blur-md"
->
+<header class="sticky top-0 z-40 border-b border-white/10 light:border-black/10 bg-[color-mix(in_srgb,var(--surface-bg)_85%,transparent)] backdrop-blur-md">
   <div class="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2 sm:gap-4 sm:px-6">
     <a
       href={copy.homePath}
@@ -44,7 +42,9 @@ const langSwitcherClass = (code: Lang) =>
       <nav aria-label={copy.nav.label}>
         <ul class="flex items-center">
           <li>
-            <a href={`${copy.homePath}#topics`} class={navItemClass}>{copy.nav.topics}</a>
+            <a href={`${copy.homePath}#topics`} class={navItemClass}>
+              {copy.nav.topics}
+            </a>
           </li>
           <li>
             <button
@@ -55,27 +55,29 @@ const langSwitcherClass = (code: Lang) =>
               class={`${navItemClass} cursor-pointer`}
             >
               <Icon name="search" class="h-4 w-4" />
-              <span class="hidden sm:inline" aria-hidden="true">{copy.nav.search}</span>
+              <span class="hidden sm:inline" aria-hidden="true">
+                {copy.nav.search}
+              </span>
             </button>
           </li>
         </ul>
       </nav>
       <nav aria-label={copy.languageSwitcher} class="flex items-center gap-0.5 sm:gap-1">
-        {
-          languages.map((code) => (
-            <a
-              href={alternates[code]}
-              hreflang={code}
-              lang={code}
-              aria-current={lang === code ? 'page' : undefined}
-              class={langSwitcherClass(code)}
-              {...(lang === code ? {} : trackAttributes('language_change', { from: lang, to: code, ...page }))}
-            >
-              <Flag code={code} class="hidden h-3 w-4 shrink-0 sm:block" />
-              {code.toUpperCase()}
-            </a>
-          ))
-        }
+        {languages.map((code) => (
+          <a
+            href={alternates[code]}
+            hreflang={code}
+            lang={code}
+            aria-current={lang === code ? 'page' : undefined}
+            class={langSwitcherClass(code)}
+            {...(lang === code
+              ? {}
+              : trackAttributes('language_change', { from: lang, to: code, ...page }))}
+          >
+            <Flag code={code} class="hidden h-3 w-4 shrink-0 sm:block" />
+            {code.toUpperCase()}
+          </a>
+        ))}
       </nav>
       <ThemeToggle lang={lang} />
     </div>

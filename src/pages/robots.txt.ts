@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { SITE_URL } from '../config';
-import { absoluteUrl } from '../lib/seo';
+import { SITE_URL } from '@/config';
+import { absoluteUrl } from '@/lib/seo';
 
 export const GET: APIRoute = () =>
   new Response(`User-agent: *\nAllow: /\n\nSitemap: ${absoluteUrl('/sitemap.xml', SITE_URL)}\n`, {

@@ -24,8 +24,11 @@ function walk(dir) {
   const out = [];
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
-    if (statSync(path).isDirectory()) out.push(...walk(path));
-    else if (name.endsWith('.html')) out.push(path);
+    if (statSync(path).isDirectory()) {
+      out.push(...walk(path));
+    } else if (name.endsWith('.html')) {
+      out.push(path);
+    }
   }
   return out;
 }
@@ -41,7 +44,9 @@ const routeOf = (path) => {
 for (const path of pages) {
   const html = readFileSync(path, 'utf8');
   const ids = new Set();
-  for (const match of html.matchAll(/\sid="([^"]+)"/g)) ids.add(match[1]);
+  for (const match of html.matchAll(/\sid="([^"]+)"/g)) {
+    ids.add(match[1]);
+  }
   idsByRoute.set(routeOf(path), ids);
 }
 
@@ -52,14 +57,18 @@ for (const path of pages) {
   const html = readFileSync(path, 'utf8');
   for (const match of html.matchAll(/\shref="(\/[^"]*)"/g)) {
     const href = match[1];
-    if (href.startsWith('//')) continue;
+    if (href.startsWith('//')) {
+      continue;
+    }
     const [target, fragment] = href.split('#');
     const targetRoute = target === '' ? route : target.endsWith('/') ? target : `${target}/`;
 
     if (target !== '') {
       const isFile = /\.[a-z0-9]+$/i.test(target);
       if (isFile) {
-        if (!existsSync(join(DIST, target.slice(1)))) problems.push(`${route} -> missing file ${target}`);
+        if (!existsSync(join(DIST, target.slice(1)))) {
+          problems.push(`${route} -> missing file ${target}`);
+        }
         continue;
       }
       if (!idsByRoute.has(targetRoute)) {
@@ -79,7 +88,9 @@ for (const path of pages) {
 
 if (problems.length > 0) {
   console.error(`${problems.length} broken internal link(s):`);
-  for (const problem of [...new Set(problems)].sort()) console.error(`  - ${problem}`);
+  for (const problem of [...new Set(problems)].sort()) {
+    console.error(`  - ${problem}`);
+  }
   process.exit(1);
 }
 

@@ -36,7 +36,7 @@ same way, as if it had been drafted in English from the start.
   this definition".
 - **Sentence case** for every title and heading, keeping proper nouns, acronyms,
   and the established names of patterns and principles: `What is software
-  architecture?`, `Factory Method`, `SOLID`, `Test-Driven Development`.
+architecture?`, `Factory Method`, `SOLID`, `Test-Driven Development`.
 
 ## What must not change
 
@@ -67,16 +67,16 @@ move them. The argument's progression and the section order stay put.
 
 Adapt Spanish expressions by what they do in the paragraph, not by their words.
 
-| Spanish | English | Why |
-| --- | --- | --- |
-| Vale la pena desarmarla | Let's unpack that | Signals the breakdown that follows |
-| Qué conviene usar | Which option makes sense | It is a judgment, not an obligation |
-| No alcanza con… | …isn't enough | The Spanish is a negation of sufficiency |
-| La invariante que el patrón busca proteger | The invariant the pattern protects | Name the property, drop the periphrasis |
-| A grandes rasgos | Broadly | Not "in broad strokes" |
-| Tener en cuenta que… | Keep in mind that… / Note that… | Depends on weight in context |
-| Sirve para… | It's for… / Use it to… | Not "It serves to…" |
-| Un caso de uso típico | A typical use case | Same term, no inflation |
+| Spanish                                    | English                            | Why                                      |
+| ------------------------------------------ | ---------------------------------- | ---------------------------------------- |
+| Vale la pena desarmarla                    | Let's unpack that                  | Signals the breakdown that follows       |
+| Qué conviene usar                          | Which option makes sense           | It is a judgment, not an obligation      |
+| No alcanza con…                            | …isn't enough                      | The Spanish is a negation of sufficiency |
+| La invariante que el patrón busca proteger | The invariant the pattern protects | Name the property, drop the periphrasis  |
+| A grandes rasgos                           | Broadly                            | Not "in broad strokes"                   |
+| Tener en cuenta que…                       | Keep in mind that… / Note that…    | Depends on weight in context             |
+| Sirve para…                                | It's for… / Use it to…             | Not "It serves to…"                      |
+| Un caso de uso típico                      | A typical use case                 | Same term, no inflation                  |
 
 ## Anti-calque checklist
 
@@ -102,46 +102,46 @@ translation onto a word that means different things in different places.
 
 ### Terms that must stay distinct
 
-| Distinction | Use |
-| --- | --- |
-| `confiabilidad` vs `disponibilidad` | **reliability** vs **availability** — never conflate |
-| `autenticación` vs `autorización` | **authentication** vs **authorization** |
+| Distinction                          | Use                                                               |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `confiabilidad` vs `disponibilidad`  | **reliability** vs **availability** — never conflate              |
+| `autenticación` vs `autorización`    | **authentication** vs **authorization**                           |
 | `unit testing` vs `un test unitario` | **unit testing** (the practice) vs **a unit test** (the artifact) |
-| `prueba` vs `test` | **test**; **testing** for the activity |
-| `latencia` vs `tiempo de respuesta` | **latency** vs **response time** |
-| `consistencia` vs `coherencia` | **consistency** vs **coherence** |
-| `rendimiento` vs `throughput` | **performance** vs **throughput** |
-| `error` vs `fallo` vs `falla` | **error** vs **failure** vs **fault**, per the source's meaning |
-| `requisito` vs `restricción` | **requirement** vs **constraint** |
+| `prueba` vs `test`                   | **test**; **testing** for the activity                            |
+| `latencia` vs `tiempo de respuesta`  | **latency** vs **response time**                                  |
+| `consistencia` vs `coherencia`       | **consistency** vs **coherence**                                  |
+| `rendimiento` vs `throughput`        | **performance** vs **throughput**                                 |
+| `error` vs `fallo` vs `falla`        | **error** vs **failure** vs **fault**, per the source's meaning   |
+| `requisito` vs `restricción`         | **requirement** vs **constraint**                                 |
 
 ### Standing translations
 
-| Spanish | English |
-| --- | --- |
-| drivers de arquitectura | architectural drivers |
-| atributos de calidad | quality attributes |
-| decisiones de arquitectura | architecture decisions |
+| Spanish                                      | English                            |
+| -------------------------------------------- | ---------------------------------- |
+| drivers de arquitectura                      | architectural drivers              |
+| atributos de calidad                         | quality attributes                 |
+| decisiones de arquitectura                   | architecture decisions             |
 | registro de decisiones de arquitectura (ADR) | architecture decision record (ADR) |
-| acoplamiento / cohesión | coupling / cohesion |
-| contexto delimitado | bounded context |
-| lenguaje ubicuo | ubiquitous language |
-| eventos de dominio | domain events |
-| monolito modular | modular monolith |
-| capa anticorrupción | anti-corruption layer |
-| sistemas distribuidos | distributed systems |
-| fallo parcial | partial failure |
-| reintentos | retries |
-| presupuesto de error | error budget |
-| dobles de test | test doubles |
-| pruebas de aceptación de usuario | user acceptance testing (UAT) |
-| cobertura | coverage |
-| deuda técnica | technical debt |
-| contrapartidas | trade-offs |
-| puesta en producción / despliegue | deployment |
-| puntos de extensión | extension points |
-| manejador | handler |
-| envoltorio | wrapper |
-| subyacente | underlying |
+| acoplamiento / cohesión                      | coupling / cohesion                |
+| contexto delimitado                          | bounded context                    |
+| lenguaje ubicuo                              | ubiquitous language                |
+| eventos de dominio                           | domain events                      |
+| monolito modular                             | modular monolith                   |
+| capa anticorrupción                          | anti-corruption layer              |
+| sistemas distribuidos                        | distributed systems                |
+| fallo parcial                                | partial failure                    |
+| reintentos                                   | retries                            |
+| presupuesto de error                         | error budget                       |
+| dobles de test                               | test doubles                       |
+| pruebas de aceptación de usuario             | user acceptance testing (UAT)      |
+| cobertura                                    | coverage                           |
+| deuda técnica                                | technical debt                     |
+| contrapartidas                               | trade-offs                         |
+| puesta en producción / despliegue            | deployment                         |
+| puntos de extensión                          | extension points                   |
+| manejador                                    | handler                            |
+| envoltorio                                   | wrapper                            |
+| subyacente                                   | underlying                         |
 
 ### Kept as-is
 

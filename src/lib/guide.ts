@@ -18,9 +18,15 @@ export interface GuideSequence {
  */
 export function guideSequence(index: ContentIndex, lang: Lang, guideId: string): GuideSequence {
   const guide = index.guide(lang, guideId);
-  if (!guide) throw new Error(`No ${lang} guide "${guideId}"`);
-  const owner = guide.subtopic ? index.subtopic(lang, guide.subtopic) : index.topic(lang, guide.topic);
-  if (!owner) throw new Error(`No parent for ${lang} guide "${guideId}"`);
+  if (!guide) {
+    throw new Error(`No ${lang} guide "${guideId}"`);
+  }
+  const owner = guide.subtopic
+    ? index.subtopic(lang, guide.subtopic)
+    : index.topic(lang, guide.topic);
+  if (!owner) {
+    throw new Error(`No parent for ${lang} guide "${guideId}"`);
+  }
 
   const guides = groupBySection(owner, index.guidesOf(lang, guide.topic, guide.subtopic)).flatMap(
     (group) => group.guides,
@@ -52,10 +58,18 @@ export function readingMinutes(body: string): number {
     0,
   );
   const diagrams = [...body.matchAll(MERMAID_DIAGRAM)].length;
-  const words = body.replace(JAVA_BLOCK, '').replace(MERMAID_DIAGRAM, '').split(/\s+/).filter(Boolean).length;
+  const words = body
+    .replace(JAVA_BLOCK, '')
+    .replace(MERMAID_DIAGRAM, '')
+    .split(/\s+/)
+    .filter(Boolean).length;
   return Math.max(
     1,
-    Math.round(words / WORDS_PER_MINUTE + javaLines / JAVA_LINES_PER_MINUTE + (diagrams * DIAGRAM_SECONDS) / 60),
+    Math.round(
+      words / WORDS_PER_MINUTE +
+        javaLines / JAVA_LINES_PER_MINUTE +
+        (diagrams * DIAGRAM_SECONDS) / 60,
+    ),
   );
 }
 

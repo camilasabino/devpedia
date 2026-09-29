@@ -1,6 +1,6 @@
 ---
-import Icon from '../Icon.astro';
-import { format, langFromPath, ui } from '../../i18n';
+import Icon from '@/components/Icon.astro';
+import { format, langFromPath, ui } from '@/i18n';
 
 interface Props {
   /** Diagram caption, used to name the button and the enlarged view. */
@@ -31,7 +31,10 @@ const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
   hidden
 >
   <Icon name="expand" class="h-3.5 w-3.5" decorative />
-  <span>{diagramCopy.zoomLabel}<span class="sr-only">{format(diagramCopy.zoomSrSuffix, { caption })}</span></span>
+  <span>
+    {diagramCopy.zoomLabel}
+    <span class="sr-only">{format(diagramCopy.zoomSrSuffix, { caption })}</span>
+  </span>
 </button>
 
 <style>
@@ -49,7 +52,9 @@ const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
     font-size: 0.75rem;
     color: var(--text-muted);
     cursor: pointer;
-    transition: color 0.2s ease, border-color 0.2s ease;
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease;
   }
 
   .diagram-zoom[hidden] {
@@ -166,7 +171,9 @@ const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
   const viewBoxWidth = (svg: SVGSVGElement) => svg.viewBox.baseVal?.width || 0;
 
   function getDialog(source: HTMLButtonElement) {
-    if (dialog) return dialog;
+    if (dialog) {
+      return dialog;
+    }
     const closeLabel = source.dataset.closeLabel ?? '';
     const scrollLabel = source.dataset.scrollLabel ?? '';
     dialog = document.createElement('dialog');
@@ -183,7 +190,9 @@ const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
     dialog.querySelector('.diagram-dialog-close')!.addEventListener('click', () => dialog!.close());
     // A click on the backdrop lands on the dialog element itself.
     dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog!.close();
+      if (event.target === dialog) {
+        dialog!.close();
+      }
     });
     dialog.addEventListener('close', () => {
       // The copy duplicates the inline SVG's ids; drop it once it is out of view.
@@ -198,7 +207,9 @@ const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
   function open(button: HTMLButtonElement) {
     const svg = button.closest('figure')?.querySelector<SVGSVGElement>('.diagram-canvas svg');
     const width = svg ? viewBoxWidth(svg) : 0;
-    if (!svg || !width) return;
+    if (!svg || !width) {
+      return;
+    }
 
     const copy = svg.cloneNode(true) as SVGSVGElement;
     copy.removeAttribute('width');
@@ -223,23 +234,33 @@ const diagramCopy = ui[langFromPath(Astro.url.pathname)].guide.diagram;
   if (buttons.length > 0 && typeof HTMLDialogElement === 'function') {
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const button = entry.target.closest('figure')?.querySelector<HTMLButtonElement>('[data-diagram-zoom]');
-        if (button) update(button);
+        const button = entry.target
+          .closest('figure')
+          ?.querySelector<HTMLButtonElement>('[data-diagram-zoom]');
+        if (button) {
+          update(button);
+        }
       }
     });
 
     for (const button of buttons) {
       button.addEventListener('click', () => open(button));
       const canvas = button.closest('figure')?.querySelector('.diagram-canvas');
-      if (canvas) resizeObserver.observe(canvas);
+      if (canvas) {
+        resizeObserver.observe(canvas);
+      }
       update(button);
     }
 
     // Mermaid renders lazily; it announces each finished render so the button can
     // measure the real SVG.
     document.addEventListener('diagram:rendered', (event) => {
-      const button = (event.target as Element).closest('figure')?.querySelector<HTMLButtonElement>('[data-diagram-zoom]');
-      if (button) update(button);
+      const button = (event.target as Element)
+        .closest('figure')
+        ?.querySelector<HTMLButtonElement>('[data-diagram-zoom]');
+      if (button) {
+        update(button);
+      }
     });
   }
 </script>

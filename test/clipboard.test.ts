@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { copyText } from '../src/lib/clipboard';
+import { copyText } from '@/lib/clipboard';
 
 interface FakeTextarea {
   value: string;
@@ -28,7 +28,9 @@ function stubDom(execCommandResult: boolean | (() => never)) {
     },
     body: { appendChild: (node: FakeTextarea) => appended.push(node) },
     execCommand: () => {
-      if (typeof execCommandResult === 'function') return execCommandResult();
+      if (typeof execCommandResult === 'function') {
+        return execCommandResult();
+      }
       return execCommandResult;
     },
   };

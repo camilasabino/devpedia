@@ -1,13 +1,13 @@
 ---
-import '../styles/global.css';
+import '@/styles/global.css';
 import { GA_MEASUREMENT_ID } from 'astro:env/client';
-import SiteHeader from '../components/SiteHeader.astro';
-import SiteFooter from '../components/SiteFooter.astro';
-import Search from '../components/Search.astro';
-import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '../config';
-import { languages, ui, type Lang } from '../i18n';
-import { absoluteUrl } from '../lib/seo';
-import { pageOf, viewAttributes, type ViewEvent } from '../lib/analytics';
+import SiteHeader from '@/components/SiteHeader.astro';
+import SiteFooter from '@/components/SiteFooter.astro';
+import Search from '@/components/Search.astro';
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/config';
+import { languages, ui, type Lang } from '@/i18n';
+import { absoluteUrl } from '@/lib/seo';
+import { pageOf, viewAttributes, type ViewEvent } from '@/lib/analytics';
 
 interface Props {
   lang: Lang;
@@ -26,7 +26,16 @@ interface Props {
   view?: ViewEvent;
 }
 
-const { lang, title, description, alternates, image = DEFAULT_OG_IMAGE, article, jsonLd = [], view } = Astro.props;
+const {
+  lang,
+  title,
+  description,
+  alternates,
+  image = DEFAULT_OG_IMAGE,
+  article,
+  jsonLd = [],
+  view,
+} = Astro.props;
 const copy = ui[lang];
 const canonicalUrl = absoluteUrl(Astro.url.pathname, SITE_URL);
 const alternateUrl = (code: Lang) => absoluteUrl(alternates[code], SITE_URL);
@@ -46,7 +55,9 @@ const analyticsHost = new URL(SITE_URL).hostname;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="canonical" href={canonicalUrl} />
-    {languages.map((code) => <link rel="alternate" hreflang={code} href={alternateUrl(code)} />)}
+    {languages.map((code) => (
+      <link rel="alternate" hreflang={code} href={alternateUrl(code)} />
+    ))}
     <link rel="alternate" hreflang="x-default" href={alternateUrl('es')} />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -62,31 +73,35 @@ const analyticsHost = new URL(SITE_URL).hostname;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content={copy.ogLocale} />
-    {
-      languages
-        .filter((code) => code !== lang)
-        .map((code) => <meta property="og:locale:alternate" content={ui[code].ogLocale} />)
-    }
+    {languages
+      .filter((code) => code !== lang)
+      .map((code) => (
+        <meta property="og:locale:alternate" content={ui[code].ogLocale} />
+      ))}
     <meta property="og:image" content={imageUrl} />
     <meta property="og:image:width" content={String(image.width)} />
     <meta property="og:image:height" content={String(image.height)} />
     <meta property="og:image:type" content={image.type} />
     {image.alt && <meta property="og:image:alt" content={image.alt} />}
-    {
-      article && (
-        <>
-          <meta property="article:published_time" content={article.created.toISOString()} />
-          <meta property="article:modified_time" content={article.lastUpdated.toISOString()} />
-          <meta property="article:section" content={article.section} />
-        </>
-      )
-    }
+    {article && (
+      <>
+        <meta property="article:published_time" content={article.created.toISOString()} />
+        <meta property="article:modified_time" content={article.lastUpdated.toISOString()} />
+        <meta property="article:section" content={article.section} />
+      </>
+    )}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
     {image.alt && <meta name="twitter:image:alt" content={image.alt} />}
-    {jsonLd.map((data) => <script type="application/ld+json" is:inline set:html={JSON.stringify(data).replaceAll('<', '\\u003c')} />)}
+    {jsonLd.map((data) => (
+      <script
+        type="application/ld+json"
+        is:inline
+        set:html={JSON.stringify(data).replaceAll('<', '\\u003c')}
+      />
+    ))}
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -95,33 +110,43 @@ const analyticsHost = new URL(SITE_URL).hostname;
       rel="stylesheet"
     />
 
-    {
-      import.meta.env.PROD && GA_MEASUREMENT_ID && (
-        <script is:inline define:vars={{ gaId: GA_MEASUREMENT_ID, analyticsHost }}>
-          (() => {
-            if (window.location.hostname !== analyticsHost) return;
-            try {
-              if (localStorage.getItem('analytics-excluded') === 'true') return;
-            } catch {
-              return;
-            }
-            if (window.gtag) return;
-            window.dataLayer = window.dataLayer || [];
-            window.gtag = function () {
-              window.dataLayer.push(arguments);
-            };
-            window.gtag('js', new Date());
-            window.gtag('config', gaId);
-            const script = document.createElement('script');
-            script.async = true;
-            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gaId);
-            document.head.appendChild(script);
-          })();
-        </script>
-      )
-    }
+    {import.meta.env.PROD && GA_MEASUREMENT_ID && <script
+      is:inline
+      define:vars={{ gaId: GA_MEASUREMENT_ID, analyticsHost }}
+    >
+      (() => {
+        if (window.location.hostname !== analyticsHost) {
+          return;
+        }
+        try {
+          if (localStorage.getItem('analytics-excluded') === 'true') {
+            return;
+          }
+        } catch {
+          return;
+        }
+        if (window.gtag) {
+          return;
+        }
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () {
+          // gtag's dataLayer contract is the Arguments object, not a rest array.
+          // eslint-disable-next-line prefer-rest-params
+          window.dataLayer.push(arguments);
+        };
+        window.gtag('js', new Date());
+        window.gtag('config', gaId);
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gaId);
+        document.head.appendChild(script);
+      })();
+    </script>}
   </head>
-  <body class="font-sans text-neutral-300 light:text-neutral-700 antialiased" {...viewAttributes(view)}>
+  <body
+    class="font-sans text-neutral-300 light:text-neutral-700 antialiased"
+    {...viewAttributes(view)}
+  >
     <a
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-accent-500 focus:px-3 focus:py-2 focus:text-neutral-950"
@@ -135,7 +160,7 @@ const analyticsHost = new URL(SITE_URL).hostname;
     <SiteFooter lang={lang} />
     <Search lang={lang} />
     <script>
-      import { initAnalytics } from '../lib/analytics';
+      import { initAnalytics } from '@/lib/analytics';
 
       initAnalytics();
     </script>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pagefindResultMatchesQuery, termMatchesCandidate } from '../src/lib/search-relevance';
+import { pagefindResultMatchesQuery, termMatchesCandidate } from '@/lib/search-relevance';
 
 describe('termMatchesCandidate', () => {
   it('keeps prefix matches while the query is still being typed', () => {

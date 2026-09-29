@@ -7,7 +7,7 @@
 // Pagefind metadata (see GuidePage and HubPage); results are rendered from those, and a
 // result click reports `id` and position, never the URL.
 import Icon from './Icon.astro';
-import { ui, type Lang } from '../i18n';
+import { ui, type Lang } from '@/i18n';
 
 interface Props {
   lang: Lang;
@@ -38,11 +38,16 @@ const scriptConfig = {
   data-config={JSON.stringify(scriptConfig)}
   class="m-0 h-dvh max-h-none w-full overflow-hidden max-w-none bg-transparent p-0 text-inherit open:flex open:items-start open:justify-center backdrop:bg-neutral-950/80 backdrop:backdrop-blur-sm light:backdrop:bg-white/90 sm:p-6 sm:pt-16"
 >
-  <div
-    class="card-surface flex h-full w-full min-w-0 flex-col sm:h-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-3xl sm:rounded-2xl lg:max-w-4xl"
-  >
-    <div role="search" class="flex items-center gap-3 border-b border-white/10 light:border-black/10 p-3 sm:p-4">
-      <Icon name="search" class="ml-1 h-4 w-4 shrink-0 text-neutral-500 light:text-neutral-600" decorative />
+  <div class="card-surface flex h-full w-full min-w-0 flex-col sm:h-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-3xl sm:rounded-2xl lg:max-w-4xl">
+    <div
+      role="search"
+      class="flex items-center gap-3 border-b border-white/10 light:border-black/10 p-3 sm:p-4"
+    >
+      <Icon
+        name="search"
+        class="ml-1 h-4 w-4 shrink-0 text-neutral-500 light:text-neutral-600"
+        decorative
+      />
       <input
         id="search-input"
         type="text"
@@ -66,12 +71,24 @@ const scriptConfig = {
       </button>
     </div>
 
-    <div id="search-results" aria-label={labels.resultsLabel} class="flex-1 overflow-y-auto overscroll-contain p-2">
-      <p data-search-idle class="p-4 font-mono text-xs text-neutral-500 light:text-neutral-600">{labels.idle}</p>
+    <div
+      id="search-results"
+      aria-label={labels.resultsLabel}
+      class="flex-1 overflow-y-auto overscroll-contain p-2"
+    >
+      <p data-search-idle class="p-4 font-mono text-xs text-neutral-500 light:text-neutral-600">
+        {labels.idle}
+      </p>
     </div>
 
-    <div id="search-footer" class="hidden items-center justify-between gap-3 border-t border-white/10 light:border-black/10 p-3">
-      <span id="search-count" class="font-mono text-xs text-neutral-500 light:text-neutral-600"></span>
+    <div
+      id="search-footer"
+      class="hidden items-center justify-between gap-3 border-t border-white/10 light:border-black/10 p-3"
+    >
+      <span
+        id="search-count"
+        class="font-mono text-xs text-neutral-500 light:text-neutral-600"
+      ></span>
       <button
         id="search-full"
         type="button"
@@ -87,9 +104,9 @@ const scriptConfig = {
 </dialog>
 
 <script>
-  import { pagefindResultMatchesQuery } from '../lib/search-relevance';
-  import { track, trackAttributes, type PageKind } from '../lib/analytics';
-  import type { Lang } from '../i18n';
+  import { pagefindResultMatchesQuery } from '@/lib/search-relevance';
+  import { track, trackAttributes, type PageKind } from '@/lib/analytics';
+  import type { Lang } from '@/i18n';
 
   interface Config {
     lang: Lang;
@@ -132,12 +149,25 @@ const scriptConfig = {
   const fullBtn = document.getElementById('search-full');
   const statusEl = document.getElementById('search-status');
 
-  if (dialog && trigger && input && closeBtn && resultsEl && footerEl && countEl && fullBtn && statusEl) {
+  if (
+    dialog &&
+    trigger &&
+    input &&
+    closeBtn &&
+    resultsEl &&
+    footerEl &&
+    countEl &&
+    fullBtn &&
+    statusEl
+  ) {
     const config = JSON.parse(dialog.dataset.config ?? '{}') as Config;
     const idleNode = resultsEl.querySelector('[data-search-idle]')!;
     const fill = (template: string, values: Record<string, string | number>) =>
-      template.replace(/\{(\w+)\}/g, (match, key: string) => (key in values ? String(values[key]) : match));
-    const countLabel = (count: number) => (count === 1 ? config.resultCountOne : fill(config.resultCountOther, { count }));
+      template.replace(/\{(\w+)\}/g, (match, key: string) =>
+        key in values ? String(values[key]) : match,
+      );
+    const countLabel = (count: number) =>
+      count === 1 ? config.resultCountOne : fill(config.resultCountOther, { count });
 
     let pagefind: Pagefind | null = null;
     let pagefindFailed = false;
@@ -165,7 +195,9 @@ const scriptConfig = {
     }
 
     async function ensurePagefind(): Promise<Pagefind | null> {
-      if (pagefind || pagefindFailed) return pagefind;
+      if (pagefind || pagefindFailed) {
+        return pagefind;
+      }
       try {
         const loaded = (await import(/* @vite-ignore */ PAGEFIND_URL)) as Pagefind;
         await loaded.init();
@@ -193,7 +225,8 @@ const scriptConfig = {
 
     function message(text: string, hint?: string) {
       const box = document.createElement('div');
-      box.className = 'flex flex-col gap-1 p-4 font-mono text-xs text-neutral-500 light:text-neutral-600';
+      box.className =
+        'flex flex-col gap-1 p-4 font-mono text-xs text-neutral-500 light:text-neutral-600';
       const first = document.createElement('p');
       first.textContent = text;
       box.append(first);
@@ -226,10 +259,20 @@ const scriptConfig = {
         link.className =
           'block rounded-lg p-3 outline-offset-[-2px] transition-colors hover:bg-white/5 focus-visible:bg-white/5 light:hover:bg-black/5 light:focus-visible:bg-black/5';
         link.setAttribute('aria-labelledby', `search-result-${i}-title`);
-        link.setAttribute('aria-describedby', `search-result-${i}-context search-result-${i}-excerpt`);
+        link.setAttribute(
+          'aria-describedby',
+          `search-result-${i}-context search-result-${i}-excerpt`,
+        );
         if (id && kind) {
-          const attrs = trackAttributes('search_result_click', { id, kind, lang: config.lang, position: i + 1 });
-          for (const [name, value] of Object.entries(attrs)) link.setAttribute(name, value);
+          const attrs = trackAttributes('search_result_click', {
+            id,
+            kind,
+            lang: config.lang,
+            position: i + 1,
+          });
+          for (const [name, value] of Object.entries(attrs)) {
+            link.setAttribute(name, value);
+          }
         }
 
         const title = document.createElement('span');
@@ -240,12 +283,14 @@ const scriptConfig = {
 
         const context = document.createElement('span');
         context.id = `search-result-${i}-context`;
-        context.className = 'mt-1 block break-words font-mono text-[11px] tracking-wide text-accent-400 light:text-accent-700';
+        context.className =
+          'mt-1 block break-words font-mono text-[11px] tracking-wide text-accent-400 light:text-accent-700';
         context.textContent = data.meta?.context ?? '';
 
         const excerpt = document.createElement('span');
         excerpt.id = `search-result-${i}-excerpt`;
-        excerpt.className = 'mt-1.5 block break-words text-xs leading-relaxed text-neutral-400 light:text-neutral-600';
+        excerpt.className =
+          'mt-1.5 block break-words text-xs leading-relaxed text-neutral-400 light:text-neutral-600';
         // Pagefind escapes the page text and only adds <mark> around the matches.
         excerpt.innerHTML = data.excerpt;
 
@@ -256,8 +301,11 @@ const scriptConfig = {
       });
 
       showNode(list);
-      if (full || items.length === total) setFooter(countLabel(total));
-      else setFooter(fill(config.showing, { shown: items.length, total }), true);
+      if (full || items.length === total) {
+        setFooter(countLabel(total));
+      } else {
+        setFooter(fill(config.showing, { shown: items.length, total }), true);
+      }
       statusEl!.textContent = countLabel(total);
     }
 
@@ -272,12 +320,16 @@ const scriptConfig = {
 
       // Only shown if Pagefind is still loading or the search takes a moment.
       const loadingTimer = window.setTimeout(() => {
-        if (token === requestToken) showNode(message(config.loading));
+        if (token === requestToken) {
+          showNode(message(config.loading));
+        }
       }, 150);
 
       try {
         const pf = await ensurePagefind();
-        if (token !== requestToken) return;
+        if (token !== requestToken) {
+          return;
+        }
         if (!pf) {
           showNode(message(config.unavailable));
           setFooter(null);
@@ -286,10 +338,16 @@ const scriptConfig = {
         }
 
         const outcome = full ? await pf.search(query) : await pf.debouncedSearch(query);
-        if (token !== requestToken || outcome === null) return;
+        if (token !== requestToken || outcome === null) {
+          return;
+        }
 
-        const sample = await Promise.all(outcome.results.slice(0, MAX_CANDIDATES).map((result) => result.data()));
-        if (token !== requestToken) return;
+        const sample = await Promise.all(
+          outcome.results.slice(0, MAX_CANDIDATES).map((result) => result.data()),
+        );
+        if (token !== requestToken) {
+          return;
+        }
         const matched = sample.filter((data) => pagefindResultMatchesQuery(query, data));
 
         noteOutcome(query, matched.length);
@@ -307,7 +365,9 @@ const scriptConfig = {
     }
 
     function open() {
-      if (dialog!.open) return;
+      if (dialog!.open) {
+        return;
+      }
       document.documentElement.style.overflow = 'hidden';
       dialog!.showModal();
       input!.focus();
@@ -325,18 +385,24 @@ const scriptConfig = {
       trigger!.focus();
     }
 
-    const results = () => [...resultsEl.querySelectorAll<HTMLAnchorElement>('a[data-search-result]')];
+    const results = () => [
+      ...resultsEl.querySelectorAll<HTMLAnchorElement>('a[data-search-result]'),
+    ];
 
     trigger.addEventListener('click', open);
     closeBtn.addEventListener('click', () => dialog.close());
     dialog.addEventListener('close', onClose);
     // A click on the dialog itself (not its panel) is a click on the backdrop area.
     dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
+      if (event.target === dialog) {
+        dialog.close();
+      }
     });
     // Coming back from a result through the back/forward cache must not find it open.
     window.addEventListener('pageshow', (event) => {
-      if (event.persisted && dialog.open) dialog.close();
+      if (event.persisted && dialog.open) {
+        dialog.close();
+      }
     });
 
     input.addEventListener('input', () => {
@@ -358,19 +424,28 @@ const scriptConfig = {
     });
 
     resultsEl.addEventListener('keydown', (event) => {
-      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+        return;
+      }
       const links = results();
       const current = links.indexOf(document.activeElement as HTMLAnchorElement);
-      if (current === -1) return;
+      if (current === -1) {
+        return;
+      }
       event.preventDefault();
       const next = current + (event.key === 'ArrowDown' ? 1 : -1);
-      if (next < 0) input.focus();
-      else links[Math.min(next, links.length - 1)].focus();
+      if (next < 0) {
+        input.focus();
+      } else {
+        links[Math.min(next, links.length - 1)].focus();
+      }
     });
 
     // Runs before the document-level analytics listener, so `search` precedes the click.
     resultsEl.addEventListener('click', (event) => {
-      if (event.target instanceof Element && event.target.closest('a[data-search-result]')) flushSearch();
+      if (event.target instanceof Element && event.target.closest('a[data-search-result]')) {
+        flushSearch();
+      }
     });
 
     // The button hides itself once every result is shown; focus moves to the first one.

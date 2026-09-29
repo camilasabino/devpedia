@@ -1,0 +1,29 @@
+input=$(cat)
+
+npm run lint || exit 1
+
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "$local_sha" ] || continue
+
+  if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+    continue
+  fi
+
+  if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+    from=$(git merge-base origin/main "$local_sha" 2>/dev/null || git merge-base origin/HEAD "$local_sha" 2>/dev/null || true)
+    if [ -z "$from" ]; then
+      echo "commitlint: could not find a base for $local_ref" >&2
+      exit 1
+    fi
+  else
+    from=$remote_sha
+  fi
+
+  if [ "$from" = "$local_sha" ]; then
+    continue
+  fi
+
+  commitlint --from "$from" --to "$local_sha" || exit 1
+done <<EOF
+$input
+EOF

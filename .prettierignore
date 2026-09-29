@@ -1,0 +1,7 @@
+src/content/**
+dist/
+.astro/
+node_modules/
+package-lock.json
+docs/specs/
+docs/superpowers/

@@ -1,6 +1,6 @@
 ---
-import { SITE_NAME } from '../config';
-import { ui, type Lang } from '../i18n';
+import { SITE_NAME } from '@/config';
+import { ui, type Lang } from '@/i18n';
 
 interface Crumb {
   label: string;
@@ -22,26 +22,25 @@ const items = [{ label: SITE_NAME, href: copy.homePath }, ...crumbs];
 
 <nav aria-label={copy.breadcrumb} class="font-mono text-xs text-neutral-500 light:text-neutral-600">
   <ol class="flex flex-wrap items-center gap-1.5">
-    {
-      items.map((crumb, i) => (
-        <li class="flex items-center gap-1.5">
-          {i > 0 && <span aria-hidden="true">›</span>}
-          <a href={crumb.href} class="inline-flex min-h-6 items-center hover:text-accent-400 light:hover:text-accent-700">
-            {crumb.label}
-          </a>
-        </li>
-      ))
-    }
-    {
-      current && (
-        <li class="flex min-w-0 items-center gap-1.5">
-          <span aria-hidden="true">›</span>
-          {/* A long guide title stays on one line; the page's h1 shows it in full. */}
-          <span aria-current="page" class="truncate text-neutral-300 light:text-neutral-800">
-            {current}
-          </span>
-        </li>
-      )
-    }
+    {items.map((crumb, i) => (
+      <li class="flex items-center gap-1.5">
+        {i > 0 && <span aria-hidden="true">›</span>}
+        <a
+          href={crumb.href}
+          class="inline-flex min-h-6 items-center hover:text-accent-400 light:hover:text-accent-700"
+        >
+          {crumb.label}
+        </a>
+      </li>
+    ))}
+    {current && (
+      <li class="flex min-w-0 items-center gap-1.5">
+        <span aria-hidden="true">›</span>
+        {/* A long guide title stays on one line; the page's h1 shows it in full. */}
+        <span aria-current="page" class="truncate text-neutral-300 light:text-neutral-800">
+          {current}
+        </span>
+      </li>
+    )}
   </ol>
 </nav>

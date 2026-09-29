@@ -2,8 +2,8 @@
 // DevPedia's own footer: the product, its descriptor and its author, secondary.
 import Icon from './Icon.astro';
 import Wordmark from './Wordmark.astro';
-import { AUTHOR, AUTHOR_GITHUB_URL, AUTHOR_URL, SITE_DESCRIPTION } from '../config';
-import { ui, type Lang } from '../i18n';
+import { AUTHOR, AUTHOR_GITHUB_URL, AUTHOR_URL, SITE_DESCRIPTION } from '@/config';
+import { ui, type Lang } from '@/i18n';
 
 interface Props {
   lang: Lang;
@@ -14,14 +14,17 @@ const copy = ui[lang];
 ---
 
 <footer class="mt-auto border-t border-white/10 light:border-black/10 bg-[color-mix(in_srgb,var(--surface-bg)_85%,transparent)]">
-  <div
-    class="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6"
-  >
+  <div class="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6">
     <div>
-      <a href={copy.homePath} class="rounded-md text-lg text-neutral-100 light:text-neutral-900 transition-opacity hover:opacity-85">
+      <a
+        href={copy.homePath}
+        class="rounded-md text-lg text-neutral-100 light:text-neutral-900 transition-opacity hover:opacity-85"
+      >
         <Wordmark />
       </a>
-      <p class="mt-2 font-mono text-xs text-neutral-500 light:text-neutral-600" lang="en">{SITE_DESCRIPTION}</p>
+      <p class="mt-2 font-mono text-xs text-neutral-500 light:text-neutral-600" lang="en">
+        {SITE_DESCRIPTION}
+      </p>
     </div>
     <div class="flex items-center gap-4 text-sm text-neutral-500 light:text-neutral-600">
       <p>

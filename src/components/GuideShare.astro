@@ -3,8 +3,8 @@
 // LinkedIn and X are plain links built at build time, so they work without JavaScript;
 // "Copy link" needs the Clipboard API and stays hidden until the script enables it.
 import Icon from './Icon.astro';
-import { ui, type Lang } from '../i18n';
-import { trackAttributes } from '../lib/analytics';
+import { ui, type Lang } from '@/i18n';
+import { trackAttributes } from '@/lib/analytics';
 
 interface Props {
   lang: Lang;
@@ -16,7 +16,8 @@ interface Props {
 }
 
 const { lang, id, title, url } = Astro.props;
-const shareTracking = (method: 'copy' | 'linkedin' | 'x') => trackAttributes('share', { method, id, lang });
+const shareTracking = (method: 'copy' | 'linkedin' | 'x') =>
+  trackAttributes('share', { method, id, lang });
 const copy = ui[lang].guide.share;
 const linkedinHref = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
 const xHref = `https://x.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
@@ -24,8 +25,16 @@ const control =
   'inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/10 text-neutral-300 transition-colors hover:border-accent-400/50 hover:text-accent-400 light:border-black/10 light:text-neutral-700 light:hover:border-accent-600/50 light:hover:text-accent-700';
 ---
 
-<div role="group" aria-labelledby="guide-share-label" class="flex flex-wrap items-center gap-x-4 gap-y-2" data-guide-share>
-  <p id="guide-share-label" class="font-mono text-xs uppercase tracking-widest text-neutral-500 light:text-neutral-600">
+<div
+  role="group"
+  aria-labelledby="guide-share-label"
+  class="flex flex-wrap items-center gap-x-4 gap-y-2"
+  data-guide-share
+>
+  <p
+    id="guide-share-label"
+    class="font-mono text-xs uppercase tracking-widest text-neutral-500 light:text-neutral-600"
+  >
     <span aria-hidden="true">{copy.eyebrow}</span>
     <span class="sr-only">{copy.label}</span>
   </p>
@@ -43,18 +52,38 @@ const control =
     >
       <Icon name="link" class="h-4 w-4" decorative />
     </button>
-    <a href={linkedinHref} target="_blank" rel="noopener noreferrer" class={control} title="LinkedIn" aria-label={`${copy.linkedin} ${copy.newTab}`} {...shareTracking('linkedin')}>
+    <a
+      href={linkedinHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      class={control}
+      title="LinkedIn"
+      aria-label={`${copy.linkedin} ${copy.newTab}`}
+      {...shareTracking('linkedin')}
+    >
       <Icon name="linkedin" class="h-4 w-4" decorative />
     </a>
-    <a href={xHref} target="_blank" rel="noopener noreferrer" class={control} title="X" aria-label={`${copy.x} ${copy.newTab}`} {...shareTracking('x')}>
+    <a
+      href={xHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      class={control}
+      title="X"
+      aria-label={`${copy.x} ${copy.newTab}`}
+      {...shareTracking('x')}
+    >
       <Icon name="x" class="h-4 w-4" decorative />
     </a>
   </div>
-  <span data-share-status role="status" class="font-mono text-xs text-accent-400 light:text-accent-700"></span>
+  <span
+    data-share-status
+    role="status"
+    class="font-mono text-xs text-accent-400 light:text-accent-700"
+  ></span>
 </div>
 
 <script>
-  import { copyText } from '../lib/clipboard';
+  import { copyText } from '@/lib/clipboard';
 
   const root = document.querySelector<HTMLElement>('[data-guide-share]');
   const button = root?.querySelector<HTMLButtonElement>('[data-copy-link]');

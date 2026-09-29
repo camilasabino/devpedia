@@ -1,13 +1,13 @@
 ---
 // The home, shared by both editions: what DevPedia is, then the entry into its topics.
 // `#topics` is also the target of the header's Topics link.
-import BaseLayout from '../layouts/BaseLayout.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
 import TopicCard from './TopicCard.astro';
 import Wordmark from './Wordmark.astro';
-import { HOME_TITLE, SITE_DESCRIPTION, SITE_URL } from '../config';
-import { ui, type Lang } from '../i18n';
-import { getContent } from '../lib/content';
-import { websiteJsonLd } from '../lib/seo';
+import { HOME_TITLE, SITE_DESCRIPTION, SITE_URL } from '@/config';
+import { ui, type Lang } from '@/i18n';
+import { getContent } from '@/lib/content';
+import { websiteJsonLd } from '@/lib/seo';
 
 interface Props {
   lang: Lang;
@@ -16,7 +16,14 @@ interface Props {
 const { lang } = Astro.props;
 const copy = ui[lang];
 const { index } = await getContent();
-const jsonLd = [websiteJsonLd({ siteUrl: SITE_URL, lang, homePath: copy.homePath, description: copy.home.description })];
+const jsonLd = [
+  websiteJsonLd({
+    siteUrl: SITE_URL,
+    lang,
+    homePath: copy.homePath,
+    description: copy.home.description,
+  }),
+];
 ---
 
 <BaseLayout
@@ -31,7 +38,10 @@ const jsonLd = [websiteJsonLd({ siteUrl: SITE_URL, lang, homePath: copy.homePath
       <Wordmark />
     </h1>
     <p class="mt-4 font-mono text-sm text-accent-400 light:text-accent-700 sm:text-base" lang="en">
-      <span aria-hidden="true" class="text-neutral-500">// </span>{SITE_DESCRIPTION}
+      <span aria-hidden="true" class="text-neutral-500">
+        //{' '}
+      </span>
+      {SITE_DESCRIPTION}
     </p>
     <p class="mt-6 max-w-2xl text-lg leading-relaxed text-neutral-300 light:text-neutral-700 sm:text-xl">
       {copy.home.lead}
@@ -46,17 +56,18 @@ const jsonLd = [websiteJsonLd({ siteUrl: SITE_URL, lang, homePath: copy.homePath
   </section>
 
   <section id="topics" aria-labelledby="topics-title" class="mt-16 scroll-mt-20 sm:mt-24">
-    <h2 id="topics-title" class="font-display text-2xl font-semibold text-neutral-50 light:text-neutral-900">
+    <h2
+      id="topics-title"
+      class="font-display text-2xl font-semibold text-neutral-50 light:text-neutral-900"
+    >
       {copy.home.topicsHeading}
     </h2>
     <ul class="mt-6 grid gap-4 sm:grid-cols-2 sm:gap-5">
-      {
-        index.topics(lang).map((topic) => (
-          <li>
-            <TopicCard lang={lang} topic={topic} />
-          </li>
-        ))
-      }
+      {index.topics(lang).map((topic) => (
+        <li>
+          <TopicCard lang={lang} topic={topic} />
+        </li>
+      ))}
     </ul>
   </section>
 </BaseLayout>

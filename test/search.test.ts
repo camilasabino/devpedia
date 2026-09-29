@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ContentIndex } from '../src/lib/content-model';
-import { searchContext } from '../src/lib/search';
+import { ContentIndex } from '@/lib/content-model';
+import { searchContext } from '@/lib/search';
 import { loadModel } from './real-content';
 
 const index = new ContentIndex(loadModel());
@@ -9,12 +9,18 @@ const context = (lang: 'es' | 'en', kind: 'topic' | 'subtopic' | 'guide', id: st
 
 describe('searchContext', () => {
   it('names the topic and section of a guide that lives directly under its topic', () => {
-    expect(context('en', 'guide', 'domain-driven-design')).toBe('Architecture › Domain and structure');
-    expect(context('es', 'guide', 'domain-driven-design')).toBe('Arquitectura › Dominio y estructura');
+    expect(context('en', 'guide', 'domain-driven-design')).toBe(
+      'Architecture › Domain and structure',
+    );
+    expect(context('es', 'guide', 'domain-driven-design')).toBe(
+      'Arquitectura › Dominio y estructura',
+    );
   });
 
   it('names topic, subtopic and section of a guide under a subtopic', () => {
-    expect(context('es', 'guide', 'state-pattern')).toBe('Diseño › Patrones › Patrones de comportamiento');
+    expect(context('es', 'guide', 'state-pattern')).toBe(
+      'Diseño › Patrones › Patrones de comportamiento',
+    );
   });
 
   it('leaves out the levels a guide does not have', () => {

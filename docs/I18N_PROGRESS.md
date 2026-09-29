@@ -21,12 +21,12 @@ had both passes (see the definition of done in `EN_EDITORIAL_GUIDE.md`).
 
 ### Routing
 
-| Page | Spanish | English |
-| --- | --- | --- |
-| Home | `/` | `/en/` |
-| Topic | `/<topic-slug>/` | `/en/<topic-slug>/` |
-| Subtopic | `/<topic-slug>/<subtopic-slug>/` | `/en/<topic-slug>/<subtopic-slug>/` |
-| Guide | `/<topic-slug>/[<subtopic-slug>/]<guide-slug>/` | `/en/<topic-slug>/[<subtopic-slug>/]<guide-slug>/` |
+| Page     | Spanish                                         | English                                            |
+| -------- | ----------------------------------------------- | -------------------------------------------------- |
+| Home     | `/`                                             | `/en/`                                             |
+| Topic    | `/<topic-slug>/`                                | `/en/<topic-slug>/`                                |
+| Subtopic | `/<topic-slug>/<subtopic-slug>/`                | `/en/<topic-slug>/<subtopic-slug>/`                |
+| Guide    | `/<topic-slug>/[<subtopic-slug>/]<guide-slug>/` | `/en/<topic-slug>/[<subtopic-slug>/]<guide-slug>/` |
 
 Slugs are localized and written for each language (`/arquitectura/drivers-de-arquitectura/`
 ↔ `/en/architecture/architectural-drivers/`). English URLs are never derived from
@@ -89,7 +89,7 @@ English ones.
 Both quotations in "What is software architecture?" were checked against their
 sources, and the English edition uses the original wording:
 
-- Bass, Clements and Kazman, *Software Architecture in Practice*: "The software
+- Bass, Clements and Kazman, _Software Architecture in Practice_: "The software
   architecture of a system is the set of structures needed to reason about the
   system, which comprise software elements, relations among them, and properties
   of both."

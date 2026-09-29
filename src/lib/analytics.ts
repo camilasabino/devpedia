@@ -18,7 +18,7 @@
  * text, so events pair across languages by id and carry no user-entered data.
  */
 
-import type { Lang } from '../i18n';
+import type { Lang } from '@/i18n';
 import type { GuideData, SubtopicData, TopicData } from './content-model';
 
 export type PageKind = 'guide' | 'topic' | 'subtopic';
@@ -37,7 +37,9 @@ export interface EventParams {
 export type AnalyticsEvent = keyof EventParams;
 
 /** One event with its parameters, as a value that can travel through markup. */
-export type TrackedEvent = { [E in AnalyticsEvent]: { event: E; params: EventParams[E] } }[AnalyticsEvent];
+export type TrackedEvent = {
+  [E in AnalyticsEvent]: { event: E; params: EventParams[E] };
+}[AnalyticsEvent];
 export type ViewEvent = Extract<TrackedEvent, { event: 'guide_view' | 'topic_view' }>;
 
 const EVENTS: readonly AnalyticsEvent[] = [
@@ -50,14 +52,25 @@ const EVENTS: readonly AnalyticsEvent[] = [
   'language_change',
 ];
 
-export function guideView(guide: Pick<GuideData, 'id' | 'topic' | 'subtopic'>, lang: Lang): ViewEvent {
+export function guideView(
+  guide: Pick<GuideData, 'id' | 'topic' | 'subtopic'>,
+  lang: Lang,
+): ViewEvent {
   return {
     event: 'guide_view',
-    params: { id: guide.id, topic_id: guide.topic, ...(guide.subtopic && { subtopic_id: guide.subtopic }), lang },
+    params: {
+      id: guide.id,
+      topic_id: guide.topic,
+      ...(guide.subtopic && { subtopic_id: guide.subtopic }),
+      lang,
+    },
   };
 }
 
-export function topicView(node: Pick<TopicData, 'id'> | Pick<SubtopicData, 'id' | 'topic'>, lang: Lang): ViewEvent {
+export function topicView(
+  node: Pick<TopicData, 'id'> | Pick<SubtopicData, 'id' | 'topic'>,
+  lang: Lang,
+): ViewEvent {
   return 'topic' in node
     ? { event: 'topic_view', params: { id: node.id, kind: 'subtopic', topic_id: node.topic, lang } }
     : { event: 'topic_view', params: { id: node.id, kind: 'topic', lang } };
@@ -65,25 +78,39 @@ export function topicView(node: Pick<TopicData, 'id'> | Pick<SubtopicData, 'id' 
 
 /** The page a view event describes, which language_change reports as its `id`/`kind`. */
 export function pageOf(view: ViewEvent): { id: string; kind: PageKind } {
-  return view.event === 'guide_view' ? { id: view.params.id, kind: 'guide' } : { id: view.params.id, kind: view.params.kind };
+  return view.event === 'guide_view'
+    ? { id: view.params.id, kind: 'guide' }
+    : { id: view.params.id, kind: view.params.kind };
 }
 
 /** Attributes that make a clickable element send `event` when it is activated. */
-export function trackAttributes<E extends AnalyticsEvent>(event: E, params: EventParams[E]): Record<string, string> {
+export function trackAttributes<E extends AnalyticsEvent>(
+  event: E,
+  params: EventParams[E],
+): Record<string, string> {
   return { 'data-track': event, 'data-track-params': JSON.stringify(params) };
 }
 
 /** Attributes that make `<body>` send its view event once, when the page loads. */
 export function viewAttributes(view: ViewEvent | undefined): Record<string, string> {
-  return view ? { 'data-track-view': view.event, 'data-track-params': JSON.stringify(view.params) } : {};
+  return view
+    ? { 'data-track-view': view.event, 'data-track-params': JSON.stringify(view.params) }
+    : {};
 }
 
 /** Reads an event back from its attributes; anything malformed or unknown is ignored. */
-export function readTracked(event: string | undefined, params: string | undefined): TrackedEvent | undefined {
-  if (!event || !EVENTS.includes(event as AnalyticsEvent)) return undefined;
+export function readTracked(
+  event: string | undefined,
+  params: string | undefined,
+): TrackedEvent | undefined {
+  if (!event || !EVENTS.includes(event as AnalyticsEvent)) {
+    return undefined;
+  }
   try {
     const parsed: unknown = JSON.parse(params ?? '{}');
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return undefined;
+    }
     return { event, params: parsed } as TrackedEvent;
   } catch {
     return undefined;
@@ -107,16 +134,22 @@ function debugEnabled(): boolean {
  */
 export function track<E extends AnalyticsEvent>(event: E, params: EventParams[E]): void {
   try {
-    if (debugEnabled()) console.info('[analytics]', event, params);
+    if (debugEnabled()) {
+      console.info('[analytics]', event, params);
+    }
     const gtag = (globalThis as { gtag?: Gtag }).gtag;
-    if (typeof gtag === 'function') gtag('event', event, params);
+    if (typeof gtag === 'function') {
+      gtag('event', event, params);
+    }
   } catch {
     // Analytics never interferes with the page.
   }
 }
 
 function send(tracked: TrackedEvent | undefined): void {
-  if (tracked) track(tracked.event, tracked.params as never);
+  if (tracked) {
+    track(tracked.event, tracked.params as never);
+  }
 }
 
 /**
@@ -128,7 +161,10 @@ export function initAnalytics(doc: Document = document): void {
   send(readTracked(body.dataset.trackView, body.dataset.trackParams));
 
   doc.addEventListener('click', (event) => {
-    const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-track]') : null;
-    if (target) send(readTracked(target.dataset.track, target.dataset.trackParams));
+    const target =
+      event.target instanceof Element ? event.target.closest<HTMLElement>('[data-track]') : null;
+    if (target) {
+      send(readTracked(target.dataset.track, target.dataset.trackParams));
+    }
   });
 }

@@ -25,7 +25,7 @@
   --diagram-surface: #0f1114;
 }
 
-:root[data-theme="light"] {
+:root[data-theme='light'] {
   --surface-bg: #fafafa;
   --surface-grid-line: rgba(0, 0, 0, 0.06);
   --surface-card-from: #ffffff;
@@ -54,6 +54,6 @@
   border-radius: 0.25rem;
 }
 
-:root[data-theme="light"] :focus-visible {
+:root[data-theme='light'] :focus-visible {
   outline-color: var(--color-accent-700);
 }

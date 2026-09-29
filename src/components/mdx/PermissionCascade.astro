@@ -1,6 +1,6 @@
 ---
-import Icon from '../Icon.astro';
-import { format, langFromPath, ui } from '../../i18n';
+import Icon from '@/components/Icon.astro';
+import { format, langFromPath, ui } from '@/i18n';
 
 interface Gate {
   question: string;
@@ -19,36 +19,46 @@ const { gates, fallback } = Astro.props;
 const copy = ui[langFromPath(Astro.url.pathname)].guide.permissionCascade;
 
 const toneStyles = {
-  block: 'border-rose-400/30 bg-rose-500/10 text-rose-300 light:border-rose-600/30 light:bg-rose-600/10 light:text-rose-600',
+  block:
+    'border-rose-400/30 bg-rose-500/10 text-rose-300 light:border-rose-600/30 light:bg-rose-600/10 light:text-rose-600',
   ask: 'border-amber-400/30 bg-amber-500/10 text-amber-300 light:border-amber-600/30 light:bg-amber-600/10 light:text-amber-600',
-  allow: 'border-accent-400/30 bg-accent-500/10 text-accent-300 light:border-accent-600/30 light:bg-accent-600/10 light:text-accent-700',
+  allow:
+    'border-accent-400/30 bg-accent-500/10 text-accent-300 light:border-accent-600/30 light:bg-accent-600/10 light:text-accent-700',
 } as const;
 ---
 
 <div class="card-surface flex flex-col gap-3 p-6">
-  {
-    gates.map((gate, i) => (
-      <div class="flex flex-col gap-2">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p class="font-mono text-sm text-neutral-200 light:text-neutral-700">
-            <span class="text-neutral-500 light:text-neutral-600">{String(i + 1).padStart(2, '0')}. </span>
-            {gate.question}
-          </p>
-          <div class="flex items-center gap-2 text-xs">
-            <span class={`rounded-md border px-2 py-1 font-mono ${toneStyles[gate.tone]}`}>{copy.yes} → {gate.outcome}</span>
-            <span class="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-neutral-500 light:border-black/10 light:bg-black/[0.03] light:text-neutral-500">
-              {copy.no}
-            </span>
-          </div>
+  {gates.map((gate, i) => (
+    <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p class="font-mono text-sm text-neutral-200 light:text-neutral-700">
+          <span class="text-neutral-500 light:text-neutral-600">
+            {String(i + 1).padStart(2, '0')}.{' '}
+          </span>
+          {gate.question}
+        </p>
+        <div class="flex items-center gap-2 text-xs">
+          <span class={`rounded-md border px-2 py-1 font-mono ${toneStyles[gate.tone]}`}>
+            {copy.yes} → {gate.outcome}
+          </span>
+          <span class="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-neutral-500 light:border-black/10 light:bg-black/[0.03] light:text-neutral-500">
+            {copy.no}
+          </span>
         </div>
-        {i < gates.length - 1 && (
-          <Icon name="chevronDown" class="mx-auto h-3.5 w-3.5 text-neutral-700 light:text-neutral-300" />
-        )}
       </div>
-    ))
-  }
+      {i < gates.length - 1 && (
+        <Icon
+          name="chevronDown"
+          class="mx-auto h-3.5 w-3.5 text-neutral-700 light:text-neutral-300"
+        />
+      )}
+    </div>
+  ))}
   <div class="mt-2 flex items-center gap-2 border-t border-white/10 pt-4 font-mono text-xs text-neutral-400 light:border-black/10 light:text-neutral-500">
-    <Icon name="arrowRight" class="h-3.5 w-3.5 shrink-0 rotate-90 text-sky-400 light:text-sky-600" />
+    <Icon
+      name="arrowRight"
+      class="h-3.5 w-3.5 shrink-0 rotate-90 text-sky-400 light:text-sky-600"
+    />
     {format(copy.fallback, { fallback })}
   </div>
 </div>

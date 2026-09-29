@@ -1,7 +1,7 @@
 // Structured data and sitemap builders. Pure functions over plain data and an explicit
 // site origin, so they stay independent of Astro and are covered by unit tests. Every
 // absolute URL is built from the origin they are given (SITE_URL at build time).
-import { AUTHOR, AUTHOR_URL, SITE_NAME } from '../config';
+import { AUTHOR, AUTHOR_URL, SITE_NAME } from '@/config';
 import type { Lang } from './content-model';
 
 type JsonLd = Record<string, unknown>;
@@ -64,7 +64,11 @@ export function techArticleJsonLd(input: {
     datePublished: isoDate(input.created),
     dateModified: isoDate(input.lastUpdated),
     author: author(),
-    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: absoluteUrl(input.homePath, input.siteUrl) },
+    isPartOf: {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: absoluteUrl(input.homePath, input.siteUrl),
+    },
   };
 }
 
@@ -95,7 +99,11 @@ export interface SitemapEntry {
 }
 
 const escapeXml = (value: string) =>
-  value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+  value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 
 /**
  * Sitemap with reciprocal hreflang alternates. `x-default` points at the Spanish
@@ -107,12 +115,21 @@ export function sitemapXml(entries: SitemapEntry[], siteUrl: string | URL): stri
     .map((entry) => {
       const links = [
         ...Object.entries(entry.alternates).map(
-          ([lang, path]) => `    <xhtml:link rel="alternate" hreflang="${lang}" href="${url(path)}"/>`,
+          ([lang, path]) =>
+            `    <xhtml:link rel="alternate" hreflang="${lang}" href="${url(path)}"/>`,
         ),
         `    <xhtml:link rel="alternate" hreflang="x-default" href="${url(entry.alternates.es)}"/>`,
       ];
-      const lastmod = entry.lastUpdated ? [`    <lastmod>${isoDate(entry.lastUpdated)}</lastmod>`] : [];
-      return ['  <url>', `    <loc>${url(entry.path)}</loc>`, ...lastmod, ...links, '  </url>'].join('\n');
+      const lastmod = entry.lastUpdated
+        ? [`    <lastmod>${isoDate(entry.lastUpdated)}</lastmod>`]
+        : [];
+      return [
+        '  <url>',
+        `    <loc>${url(entry.path)}</loc>`,
+        ...lastmod,
+        ...links,
+        '  </url>',
+      ].join('\n');
     })
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>

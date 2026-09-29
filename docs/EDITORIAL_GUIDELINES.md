@@ -51,21 +51,21 @@ No traduzcas identificadores, nombres de APIs, flags, comandos ni nombres oficia
 
 Distinguí una **denominación establecida** de una **frase descriptiva**. Conservá nombres como Domain-Driven Design, Factory Method, Bounded Context, Hexagonal Architecture o Circuit Breaker. Traducí las palabras que describen acciones, relaciones o propiedades alrededor de esos términos.
 
-| Evitar | Preferir | Por qué |
-|---|---|---|
-| Aggregate design | Diseño de aggregates | *Diseño* es la actividad; *aggregate* es el concepto de DDD que usa la guía. |
-| Aggregate boundaries | Límites de los aggregates | *Límites* es español natural; *aggregate* se conserva. |
-| Relationships between Bounded Contexts | Relaciones entre Bounded Contexts | La relación va en español; Bounded Context es el nombre. |
-| Context map | Mapa de contextos (_Context Map_) | *Mapa* describe el artefacto; el original entra en la primera mención. |
-| Architectural drivers | Drivers de arquitectura | La guía ya nombra el concepto así; *drivers* se conserva. |
-| un sequence diagram | un diagrama de secuencia | El tipo de diagrama tiene nombre en español. |
-| decision node / merge node | nodo de decisión / nodo de fusión | Piezas de la notación UML, no identificadores del ejemplo. |
-| Error budget | Presupuesto de error (_error budget_) | La description de la guía ya usa el español; el original se introduce una vez. |
-| Service level indicator | indicador de nivel de servicio | La sigla SLI/SLO/SLA se queda; la expansión puede ir en español. |
+| Evitar                                 | Preferir                              | Por qué                                                                        |
+| -------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------ |
+| Aggregate design                       | Diseño de aggregates                  | _Diseño_ es la actividad; _aggregate_ es el concepto de DDD que usa la guía.   |
+| Aggregate boundaries                   | Límites de los aggregates             | _Límites_ es español natural; _aggregate_ se conserva.                         |
+| Relationships between Bounded Contexts | Relaciones entre Bounded Contexts     | La relación va en español; Bounded Context es el nombre.                       |
+| Context map                            | Mapa de contextos (_Context Map_)     | _Mapa_ describe el artefacto; el original entra en la primera mención.         |
+| Architectural drivers                  | Drivers de arquitectura               | La guía ya nombra el concepto así; _drivers_ se conserva.                      |
+| un sequence diagram                    | un diagrama de secuencia              | El tipo de diagrama tiene nombre en español.                                   |
+| decision node / merge node             | nodo de decisión / nodo de fusión     | Piezas de la notación UML, no identificadores del ejemplo.                     |
+| Error budget                           | Presupuesto de error (_error budget_) | La description de la guía ya usa el español; el original se introduce una vez. |
+| Service level indicator                | indicador de nivel de servicio        | La sigla SLI/SLO/SLA se queda; la expansión puede ir en español.               |
 
-Si la guía ya eligió una traducción clara y consistente —*agregado*, *evento de dominio*, *reintento*— no la reemplaces por inglés. Tampoco fuerces un híbrido cuando existe una expresión completamente en español que resulte natural y precisa (*diagrama de secuencia*, no *sequence diagram*).
+Si la guía ya eligió una traducción clara y consistente —_agregado_, _evento de dominio_, _reintento_— no la reemplaces por inglés. Tampoco fuerces un híbrido cuando existe una expresión completamente en español que resulte natural y precisa (_diagrama de secuencia_, no _sequence diagram_).
 
-No traduzcas un término de forma aislada sin revisar cómo se usa en la guía y en los contenidos relacionados del mismo tema. *Aggregate* se queda en la guía de DDD porque es el término elegido ahí; *evento de dominio* en el overview del tema no obliga a renombrar el building block **Domain event** dentro del catálogo táctico.
+No traduzcas un término de forma aislada sin revisar cómo se usa en la guía y en los contenidos relacionados del mismo tema. _Aggregate_ se queda en la guía de DDD porque es el término elegido ahí; _evento de dominio_ en el overview del tema no obliga a renombrar el building block **Domain event** dentro del catálogo táctico.
 
 Mantener un término en inglés no implica agregarle mayúsculas: sigue **Mayúsculas y minúsculas**. timeout, retry y aggregate van en minúscula en el cuerpo; Bounded Context, Factory Method y Context Map conservan su denominación.
 
@@ -103,20 +103,20 @@ Conservá las cursivas que tengan otra función editorial válida: títulos de l
 
 ## Modelo de contenido y frontmatter
 
-La unidad editorial de DevPedia es la **guía** (*guide*). Las guías se organizan por estructura de conocimiento, no por fecha: tema → subtema opcional → guía, con secciones opcionales para agrupar guías dentro de un tema o subtema. Cada guía existe en las dos ediciones, en `src/content/guides/{es,en}/<tema>/[<subtema>/]<id>.mdx`.
+La unidad editorial de DevPedia es la **guía** (_guide_). Las guías se organizan por estructura de conocimiento, no por fecha: tema → subtema opcional → guía, con secciones opcionales para agrupar guías dentro de un tema o subtema. Cada guía existe en las dos ediciones, en `src/content/guides/{es,en}/<tema>/[<subtema>/]<id>.mdx`.
 
 ```yaml
-id: test-doubles            # identidad conceptual, igual en ES y EN
-slug: dobles-de-test        # segmento de URL de esta edición
-order: 5                    # posición pedagógica entre sus hermanos
-topic: testing              # id del tema
-subtopic:                   # id del subtema, si lo tiene (opcional)
-section: unit-testing       # id de una sección declarada en el tema o subtema (opcional)
-title: "Dobles de test: dummy, stub, spy, mock y fake"
-description: "Qué función cumple cada tipo de doble y cómo elegir el adecuado para controlar las dependencias de una prueba."
-created: 2026-08-04         # primera publicación; no se muestra como fecha principal
-lastUpdated: 2026-08-04     # la fecha que ve el lector («Actualizado …»); nunca anterior a created
-cover:                      # imagen social propia, 1200×630 (opcional; si falta, se usa la del tema o subtema)
+id: test-doubles # identidad conceptual, igual en ES y EN
+slug: dobles-de-test # segmento de URL de esta edición
+order: 5 # posición pedagógica entre sus hermanos
+topic: testing # id del tema
+subtopic: # id del subtema, si lo tiene (opcional)
+section: unit-testing # id de una sección declarada en el tema o subtema (opcional)
+title: 'Dobles de test: dummy, stub, spy, mock y fake'
+description: 'Qué función cumple cada tipo de doble y cómo elegir el adecuado para controlar las dependencias de una prueba.'
+created: 2026-08-04 # primera publicación; no se muestra como fecha principal
+lastUpdated: 2026-08-04 # la fecha que ve el lector («Actualizado …»); nunca anterior a created
+cover: # imagen social propia, 1200×630 (opcional; si falta, se usa la del tema o subtema)
 ```
 
 - **`id`**: identidad conceptual y estable. En inglés, kebab-case, único dentro de su tipo de contenido y el mismo en las dos ediciones. Empareja ES ↔ EN, alimenta hreflang y analytics, y no cambia nunca. No lo derives del slug ni del título: un id puede coincidir con el slug en inglés, pero no depende de él.
@@ -135,7 +135,7 @@ Son el primer contacto con la guía, en el índice y al compartir el enlace (Ope
 **Títulos**
 
 - Claridad, naturalidad y atractivo. Expresá el concepto, la pregunta o el problema central.
-- En español, mayúscula solo en la primera palabra, más nombres propios, nombres oficiales y siglas. No uses *title case* para dar importancia.
+- En español, mayúscula solo en la primera palabra, más nombres propios, nombres oficiales y siglas. No uses _title case_ para dar importancia.
 - Conservá los términos técnicos que permiten reconocer el tema (Factory Method, TDD, MCP). Si el título es el nombre de un patrón o de un enfoque, usá su denominación convencional.
 - Evitá títulos genéricos, traducciones literales, enumeraciones innecesarias (`Foo: A, B y C`) y fórmulas repetitivas.
 - No fuerces una pregunta cuando un título directo funciona mejor.
@@ -146,7 +146,7 @@ Son el primer contacto con la guía, en el índice y al compartir el enlace (Ope
 - Cortas y claras: una oración, dos si hace falta. Si hay que recortar, recortá el inventario de temas, no la tesis. Una description breve que obliga a reconstruir el significado no es clara: falta una palabra, no sobra.
 - Complementá el título; no lo repitas ni lo conviertas en un índice comprimido.
 - El lector tiene que entender de qué se trata la guía sin haber leído nada más.
-- No arranques por lo que el tema *no* es («DDD no es microservicios», «Cloud no es un inventario») salvo que esa negación sea el tema. Primero qué es o qué pregunta responde.
+- No arranques por lo que el tema _no_ es («DDD no es microservicios», «Cloud no es un inventario») salvo que esa negación sea el tema. Primero qué es o qué pregunta responde.
 - Evitá metáforas y fórmulas sentenciosas («escalera de madurez», «cuesta más de lo que evita») cuando el significado no queda en una primera lectura.
 - Generá interés con una tensión real o una decisión, sin clickbait.
 - El sistema de ejemplo (AndesShop, ReservaResto, checkout, envío, mesas, `Order`) vive en el cuerpo, no en la preview.
@@ -164,8 +164,8 @@ Cómo se forma el slug a partir del título:
 - se quitan `¿ ? ¡ !` y el resto de la puntuación de cierre;
 - `:` y `,` separan y se vuelven guión (`Plugins: cómo empaquetar y compartir extensiones` → `plugins-como-empaquetar-y-compartir-extensiones`);
 - se conservan artículos y preposiciones (`de`, `y`, `en`, `el`, `la`, `un`, `cómo` → `como`): el slug se lee como el título, no como una versión recortada;
-- un acrónimo entre paréntesis que solo reitera el mismo nombre se omite: *Domain-Driven Design (DDD)* → `domain-driven-design`;
-- un acrónimo que suma información se conserva: *Pruebas de aceptación de usuario (UAT)* → `pruebas-de-aceptacion-de-usuario-uat`; *F.I.R.S.T.: principios para tests unitarios* → `first-principios-para-tests-unitarios`.
+- un acrónimo entre paréntesis que solo reitera el mismo nombre se omite: _Domain-Driven Design (DDD)_ → `domain-driven-design`;
+- un acrónimo que suma información se conserva: _Pruebas de aceptación de usuario (UAT)_ → `pruebas-de-aceptacion-de-usuario-uat`; _F.I.R.S.T.: principios para tests unitarios_ → `first-principios-para-tests-unitarios`.
 
 Qué no vale:
 
@@ -185,21 +185,21 @@ Aplicá el mismo criterio a categorías y páginas de temas, títulos de guías 
 
 Un mismo título conserva la misma escritura en el encabezado, las cards, los breadcrumbs, la navegación, los índices y los metadatos. Si el texto vive en una fuente compartida (el YAML del tema o subtema, incluidos los títulos de sus `sections`, o el frontmatter de la guía), corregí ahí para no duplicar divergencias. Revisá también las referencias escritas a mano en el cuerpo y en los enlaces internos.
 
-| Actual | Corregido |
-|---|---|
-| Arquitectura de Software | Arquitectura de software |
-| Principios de Diseño | Principios de diseño |
-| Patrones de Diseño | Patrones de diseño |
-| ¿Qué es la Arquitectura de Software? | ¿Qué es la arquitectura de software? |
-| Arquitectura de la Aplicación | Arquitectura de la aplicación |
-| Resiliencia en Sistemas Distribuidos | Resiliencia en sistemas distribuidos |
-| Cómo Comunicar Decisiones de Arquitectura | Cómo comunicar decisiones de arquitectura |
-| Atributos de Calidad (Requisitos No Funcionales) | Atributos de calidad (requisitos no funcionales) |
-| Restricciones Técnicas | Restricciones técnicas |
-| MCP: Conectar Herramientas Externas | MCP: conectar herramientas externas |
-| Aggregate Design | Diseño de aggregates |
-| Architectural Drivers: Qué Guía… | Drivers de arquitectura: qué guía las decisiones de arquitectura |
-| Bounded Context ≠ Microservicio | Bounded Context ≠ microservicio |
+| Actual                                           | Corregido                                                        |
+| ------------------------------------------------ | ---------------------------------------------------------------- |
+| Arquitectura de Software                         | Arquitectura de software                                         |
+| Principios de Diseño                             | Principios de diseño                                             |
+| Patrones de Diseño                               | Patrones de diseño                                               |
+| ¿Qué es la Arquitectura de Software?             | ¿Qué es la arquitectura de software?                             |
+| Arquitectura de la Aplicación                    | Arquitectura de la aplicación                                    |
+| Resiliencia en Sistemas Distribuidos             | Resiliencia en sistemas distribuidos                             |
+| Cómo Comunicar Decisiones de Arquitectura        | Cómo comunicar decisiones de arquitectura                        |
+| Atributos de Calidad (Requisitos No Funcionales) | Atributos de calidad (requisitos no funcionales)                 |
+| Restricciones Técnicas                           | Restricciones técnicas                                           |
+| MCP: Conectar Herramientas Externas              | MCP: conectar herramientas externas                              |
+| Aggregate Design                                 | Diseño de aggregates                                             |
+| Architectural Drivers: Qué Guía…                 | Drivers de arquitectura: qué guía las decisiones de arquitectura |
+| Bounded Context ≠ Microservicio                  | Bounded Context ≠ microservicio                                  |
 
 Después de dos puntos y dentro de paréntesis, usá minúscula cuando continúe una frase descriptiva (`MCP: conectar herramientas externas`; `Atributos de calidad (requisitos no funcionales)`). Si lo que sigue es el nombre de un patrón o de un concepto establecido, conservá su denominación (`Wrappers: Adapter, Decorator, Proxy`; `Hexagonal vs. Onion vs. Clean`; `Bounded Context ≠ microservicio`).
 
@@ -210,8 +210,8 @@ Después de dos puntos y dentro de paréntesis, usá minúscula cuando continúe
 - Los nombres de patrones y de conceptos establecidos conservan su denominación convencional: Factory Method, Bounded Context, Domain-Driven Design, Single Responsibility Principle, Hexagonal Architecture, Event Sourcing, Circuit Breaker. La distinción no es que el término sea técnico, sino que se use como nombre de un concepto específico.
 - Las frases descriptivas o las actividades usan sentence case: mayúscula solo en la primera palabra (`Diseño de aggregates`; `Drivers de arquitectura: qué guía las decisiones de arquitectura`). Si la frase mezcla español y un nombre establecido, la primera palabra en español lleva la mayúscula del encabezado (`Mapa de contextos`; `Relaciones entre Bounded Contexts`).
 - Un nombre de una sola palabra (Observer, Strategy, Adapter, Bulkhead) ya es su denominación. Al combinarse con una palabra que no es ese nombre, esa segunda va en minúscula (`Observer ≠ pub/sub`; `Bounded Context ≠ microservicio`).
-- Los lemas citados de un acrónimo pueden conservar su forma habitual: *Keep It Simple, Stupid*.
-- Los títulos de libros conservan su capitalización original: *Domain-Driven Design: Tackling Complexity in the Heart of Software*.
+- Los lemas citados de un acrónimo pueden conservar su forma habitual: _Keep It Simple, Stupid_.
+- Los títulos de libros conservan su capitalización original: _Domain-Driven Design: Tackling Complexity in the Heart of Software_.
 - Los términos genéricos en inglés no llevan mayúscula por ser técnicos o estar en inglés: testing, performance, cloud, framework, deployment, load balancer. Usá mayúscula si comienzan un título o una oración, o si en ese uso son el nombre de un concepto (`API Gateway`, `Load Balancer` como patrón o componente nombrado en un heading).
 - No modifiques identificadores de código, clases, métodos, comandos, rutas, nombres de configuración ni etiquetas de nodos en diagramas que coincidan con el ejemplo (`Payment Service`, `retry ChargeCard()`, `Load Balancer` en un diagrama).
 
@@ -245,7 +245,7 @@ Priorizá una idea bien expresada por encima de una frase breve o ingeniosa.
 - Si falta un paso de razonamiento, incorporá la explicación mínima para que se pueda seguir.
 - No dejes afirmaciones vagas («mejora la escalabilidad», «reduce el acoplamiento») sin el mecanismo, una condición, una consecuencia o un ejemplo.
 - Distinguí definición, recomendación y decisión que depende del contexto.
-- Revisá absolutos: *siempre*, *nunca*, *garantiza*, *la mejor opción*. Conservá matices y trade-offs.
+- Revisá absolutos: _siempre_, _nunca_, _garantiza_, _la mejor opción_. Conservá matices y trade-offs.
 - No confundas brevedad con borrar información necesaria. Tampoco conviertas cada párrafo en una explicación extensa: agregá profundidad donde resuelve una duda real.
 - No inventes datos, fuentes ni comportamientos. Si una corrección depende de algo técnico incierto, verificá documentación primaria o dejalo marcado como pendiente.
 
@@ -281,32 +281,32 @@ Si el párrafo anterior ya expresa esa idea, eliminá la oración en lugar de re
 
 **«Actualmente», «recientemente», «en la última versión», «hoy».** Si importan para la afirmación, precisá la fecha o la versión con información verificable. No las borres si eso convierte una afirmación temporal en una verdad general: «la lista completa hoy supera los 30 eventos» no puede quedar como «la lista supera los 30 eventos» sin ancla. Un «hoy» que solo marca el momento de escritura o el de una clase, sí se reformula o se elimina.
 
-| Evitar | Preferir | Por qué |
-|---|---|---|
-| «Las tres piezas de hoy especializan a Claude, pero no de la misma manera.» | «Skills, subagentes y hooks permiten extender Claude Code de distintas maneras.» | Nombra el tema; no depende de cuándo se lea. |
-| «En la próxima guía vemos F.I.R.S.T.» | «[F.I.R.S.T.](/testing/first-principios-para-tests-unitarios/) es la regla mnemotécnica más usada para chequear si un unit test está bien pensado.» | Relaciona por el concepto y el enlace, no por un recorrido compartido. |
-| «La lista completa hoy supera los 25-30 eventos» | «En septiembre de 2026 la lista oficial supera los 30 eventos» | La cifra cambia; sin fecha se lee como una verdad permanente. |
+| Evitar                                                                      | Preferir                                                                                                                                            | Por qué                                                                |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| «Las tres piezas de hoy especializan a Claude, pero no de la misma manera.» | «Skills, subagentes y hooks permiten extender Claude Code de distintas maneras.»                                                                    | Nombra el tema; no depende de cuándo se lea.                           |
+| «En la próxima guía vemos F.I.R.S.T.»                                       | «[F.I.R.S.T.](/testing/first-principios-para-tests-unitarios/) es la regla mnemotécnica más usada para chequear si un unit test está bien pensado.» | Relaciona por el concepto y el enlace, no por un recorrido compartido. |
+| «La lista completa hoy supera los 25-30 eventos»                            | «En septiembre de 2026 la lista oficial supera los 30 eventos»                                                                                      | La cifra cambia; sin fecha se lee como una verdad permanente.          |
 
 ## Problemas recurrentes
 
 Criterio, no reemplazo automático.
 
-| Evitar | Preferir | Por qué |
-|---|---|---|
-| «Un monolito tiene un único deployment unit principal» | «Un monolito se despliega como una única unidad» | Calco; el español nombra la acción. |
-| «Con estados pocos y transiciones simples» | «Con pocos estados y transiciones simples» | Orden natural. |
-| «La invariante que el patrón existe para proteger» | «La invariante que el patrón busca preservar» | El patrón no «existe para»; busca preservar. |
-| «Un patrón creacional: …» (todas las descriptions iguales) | El problema o la tensión que introduce el patrón | El tipo ya está en el título o en la categoría. |
-| «timeout, retry, circuit breaker, idempotencia, bulkhead, saga…» como summary | «¿Cómo evitar que un fallo parcial se propague? Mecanismos, cuándo usarlos y qué no resuelven» | Un índice no da una razón para leer. |
-| «Esto mejora la autonomía» | «Puede cambiar su esquema sin coordinar con los demás. El costo es que la transacción ya no es local» | El cómo y el costo. |
-| «mejorar el acoplamiento» | «reducir el acoplamiento» | *Mejorar* se lee como aumentarlo. |
-| AndesExpress / checkout / `Order` en el `description` | El mecanismo, sin el ejemplo local | El summary se lee fuera de la guía. |
-| «Tres reportes, la misma secuencia, pasos distintos…» | «La clase base fija la secuencia; las subclases completan los pasos que varían» | La description tiene que decir de qué se trata, no reconstruir el ejemplo. |
-| *envoltorio* / *fábrica* para el patrón | *wrapper* / *factory* | Es el nombre del concepto; *envoltorio* choca con el ejemplo de regalo. |
-| «responde a un modo distinto de que un cambio chico se vuelva caro» | «busca evitar que un cambio pequeño termine exigiendo mucho trabajo» | Construcción rebuscada; *chico*/*caro* comprimen esfuerzo, complejidad y costo. |
-| «suele costar más de lo que evita» | «puede agregar más complejidad de la que resuelve» | Compara magnitudes que el lector tiene que reconstruir; convierte un riesgo en regla. |
+| Evitar                                                                        | Preferir                                                                                              | Por qué                                                                               |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| «Un monolito tiene un único deployment unit principal»                        | «Un monolito se despliega como una única unidad»                                                      | Calco; el español nombra la acción.                                                   |
+| «Con estados pocos y transiciones simples»                                    | «Con pocos estados y transiciones simples»                                                            | Orden natural.                                                                        |
+| «La invariante que el patrón existe para proteger»                            | «La invariante que el patrón busca preservar»                                                         | El patrón no «existe para»; busca preservar.                                          |
+| «Un patrón creacional: …» (todas las descriptions iguales)                    | El problema o la tensión que introduce el patrón                                                      | El tipo ya está en el título o en la categoría.                                       |
+| «timeout, retry, circuit breaker, idempotencia, bulkhead, saga…» como summary | «¿Cómo evitar que un fallo parcial se propague? Mecanismos, cuándo usarlos y qué no resuelven»        | Un índice no da una razón para leer.                                                  |
+| «Esto mejora la autonomía»                                                    | «Puede cambiar su esquema sin coordinar con los demás. El costo es que la transacción ya no es local» | El cómo y el costo.                                                                   |
+| «mejorar el acoplamiento»                                                     | «reducir el acoplamiento»                                                                             | _Mejorar_ se lee como aumentarlo.                                                     |
+| AndesExpress / checkout / `Order` en el `description`                         | El mecanismo, sin el ejemplo local                                                                    | El summary se lee fuera de la guía.                                                   |
+| «Tres reportes, la misma secuencia, pasos distintos…»                         | «La clase base fija la secuencia; las subclases completan los pasos que varían»                       | La description tiene que decir de qué se trata, no reconstruir el ejemplo.            |
+| _envoltorio_ / _fábrica_ para el patrón                                       | _wrapper_ / _factory_                                                                                 | Es el nombre del concepto; _envoltorio_ choca con el ejemplo de regalo.               |
+| «responde a un modo distinto de que un cambio chico se vuelva caro»           | «busca evitar que un cambio pequeño termine exigiendo mucho trabajo»                                  | Construcción rebuscada; _chico_/_caro_ comprimen esfuerzo, complejidad y costo.       |
+| «suele costar más de lo que evita»                                            | «puede agregar más complejidad de la que resuelve»                                                    | Compara magnitudes que el lector tiene que reconstruir; convierte un riesgo en regla. |
 
-Otros calcos frecuentes a revisar en contexto: *bottleneck* → cuello de botella; *recovery* → recuperación (salvo *disaster recovery* / RPO / RTO, que se quedan o se introducen con el original); *sequence diagram* / *class diagram* → diagrama de secuencia / diagrama de clases; *source of truth* → fuente de verdad.
+Otros calcos frecuentes a revisar en contexto: _bottleneck_ → cuello de botella; _recovery_ → recuperación (salvo _disaster recovery_ / RPO / RTO, que se quedan o se introducen con el original); _sequence diagram_ / _class diagram_ → diagrama de secuencia / diagrama de clases; _source of truth_ → fuente de verdad.
 
 No traduzcas por sistema feature, codebase, schema, tooling, ownership ni scope: en el habla tech rioplatense suelen quedar mejor en inglés. Funcionalidad no siempre sustituye a feature. En el cuerpo, esos términos habituales van en redonda; ver **Cursivas, código y énfasis**.
 

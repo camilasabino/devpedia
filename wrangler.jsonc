@@ -5,7 +5,7 @@
   "name": "devpedia",
   "compatibility_date": "2024-11-01",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
   },
-  "routes": [{ "pattern": "devpedia.camilasabino.dev", "custom_domain": true }]
+  "routes": [{ "pattern": "devpedia.camilasabino.dev", "custom_domain": true }],
 }

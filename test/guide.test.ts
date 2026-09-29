@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ContentIndex } from '../src/lib/content-model';
-import { formatMonthYear, guideSequence, readingMinutes, tocEntries } from '../src/lib/guide';
+import { ContentIndex } from '@/lib/content-model';
+import { formatMonthYear, guideSequence, readingMinutes, tocEntries } from '@/lib/guide';
 import { loadModel } from './real-content';
 
 const index = new ContentIndex(loadModel());
@@ -40,7 +40,9 @@ describe('guideSequence', () => {
       for (const guide of index.model[lang].guides) {
         const { previous, next, position, total } = guideSequence(index, lang, guide.id);
         for (const neighbor of [previous, next]) {
-          if (!neighbor) continue;
+          if (!neighbor) {
+            continue;
+          }
           expect(neighbor.topic).toBe(guide.topic);
           expect(neighbor.subtopic).toBe(guide.subtopic);
         }
@@ -91,7 +93,11 @@ describe('tocEntries', () => {
   const h = (depth: number, slug: string) => ({ depth, slug, text: slug });
 
   it('keeps sections and subsections only', () => {
-    expect(tocEntries([h(2, 'a'), h(3, 'b'), h(4, 'c'), h(2, 'd')]).map((e) => e.slug)).toEqual(['a', 'b', 'd']);
+    expect(tocEntries([h(2, 'a'), h(3, 'b'), h(4, 'c'), h(2, 'd')]).map((e) => e.slug)).toEqual([
+      'a',
+      'b',
+      'd',
+    ]);
   });
 
   it('is empty when there is too little to navigate', () => {

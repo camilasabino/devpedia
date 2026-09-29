@@ -2,20 +2,20 @@
 // Topic and subtopic pages: a knowledge hub for one area. A topic lists its subtopics
 // (as an index into them, without repeating their guides) and then its own guides; a
 // subtopic lists its guides. Guides are grouped by section in pedagogical order.
-import BaseLayout from '../layouts/BaseLayout.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
 import Icon from './Icon.astro';
 import Breadcrumb from './Breadcrumb.astro';
 import GuideList from './GuideList.astro';
 import SubtopicCard from './SubtopicCard.astro';
-import { SITE_NAME, SITE_URL, pageTitle } from '../config';
-import { plural, ui, type Lang } from '../i18n';
-import { getContent } from '../lib/content';
-import type { TopicData } from '../lib/content-model';
-import { groupBySection } from '../lib/hub';
-import { breadcrumbJsonLd, imageType } from '../lib/seo';
-import { topicView } from '../lib/analytics';
-import { searchContext } from '../lib/search';
-import { coverOf, topicVisual } from '../lib/topic-visuals';
+import { SITE_NAME, SITE_URL, pageTitle } from '@/config';
+import { plural, ui, type Lang } from '@/i18n';
+import { getContent } from '@/lib/content';
+import type { TopicData } from '@/lib/content-model';
+import { groupBySection } from '@/lib/hub';
+import { breadcrumbJsonLd, imageType } from '@/lib/seo';
+import { topicView } from '@/lib/analytics';
+import { searchContext } from '@/lib/search';
+import { coverOf, topicVisual } from '@/lib/topic-visuals';
 
 interface Props {
   lang: Lang;
@@ -38,7 +38,9 @@ const guideCount = subtopic ? guides.length : index.guideCount(lang, topic.id);
 const groups = groupBySection(node, guides);
 const visual = topicVisual(topic.id);
 
-const crumbs = subtopic ? [{ label: topic.title, href: index.pathOf(lang, 'topic', topic.id)! }] : [];
+const crumbs = subtopic
+  ? [{ label: topic.title, href: index.pathOf(lang, 'topic', topic.id)! }]
+  : [];
 const trail = [
   { name: SITE_NAME, path: copy.homePath },
   ...crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href })),
@@ -59,7 +61,9 @@ const image = { path: imagePath, width: 1200, height: 630, type: imageType(image
 >
   <Breadcrumb lang={lang} crumbs={crumbs} current={node.title} />
   {/* Search result metadata. Kept outside the indexed element, whose text is searchable. */}
-  <span hidden data-pagefind-meta="context">{searchContext(index, lang, kind, id, copy.search.topicLabel)}</span>
+  <span hidden data-pagefind-meta="context">
+    {searchContext(index, lang, kind, id, copy.search.topicLabel)}
+  </span>
   <span hidden data-pagefind-meta={`id:${id}`}></span>
   <span hidden data-pagefind-meta={`kind:${kind}`}></span>
   {/* Search indexes the hub's own title and description only: its guide list would
@@ -68,33 +72,38 @@ const image = { path: imagePath, width: 1200, height: 630, type: imageType(image
     <span class={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${visual.badge}`}>
       <Icon name={node.icon} class="h-6 w-6" />
     </span>
-    <h1 class="mt-5 font-display text-4xl font-bold text-neutral-50 light:text-neutral-900 sm:text-5xl">{node.title}</h1>
-    <p class="mt-4 max-w-2xl text-lg leading-relaxed text-neutral-300 light:text-neutral-700">{node.description}</p>
-    <p data-pagefind-ignore class={`mt-4 font-mono text-sm ${visual.text}`}>{plural(copy.hub.guidesCount, guideCount)}</p>
+    <h1 class="mt-5 font-display text-4xl font-bold text-neutral-50 light:text-neutral-900 sm:text-5xl">
+      {node.title}
+    </h1>
+    <p class="mt-4 max-w-2xl text-lg leading-relaxed text-neutral-300 light:text-neutral-700">
+      {node.description}
+    </p>
+    <p data-pagefind-ignore class={`mt-4 font-mono text-sm ${visual.text}`}>
+      {plural(copy.hub.guidesCount, guideCount)}
+    </p>
   </header>
 
-  {
-    subtopics.length > 0 && (
-      <section aria-labelledby="subtopics-title" class="mt-12">
-        <h2 id="subtopics-title" class="font-mono text-xs uppercase tracking-wider text-neutral-500 light:text-neutral-600">
-          {copy.hub.subtopicsHeading}
-        </h2>
-        <ul class="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-start gap-4 sm:gap-5">
-          {subtopics.map((child) => (
-            <li>
-              <SubtopicCard lang={lang} subtopic={child} />
-            </li>
-          ))}
-        </ul>
-      </section>
-    )
-  }
+  {subtopics.length > 0 && (
+    <section aria-labelledby="subtopics-title" class="mt-12">
+      <h2
+        id="subtopics-title"
+        class="font-mono text-xs uppercase tracking-wider text-neutral-500 light:text-neutral-600"
+      >
+        {copy.hub.subtopicsHeading}
+      </h2>
+      <ul class="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-start gap-4 sm:gap-5">
+        {subtopics.map((child) => (
+          <li>
+            <SubtopicCard lang={lang} subtopic={child} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
 
-  {
-    groups.length > 0 && (
-      <div class="mt-12">
-        <GuideList lang={lang} groups={groups} accentClass={visual.text} />
-      </div>
-    )
-  }
+  {groups.length > 0 && (
+    <div class="mt-12">
+      <GuideList lang={lang} groups={groups} accentClass={visual.text} />
+    </div>
+  )}
 </BaseLayout>

@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
-import { SITE_URL } from '../config';
-import { languages, ui } from '../i18n';
-import { getContent } from '../lib/content';
-import { sitemapXml, type SitemapEntry } from '../lib/seo';
+import { SITE_URL } from '@/config';
+import { languages, ui } from '@/i18n';
+import { getContent } from '@/lib/content';
+import { sitemapXml, type SitemapEntry } from '@/lib/seo';
 
 // Every canonical DevPedia URL in both editions: the homes, then each topic,
 // subtopic and guide, with their counterparts resolved by conceptual id.

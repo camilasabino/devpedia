@@ -7,14 +7,19 @@ import {
   sitemapXml,
   techArticleJsonLd,
   websiteJsonLd,
-} from '../src/lib/seo';
-import { SUBTOPIC_COVERS, TOPIC_VISUALS, coverOf } from '../src/lib/topic-visuals';
+} from '@/lib/seo';
+import { SUBTOPIC_COVERS, TOPIC_VISUALS, coverOf } from '@/lib/topic-visuals';
 
 const SITE = 'https://handbook.example.org';
 
 describe('DevPedia structured data', () => {
   it('describes each home as the DevPedia WebSite, on the given origin', () => {
-    const data = websiteJsonLd({ siteUrl: SITE, lang: 'en', homePath: '/en/', description: 'A handbook.' });
+    const data = websiteJsonLd({
+      siteUrl: SITE,
+      lang: 'en',
+      homePath: '/en/',
+      description: 'A handbook.',
+    });
     expect(data).toMatchObject({
       '@type': 'WebSite',
       name: 'DevPedia',
@@ -89,17 +94,31 @@ describe('DevPedia sitemap', () => {
   });
 
   it('builds URLs only from the origin it is given', () => {
-    expect(absoluteUrl('/en/', 'https://devpedia.camilasabino.dev')).toBe('https://devpedia.camilasabino.dev/en/');
+    expect(absoluteUrl('/en/', 'https://devpedia.camilasabino.dev')).toBe(
+      'https://devpedia.camilasabino.dev/en/',
+    );
     expect(xml).not.toContain('camilasabino.dev');
   });
 });
 
 describe('DevPedia topic visuals', () => {
   const ids = (files: Record<string, unknown>) =>
-    Object.values(files as Record<string, string>).map((source) => (parse(source) as { id: string }).id);
-  const topicIds = ids(import.meta.glob('../src/content/topics/es/*.yaml', { query: '?raw', import: 'default', eager: true }));
+    Object.values(files as Record<string, string>).map(
+      (source) => (parse(source) as { id: string }).id,
+    );
+  const topicIds = ids(
+    import.meta.glob('../src/content/topics/es/*.yaml', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }),
+  );
   const subtopicIds = ids(
-    import.meta.glob('../src/content/subtopics/es/*.yaml', { query: '?raw', import: 'default', eager: true }),
+    import.meta.glob('../src/content/subtopics/es/*.yaml', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }),
   );
   const coverFiles = Object.keys(import.meta.glob('../public/covers/*')).map((path) =>
     path.replace('../public', ''),
@@ -107,16 +126,25 @@ describe('DevPedia topic visuals', () => {
 
   it('configures every topic, and only existing topics', () => {
     expect(Object.keys(TOPIC_VISUALS).sort()).toEqual([...topicIds].sort());
-    expect(topicIds).toEqual(expect.arrayContaining(['architecture', 'design', 'testing', 'ai-engineering']));
+    expect(topicIds).toEqual(
+      expect.arrayContaining(['architecture', 'design', 'testing', 'ai-engineering']),
+    );
   });
 
   it('keys subtopic covers by existing subtopic ids', () => {
-    for (const id of Object.keys(SUBTOPIC_COVERS)) expect(subtopicIds).toContain(id);
+    for (const id of Object.keys(SUBTOPIC_COVERS)) {
+      expect(subtopicIds).toContain(id);
+    }
   });
 
   it('points every cover at a file in public/covers', () => {
-    const covers = [...Object.values(TOPIC_VISUALS).map((visual) => visual.cover), ...Object.values(SUBTOPIC_COVERS)];
-    for (const cover of covers) expect(coverFiles).toContain(cover);
+    const covers = [
+      ...Object.values(TOPIC_VISUALS).map((visual) => visual.cover),
+      ...Object.values(SUBTOPIC_COVERS),
+    ];
+    for (const cover of covers) {
+      expect(coverFiles).toContain(cover);
+    }
   });
 
   it('prefers the subtopic cover, falling back to the topic', () => {

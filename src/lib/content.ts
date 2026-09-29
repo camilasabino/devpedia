@@ -1,5 +1,11 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { ContentIndex, LANG_PREFIX, validateContentModel, type ContentModel, type Lang } from './content-model';
+import {
+  ContentIndex,
+  LANG_PREFIX,
+  validateContentModel,
+  type ContentModel,
+  type Lang,
+} from './content-model';
 
 export type GuideEntry = CollectionEntry<'guidesEs'> | CollectionEntry<'guidesEn'>;
 
@@ -43,7 +49,9 @@ async function load(): Promise<Content> {
     index: new ContentIndex(model),
     guideEntry(lang, id) {
       const entry = entries[lang].find((guide) => guide.id === id);
-      if (!entry) throw new Error(`No ${lang} guide "${id}"`);
+      if (!entry) {
+        throw new Error(`No ${lang} guide "${id}"`);
+      }
       return entry;
     },
   };
@@ -53,7 +61,9 @@ let cached: Promise<Content> | undefined;
 
 /** The validated content of both editions, loaded once per build (on every request in dev). */
 export function getContent(): Promise<Content> {
-  if (import.meta.env.DEV) return load();
+  if (import.meta.env.DEV) {
+    return load();
+  }
   cached ??= load();
   return cached;
 }

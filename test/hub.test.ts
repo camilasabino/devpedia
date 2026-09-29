@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { GuideData } from '../src/lib/content-model';
-import { groupBySection } from '../src/lib/hub';
+import type { GuideData } from '@/lib/content-model';
+import { groupBySection } from '@/lib/hub';
 
 const guide = (id: string, order: number, section?: string): GuideData => ({
   id,
@@ -24,7 +24,12 @@ describe('groupBySection', () => {
   ];
 
   it('follows the declared section order and sorts each group by order', () => {
-    const guides = [guide('c', 3, 'first'), guide('d', 12, 'second'), guide('a', 1, 'second'), guide('b', 2, 'first')];
+    const guides = [
+      guide('c', 3, 'first'),
+      guide('d', 12, 'second'),
+      guide('a', 1, 'second'),
+      guide('b', 2, 'first'),
+    ];
     expect(ids(groupBySection({ sections }, guides))).toEqual([
       ['first', ['b', 'c']],
       ['second', ['a', 'd']],
@@ -40,6 +45,8 @@ describe('groupBySection', () => {
   });
 
   it('returns one ordered group when the node declares no sections', () => {
-    expect(ids(groupBySection({}, [guide('b', 2), guide('a', 1)]))).toEqual([[undefined, ['a', 'b']]]);
+    expect(ids(groupBySection({}, [guide('b', 2), guide('a', 1)]))).toEqual([
+      [undefined, ['a', 'b']],
+    ]);
   });
 });

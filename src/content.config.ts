@@ -28,7 +28,9 @@ function byDeclaredId(pattern: string, base: string): Loader {
       await loader.load(context);
       const clashes = [...filesById].filter(([, files]) => files.size > 1);
       if (clashes.length > 0) {
-        const detail = clashes.map(([id, files]) => `"${id}" in ${[...files].join(', ')}`).join('; ');
+        const detail = clashes
+          .map(([id, files]) => `"${id}" in ${[...files].join(', ')}`)
+          .join('; ');
         throw new Error(`Duplicate ids in ${base}: ${detail}`);
       }
     },
@@ -76,8 +78,14 @@ const guidesIn = (base: string) => byDeclaredId('**/*.{md,mdx}', base);
 export const collections = {
   topicsEs: defineCollection({ loader: yamlIn('./src/content/topics/es'), schema: topicSchema }),
   topicsEn: defineCollection({ loader: yamlIn('./src/content/topics/en'), schema: topicSchema }),
-  subtopicsEs: defineCollection({ loader: yamlIn('./src/content/subtopics/es'), schema: subtopicSchema }),
-  subtopicsEn: defineCollection({ loader: yamlIn('./src/content/subtopics/en'), schema: subtopicSchema }),
+  subtopicsEs: defineCollection({
+    loader: yamlIn('./src/content/subtopics/es'),
+    schema: subtopicSchema,
+  }),
+  subtopicsEn: defineCollection({
+    loader: yamlIn('./src/content/subtopics/en'),
+    schema: subtopicSchema,
+  }),
   guidesEs: defineCollection({ loader: guidesIn('./src/content/guides/es'), schema: guideSchema }),
   guidesEn: defineCollection({ loader: guidesIn('./src/content/guides/en'), schema: guideSchema }),
 };

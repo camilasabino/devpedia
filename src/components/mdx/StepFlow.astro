@@ -1,5 +1,5 @@
 ---
-import Icon from '../Icon.astro';
+import Icon from '@/components/Icon.astro';
 
 interface Step {
   label: string;
@@ -16,30 +16,34 @@ const { steps, loopLabel } = Astro.props;
 
 <div class="card-surface p-6">
   <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:gap-2">
-    {
-      steps.map((step, i) => (
-        <>
-          <div class="flex min-w-0 flex-1 flex-col gap-1 rounded-lg border border-white/10 light:border-black/10 bg-white/[0.03] light:bg-black/[0.03] p-3">
-            <span class="font-mono text-xs text-accent-400 light:text-accent-700">{String(i + 1).padStart(2, '0')}</span>
-            <span class="font-display text-sm font-semibold text-neutral-100 light:text-neutral-800">{step.label}</span>
-            {step.detail && <span class="font-mono text-xs text-neutral-500 light:text-neutral-600">{step.detail}</span>}
-          </div>
-          {i < steps.length - 1 && (
-            <Icon
-              name="arrowRight"
-              class="mx-auto h-4 w-4 shrink-0 rotate-90 text-neutral-500 light:text-neutral-600 sm:mx-0 sm:rotate-0"
-            />
+    {steps.map((step, i) => (
+      <>
+        <div class="flex min-w-0 flex-1 flex-col gap-1 rounded-lg border border-white/10 light:border-black/10 bg-white/[0.03] light:bg-black/[0.03] p-3">
+          <span class="font-mono text-xs text-accent-400 light:text-accent-700">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <span class="font-display text-sm font-semibold text-neutral-100 light:text-neutral-800">
+            {step.label}
+          </span>
+          {step.detail && (
+            <span class="font-mono text-xs text-neutral-500 light:text-neutral-600">
+              {step.detail}
+            </span>
           )}
-        </>
-      ))
-    }
+        </div>
+        {i < steps.length - 1 && (
+          <Icon
+            name="arrowRight"
+            class="mx-auto h-4 w-4 shrink-0 rotate-90 text-neutral-500 light:text-neutral-600 sm:mx-0 sm:rotate-0"
+          />
+        )}
+      </>
+    ))}
   </div>
-  {
-    loopLabel && (
-      <div class="mt-4 flex items-center gap-2 border-t border-white/10 light:border-black/10 pt-4 font-mono text-xs text-neutral-400 light:text-neutral-600">
-        <Icon name="refresh" class="h-3.5 w-3.5 shrink-0 text-accent-400 light:text-accent-700" />
-        {loopLabel}
-      </div>
-    )
-  }
+  {loopLabel && (
+    <div class="mt-4 flex items-center gap-2 border-t border-white/10 light:border-black/10 pt-4 font-mono text-xs text-neutral-400 light:text-neutral-600">
+      <Icon name="refresh" class="h-3.5 w-3.5 shrink-0 text-accent-400 light:text-accent-700" />
+      {loopLabel}
+    </div>
+  )}
 </div>

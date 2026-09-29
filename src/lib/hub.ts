@@ -13,7 +13,10 @@ const byOrder = (a: GuideData, b: GuideData) => a.order - b.order;
  * order, each group sorted by `order`. Guides without a section come first, as a
  * group without a heading. Empty groups are dropped.
  */
-export function groupBySection(owner: Pick<TopicData, 'sections'>, guides: readonly GuideData[]): GuideGroup[] {
+export function groupBySection(
+  owner: Pick<TopicData, 'sections'>,
+  guides: readonly GuideData[],
+): GuideGroup[] {
   const sorted = [...guides].sort(byOrder);
   return [
     { guides: sorted.filter((guide) => !guide.section) },

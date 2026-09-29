@@ -13,16 +13,58 @@ const JDK_TYPE_LIGHT = '#3f6212'; // lime-800
 // the grammar-based theme above has already colored everything else.
 const JDK_TYPE_NAMES = new Set([
   // primitives
-  'void', 'int', 'boolean', 'long', 'double', 'float', 'char', 'byte', 'short',
+  'void',
+  'int',
+  'boolean',
+  'long',
+  'double',
+  'float',
+  'char',
+  'byte',
+  'short',
   // java.lang / java.util types used across the design patterns snippets
-  'String', 'StringBuilder', 'Integer', 'Long', 'Double', 'Float', 'Boolean', 'Character',
-  'Object', 'Math', 'System', 'Class', 'Number',
-  'List', 'ArrayList', 'LinkedList', 'Map', 'HashMap', 'ConcurrentHashMap', 'TreeMap',
-  'Set', 'HashSet', 'TreeSet', 'Queue', 'Deque', 'Iterator', 'Iterable',
-  'Comparable', 'Comparator', 'Optional', 'Collections', 'Collection', 'Runnable', 'Thread',
-  'Exception', 'RuntimeException', 'IllegalStateException', 'IllegalArgumentException',
-  'UnsupportedOperationException', 'NullPointerException',
-  'Cloneable', 'Serializable',
+  'String',
+  'StringBuilder',
+  'Integer',
+  'Long',
+  'Double',
+  'Float',
+  'Boolean',
+  'Character',
+  'Object',
+  'Math',
+  'System',
+  'Class',
+  'Number',
+  'List',
+  'ArrayList',
+  'LinkedList',
+  'Map',
+  'HashMap',
+  'ConcurrentHashMap',
+  'TreeMap',
+  'Set',
+  'HashSet',
+  'TreeSet',
+  'Queue',
+  'Deque',
+  'Iterator',
+  'Iterable',
+  'Comparable',
+  'Comparator',
+  'Optional',
+  'Collections',
+  'Collection',
+  'Runnable',
+  'Thread',
+  'Exception',
+  'RuntimeException',
+  'IllegalStateException',
+  'IllegalArgumentException',
+  'UnsupportedOperationException',
+  'NullPointerException',
+  'Cloneable',
+  'Serializable',
 ]);
 
 function recolor(value: string | undefined, from: string, to: string): string | undefined {
@@ -34,18 +76,28 @@ export const jdkTypeTransformer: ShikiTransformer = {
   tokens(lines) {
     for (const line of lines) {
       for (const token of line) {
-        if (!JDK_TYPE_NAMES.has(token.content.trim())) continue;
+        if (!JDK_TYPE_NAMES.has(token.content.trim())) {
+          continue;
+        }
 
         // Single-theme path (token.color) and dual-theme path (htmlStyle + CSS vars).
         token.color = recolor(token.color, TYPE_REFERENCE_DARK, JDK_TYPE_DARK);
         const style = token.htmlStyle;
-        if (!style) continue;
+        if (!style) {
+          continue;
+        }
         const nextColor = recolor(style.color, TYPE_REFERENCE_DARK, JDK_TYPE_DARK);
-        if (nextColor) style.color = nextColor;
+        if (nextColor) {
+          style.color = nextColor;
+        }
         const nextDark = recolor(style['--shiki-dark'], TYPE_REFERENCE_DARK, JDK_TYPE_DARK);
-        if (nextDark) style['--shiki-dark'] = nextDark;
+        if (nextDark) {
+          style['--shiki-dark'] = nextDark;
+        }
         const nextLight = recolor(style['--shiki-light'], TYPE_REFERENCE_LIGHT, JDK_TYPE_LIGHT);
-        if (nextLight) style['--shiki-light'] = nextLight;
+        if (nextLight) {
+          style['--shiki-light'] = nextLight;
+        }
       }
     }
     return lines;
@@ -114,10 +166,7 @@ function makeTheme(
       },
       {
         // The class/interface/enum/record NAME at its declaration site.
-        scope: [
-          'entity.name.type',
-          'meta.class.identifier',
-        ],
+        scope: ['entity.name.type', 'meta.class.identifier'],
         settings: { foreground: colors.className },
       },
       {
@@ -125,12 +174,7 @@ function makeTheme(
         // an implemented/extended interface referenced by name) — distinct from the
         // class-declaration color above, the same way a real editor tells apart
         // "the class you're defining" from "a type you're referencing".
-        scope: [
-          'storage.type',
-          'entity.other.inherited-class',
-          'support.type',
-          'support.class',
-        ],
+        scope: ['storage.type', 'entity.other.inherited-class', 'support.type', 'support.class'],
         settings: { foreground: colors.typeReference },
       },
       {

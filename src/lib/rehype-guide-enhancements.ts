@@ -58,7 +58,9 @@ function wrapTable(table: HastNode, label: string): HastNode {
 }
 
 function transformChildren(parent: HastNode, label: string): void {
-  if (!parent.children) return;
+  if (!parent.children) {
+    return;
+  }
 
   const next: HastNode[] = [];
 

@@ -3,9 +3,9 @@
 // declares them, with the guides of each section sorted by `order`. The visible
 // number is the guide's position in the whole sequence, not its `order` value.
 // Each guide row is clickable through the title link's stretched ::after.
-import type { Lang } from '../i18n';
-import { getContent } from '../lib/content';
-import type { GuideGroup } from '../lib/hub';
+import type { Lang } from '@/i18n';
+import { getContent } from '@/lib/content';
+import type { GuideGroup } from '@/lib/hub';
 
 interface Props {
   lang: Lang;
@@ -25,40 +25,40 @@ const numbered = groups.map((group) => ({
 ---
 
 <div class="border-b border-white/10 light:border-black/10">
-  {
-    numbered.map((group) => (
-      <section
-        id={group.section?.id}
-        aria-labelledby={group.section ? `section-${group.section.id}` : undefined}
-        class="grid gap-4 border-t border-white/10 py-8 light:border-black/10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-10"
-      >
-        {group.section && (
-          <h2
-            id={`section-${group.section.id}`}
-            class="font-display text-lg font-semibold text-neutral-100 light:text-neutral-900 lg:pt-3"
-          >
-            {group.section.title}
-          </h2>
-        )}
-        <ol class:list={['-mx-3 space-y-1', { 'lg:col-start-2': !group.section }]}>
-          {group.guides.map(({ guide, number }) => (
-            <li class="group relative flex gap-4 rounded-lg p-3 transition-colors hover:bg-white/[0.03] light:hover:bg-black/[0.03] has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-accent-400 light:has-[a:focus-visible]:outline-accent-700">
-              <span aria-hidden="true" class={`pt-0.5 font-mono text-xs ${accentClass}`}>
-                {number}
-              </span>
-              <div class="min-w-0">
-                <a
-                  href={index.pathOf(lang, 'guide', guide.id)}
-                  class="font-medium text-neutral-100 transition-colors after:absolute after:inset-0 after:rounded-lg after:content-[''] group-hover:text-accent-300 stretched-link light:text-neutral-900 light:group-hover:text-accent-700"
-                >
-                  {guide.title}
-                </a>
-                <p class="mt-1 text-sm leading-relaxed text-neutral-400 light:text-neutral-600">{guide.description}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-    ))
-  }
+  {numbered.map((group) => (
+    <section
+      id={group.section?.id}
+      aria-labelledby={group.section ? `section-${group.section.id}` : undefined}
+      class="grid gap-4 border-t border-white/10 py-8 light:border-black/10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-10"
+    >
+      {group.section && (
+        <h2
+          id={`section-${group.section.id}`}
+          class="font-display text-lg font-semibold text-neutral-100 light:text-neutral-900 lg:pt-3"
+        >
+          {group.section.title}
+        </h2>
+      )}
+      <ol class:list={['-mx-3 space-y-1', { 'lg:col-start-2': !group.section }]}>
+        {group.guides.map(({ guide, number }) => (
+          <li class="group relative flex gap-4 rounded-lg p-3 transition-colors hover:bg-white/[0.03] light:hover:bg-black/[0.03] has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-accent-400 light:has-[a:focus-visible]:outline-accent-700">
+            <span aria-hidden="true" class={`pt-0.5 font-mono text-xs ${accentClass}`}>
+              {number}
+            </span>
+            <div class="min-w-0">
+              <a
+                href={index.pathOf(lang, 'guide', guide.id)}
+                class="font-medium text-neutral-100 transition-colors after:absolute after:inset-0 after:rounded-lg after:content-[''] group-hover:text-accent-300 stretched-link light:text-neutral-900 light:group-hover:text-accent-700"
+              >
+                {guide.title}
+              </a>
+              <p class="mt-1 text-sm leading-relaxed text-neutral-400 light:text-neutral-600">
+                {guide.description}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  ))}
 </div>

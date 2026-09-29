@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ContentIndex } from '../src/lib/content-model';
+import { ContentIndex } from '@/lib/content-model';
 import {
   guideView,
   pageOf,
@@ -8,7 +8,7 @@ import {
   track,
   trackAttributes,
   viewAttributes,
-} from '../src/lib/analytics';
+} from '@/lib/analytics';
 import { loadModel } from './real-content';
 
 const index = new ContentIndex(loadModel());
@@ -20,7 +20,12 @@ describe('view events', () => {
     expect(guide.slug).not.toBe(guide.id);
     expect(guideView(guide, 'es')).toEqual({
       event: 'guide_view',
-      params: { id: 'creational-patterns', topic_id: 'design', subtopic_id: 'design-patterns', lang: 'es' },
+      params: {
+        id: 'creational-patterns',
+        topic_id: 'design',
+        subtopic_id: 'design-patterns',
+        lang: 'es',
+      },
     });
   });
 
@@ -49,14 +54,25 @@ describe('view events', () => {
   });
 
   it('name the page they describe', () => {
-    expect(pageOf(guideView(index.guide('es', 'solid')!, 'es'))).toEqual({ id: 'solid', kind: 'guide' });
-    expect(pageOf(topicView(index.subtopic('es', 'claude-code')!, 'es'))).toEqual({ id: 'claude-code', kind: 'subtopic' });
+    expect(pageOf(guideView(index.guide('es', 'solid')!, 'es'))).toEqual({
+      id: 'solid',
+      kind: 'guide',
+    });
+    expect(pageOf(topicView(index.subtopic('es', 'claude-code')!, 'es'))).toEqual({
+      id: 'claude-code',
+      kind: 'subtopic',
+    });
   });
 });
 
 describe('event attributes', () => {
   it('round-trip through markup with their types intact', () => {
-    const attrs = trackAttributes('search_result_click', { id: 'solid', kind: 'guide', lang: 'en', position: 3 });
+    const attrs = trackAttributes('search_result_click', {
+      id: 'solid',
+      kind: 'guide',
+      lang: 'en',
+      position: 3,
+    });
     expect(attrs['data-track']).toBe('search_result_click');
     expect(readTracked(attrs['data-track'], attrs['data-track-params'])).toEqual({
       event: 'search_result_click',
@@ -66,7 +82,9 @@ describe('event attributes', () => {
 
   it('put a view event on the page, and nothing when there is none', () => {
     const attrs = viewAttributes(topicView(index.topic('en', 'design')!, 'en'));
-    expect(readTracked(attrs['data-track-view'], attrs['data-track-params'])?.event).toBe('topic_view');
+    expect(readTracked(attrs['data-track-view'], attrs['data-track-params'])?.event).toBe(
+      'topic_view',
+    );
     expect(viewAttributes(undefined)).toEqual({});
   });
 
