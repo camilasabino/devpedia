@@ -22,3 +22,8 @@ node_modules/
 .vscode/
 *.swp
 *.swo
+
+# Internal development docs stay local
+docs/specs/
+docs/superpowers/
+.superpowers/

@@ -4,7 +4,7 @@ This file provides guidance to coding agents such as Codex when working with cod
 
 ## Project
 
-DevPedia (*A handbook for Software Engineering*): a bilingual static Astro site of guides organized by topic, subtopic and section. `docs/specs/devpedia-spec.md` is the single source of truth for the product; `docs/implementation-status.md` is the technical handoff between sessions. Do not reopen product decisions recorded there.
+DevPedia (*A handbook for Software Engineering*): a bilingual static Astro site of guides organized by topic, subtopic and section.
 
 There is no `/blog`, no redirects and no blog terminology: the unit is the **Guide** (`Guía`), grouped under **Topic** (`Tema`) and **Subtopic** (`Subtema`).
 
