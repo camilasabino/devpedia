@@ -1,12 +1,9 @@
 @import "tailwindcss";
-@import "../../../src/styles/theme.css";
-@import "../../../src/styles/surfaces.css";
+@import "./theme.css";
+@import "./surfaces.css";
 
-/* Shared primitives live in the portfolio's src/ tree, outside this project's root,
-   so Tailwind has to be told to scan them. List only the ones DevPedia renders. */
-@source "../../../src/components/Icon.astro";
-@source "../../../src/components/Flag.astro";
-@source "../../../src/components/ThemeToggle.astro";
+/* Project documentation is prose, not markup: keep its words out of the class scan. */
+@source not "../../docs";
 
 :root {
   --guide-measure: 64ch;
@@ -24,8 +21,8 @@ html {
   }
 }
 
-/* Graph-paper grid, the same pattern as the portfolio: a fixed, low-contrast
-   background, never colored shapes behind the text. */
+/* Graph-paper grid: a fixed, low-contrast background, never colored shapes behind
+   the text. */
 body {
   display: flex;
   min-height: 100dvh;

@@ -1,0 +1,15 @@
+/* Design tokens: fonts, accent colors and the `light` variant. Keep this file free of
+   page-specific styles; global.css imports it right after Tailwind. */
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --color-accent-300: #7fe6d9;
+  --color-accent-400: #2dd4bf;
+  --color-accent-500: #14b8a6;
+  --color-accent-600: #0d9488;
+  --color-accent-700: #0f766e;
+}
+
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));

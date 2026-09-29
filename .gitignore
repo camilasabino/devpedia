@@ -1,0 +1,24 @@
+# build output (Astro + Pagefind index inside dist/)
+dist/
+.astro/
+.wrangler/
+
+# dependencies
+node_modules/
+
+# environment variables
+.env
+.env.production
+.dev.vars
+
+# OS
+.DS_Store
+
+# browser automation logs and screenshots
+.playwright-mcp/
+
+# editors
+.idea/
+.vscode/
+*.swp
+*.swo

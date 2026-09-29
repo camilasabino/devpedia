@@ -1,0 +1,59 @@
+/* Surface, border and text tokens for both themes, plus the focus ring built on them.
+   Like theme.css, keep this file free of page-specific styles; global.css imports it
+   right after theme.css. */
+
+:root {
+  --surface-bg: #050607;
+  --surface-grid-line: rgba(255, 255, 255, 0.05);
+  --surface-card-from: #16181c;
+  --surface-card-to: #101215;
+  --surface-card-hover-from: #191b20;
+  --surface-card-hover-to: #121417;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-faint: rgba(255, 255, 255, 0.06);
+  --overlay-faint: rgba(255, 255, 255, 0.02);
+  --overlay-subtle: rgba(255, 255, 255, 0.05);
+  /* Reading plate for small blocks that sit straight on the page background
+     (see `.surface-quiet`). Translucent, so the ambient glows still tint it. */
+  --surface-quiet: color-mix(in srgb, var(--surface-bg) 78%, transparent);
+  --overlay-inset: rgba(255, 255, 255, 0.04);
+  --selection-fg: #05201c;
+  --text-body: var(--color-neutral-300);
+  --text-heading: var(--color-neutral-50);
+  --text-muted: var(--color-neutral-300);
+  --text-accent: var(--color-accent-400);
+  --diagram-surface: #0f1114;
+}
+
+:root[data-theme="light"] {
+  --surface-bg: #fafafa;
+  --surface-grid-line: rgba(0, 0, 0, 0.06);
+  --surface-card-from: #ffffff;
+  --surface-card-to: #f4f4f5;
+  --surface-card-hover-from: #ffffff;
+  --surface-card-hover-to: #eceef0;
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-faint: rgba(0, 0, 0, 0.06);
+  --overlay-faint: rgba(0, 0, 0, 0.02);
+  --overlay-subtle: rgba(0, 0, 0, 0.04);
+  --surface-quiet: color-mix(in srgb, var(--surface-bg) 82%, transparent);
+  --overlay-inset: rgba(0, 0, 0, 0.04);
+  --selection-fg: #05201c;
+  --text-body: var(--color-neutral-700);
+  --text-heading: var(--color-neutral-900);
+  --text-muted: var(--color-neutral-600);
+  --text-accent: var(--color-accent-700);
+  --diagram-surface: #ffffff;
+}
+
+/* One visible focus ring everywhere. The browser default is nearly invisible on the
+   dark surface, and several interactive elements only had hover styles. */
+:focus-visible {
+  outline: 2px solid var(--color-accent-400);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+:root[data-theme="light"] :focus-visible {
+  outline-color: var(--color-accent-700);
+}

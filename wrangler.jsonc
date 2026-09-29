@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // DevPedia is served as static assets only: no Worker script, no bindings.
+  // Cloudflare's Workers Builds runs `npx wrangler deploy` with this file after `npm run build`.
+  "name": "devpedia",
+  "compatibility_date": "2024-11-01",
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [{ "pattern": "devpedia.camilasabino.dev", "custom_domain": true }]
+}
