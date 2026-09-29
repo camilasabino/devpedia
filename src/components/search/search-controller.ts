@@ -45,6 +45,7 @@ interface SearchElements {
   dialog: HTMLDialogElement;
   trigger: HTMLButtonElement;
   input: HTMLInputElement;
+  clearButton: HTMLButtonElement;
   closeButton: HTMLButtonElement;
   resultsEl: HTMLElement;
   footerEl: HTMLElement;
@@ -71,6 +72,7 @@ export function initializeSearch(): void {
     dialog,
     trigger,
     input,
+    clearButton,
     closeButton,
     resultsEl,
     footerEl,
@@ -300,6 +302,7 @@ export function initializeSearch(): void {
     requestToken += 1;
     lastQuery = '';
     input.value = '';
+    syncClearButton();
     showIdle();
     document.documentElement.style.overflow = '';
     trigger.focus();
@@ -325,9 +328,36 @@ export function initializeSearch(): void {
     }
   });
 
+  function syncClearButton() {
+    const hasQuery = input.value.length > 0;
+    clearButton.hidden = !hasQuery;
+    if (hasQuery) {
+      input.setAttribute('data-query', '');
+    } else {
+      input.removeAttribute('data-query');
+    }
+  }
+
+  function commitQuery(query: string) {
+    lastQuery = query;
+    syncClearButton();
+    void search(query);
+  }
+
+  syncClearButton();
+
   input.addEventListener('input', () => {
-    lastQuery = input.value;
-    void search(lastQuery);
+    commitQuery(input.value);
+  });
+
+  // Keep the caret in the field when the click starts on the clear control.
+  clearButton.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+  });
+  clearButton.addEventListener('click', () => {
+    input.value = '';
+    commitQuery('');
+    input.focus();
   });
 
   input.addEventListener('keydown', (event) => {
@@ -391,6 +421,7 @@ function readSearchElements(): SearchElements {
     dialog,
     trigger: requireElement('search-trigger', isButton),
     input: requireElement('search-input', isInput),
+    clearButton: requireElement('search-clear', isButton),
     closeButton: requireElement('search-close', isButton),
     resultsEl,
     footerEl: requireElement('search-footer', isHtmlElement),

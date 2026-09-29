@@ -40,19 +40,30 @@ const scriptConfig = {
         class="ml-1 h-4 w-4 shrink-0 text-neutral-500 light:text-neutral-600"
         decorative
       />
-      <input
-        id="search-input"
-        type="text"
-        inputmode="search"
-        enterkeyhint="search"
-        aria-label={labels.inputLabel}
-        aria-controls="search-results"
-        placeholder={labels.placeholder}
-        autocomplete="off"
-        autocapitalize="off"
-        spellcheck="false"
-        class="min-w-0 flex-1 bg-transparent py-2 font-mono text-base text-neutral-100 light:text-neutral-800 placeholder:text-neutral-500 light:placeholder:text-neutral-600 focus:outline-none sm:text-sm"
-      />
+      <div class="relative min-w-0 flex-1">
+        <input
+          id="search-input"
+          type="text"
+          inputmode="search"
+          enterkeyhint="search"
+          aria-label={labels.inputLabel}
+          aria-controls="search-results"
+          placeholder={labels.placeholder}
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          class="w-full min-w-0 bg-transparent py-2 font-mono text-base text-neutral-100 light:text-neutral-800 placeholder:text-neutral-500 light:placeholder:text-neutral-600 focus:outline-none data-[query]:pr-9 sm:text-sm"
+        />
+        <button
+          id="search-clear"
+          type="button"
+          hidden
+          aria-label={labels.clearLabel}
+          class="absolute top-1/2 right-0 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-neutral-600 transition-colors hover:text-accent-400 focus-visible:text-accent-400 light:text-neutral-500 light:hover:text-accent-700 light:focus-visible:text-accent-700"
+        >
+          <Icon name="circleX" class="h-4 w-4" decorative />
+        </button>
+      </div>
       <button
         id="search-close"
         type="button"
