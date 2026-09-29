@@ -31,7 +31,7 @@ function copyWithExecCommand(text: string): boolean {
     textarea.select();
     // execCommand is deprecated with no replacement for this exact fallback case
     // (insecure contexts / older Safari without navigator.clipboard).
-    return document.execCommand('copy'); // NOSONAR
+    return document.execCommand('copy');
   } catch {
     return false;
   } finally {

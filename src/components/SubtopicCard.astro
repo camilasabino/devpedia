@@ -1,9 +1,4 @@
 ---
-// One subtopic on its parent topic's page. The topic page is the index of the area, so
-// the card points into the subtopic instead of repeating its guides: title, description,
-// guide count and, when the subtopic declares them, links to each of its sections.
-// The card is clickable through the title link's stretched ::after; the section links
-// sit above it.
 import Icon from './Icon.astro';
 import { format, plural, ui, type Lang } from '@/i18n';
 import { getContent } from '@/lib/content';
@@ -45,6 +40,7 @@ const sections = groupBySection(subtopic, guides).flatMap((group) =>
   <p class={`mt-3 font-mono text-xs ${visual.text}`}>
     {plural(copy.hub.guidesCount, guides.length)}
   </p>
+  {/* Above the title link's stretched ::after, so these links stay clickable. */}
   {sections.length > 0 && (
     <nav
       aria-label={format(copy.hub.sectionsLabel, { title: subtopic.title })}

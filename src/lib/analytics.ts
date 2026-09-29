@@ -1,21 +1,11 @@
 /**
- * Product analytics: DevPedia's event vocabulary and the one client-side path that
- * sends it to GA4.
+ * Events are declared in markup, not in per-component listeners. Only `search` calls
+ * `track` directly, because it has no click.
  *
- * Events are declared in markup, not in per-component listeners:
+ * `track` never throws: analytics must not break the page.
  *
- *   - a page view event sits on `<body>` as `data-track-view` + `data-track-params`;
- *   - a tracked control carries `data-track` + `data-track-params`, and one delegated
- *     click listener (`initAnalytics`, run by BaseLayout) sends it.
- *
- * Only Search calls `track` directly, for the `search` event, which has no click.
- *
- * `track` is a no-op unless the GA bootstrap in BaseLayout defined `window.gtag`, which
- * it only does when GA_MEASUREMENT_ID is set, in production, on the canonical host. It
- * never throws: analytics must not break navigation, sharing or search.
- *
- * Parameters are conceptual ids and small enums, never slugs, paths, titles or search
- * text, so events pair across languages by id and carry no user-entered data.
+ * Parameters are conceptual ids and small enums, never slugs, paths, or titles.
+ * Search text is never sent to analytics.
  */
 
 import type { Lang } from '@/i18n';

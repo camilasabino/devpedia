@@ -33,7 +33,6 @@ export interface TopicData {
 }
 
 export interface SubtopicData extends TopicData {
-  /** Parent topic id. */
   topic: string;
 }
 
