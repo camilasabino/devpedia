@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ContentIndex,
-  validateContentModel,
-  type ContentModel,
-  type Lang,
-} from '@/lib/content-model';
+import { ContentIndex, type ContentModel, type Lang } from '@/lib/content-model';
+import { validateContentModel } from '@/lib/content-validation';
 import { bodies, cloneModel, frontmatter, loadModel, SOURCES } from './real-content';
 
 describe('DevPedia content model', () => {

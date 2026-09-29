@@ -1,11 +1,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import {
-  ContentIndex,
-  LANG_PREFIX,
-  validateContentModel,
-  type ContentModel,
-  type Lang,
-} from './content-model';
+import { ContentIndex, LANG_PREFIX, type ContentModel, type Lang } from './content-model';
+import { validateContentModel } from './content-validation';
 
 export type GuideEntry = CollectionEntry<'guidesEs'> | CollectionEntry<'guidesEn'>;
 
