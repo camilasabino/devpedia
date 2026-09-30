@@ -19,11 +19,11 @@ const visual = topicVisual(topic.id);
 const subtopics = index.subtopicsOf(lang, topic.id);
 ---
 
-<article class="card-surface group relative flex h-full flex-col p-5 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent-400 light:has-[a:focus-visible]:outline-accent-700 sm:p-6">
-  <span class={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${visual.badge}`}>
-    <Icon name={topic.icon} class="h-5 w-5" />
+<article class="card-surface group relative flex h-full min-w-0 flex-col p-4 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent-400 light:has-[a:focus-visible]:outline-accent-700">
+  <span class={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${visual.badge}`}>
+    <Icon name={topic.icon} class="h-4 w-4" />
   </span>
-  <h3 class="mt-5 font-display text-xl font-semibold text-neutral-50 light:text-neutral-900">
+  <h3 class="mt-3 font-display text-xl font-semibold text-neutral-50 light:text-neutral-900">
     <a
       href={index.pathOf(lang, 'topic', topic.id)}
       class="after:absolute after:inset-0 after:rounded-2xl after:content-[''] stretched-link"
@@ -31,16 +31,16 @@ const subtopics = index.subtopicsOf(lang, topic.id);
       {topic.title}
     </a>
   </h3>
-  <p class="mt-2 text-sm leading-relaxed text-neutral-400 light:text-neutral-600">
+  <p class="mt-1.5 text-sm leading-relaxed text-neutral-400 light:text-neutral-600">
     {topic.description}
   </p>
   {subtopics.length > 0 && (
-    <p class="mt-4 font-mono text-xs text-neutral-400 light:text-neutral-600">
+    <p class="mt-3 font-mono text-xs text-neutral-400 light:text-neutral-600">
       <span class="sr-only">{copy.hub.subtopicsHeading}: </span>
       {subtopics.map((subtopic) => subtopic.title).join(' · ')}
     </p>
   )}
-  <p class="mt-auto flex items-center justify-between gap-4 pt-5 font-mono text-xs">
+  <p class="mt-auto flex items-center justify-between gap-3 pt-3 font-mono text-xs">
     <span class={visual.text}>
       {plural(copy.hub.guidesCount, index.guideCount(lang, topic.id))}
     </span>

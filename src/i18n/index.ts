@@ -44,7 +44,6 @@ export const ui = {
       description:
         'Un handbook estructurado para entender los conceptos, prácticas y trade-offs de Software Engineering: arquitectura, diseño, testing, AI Engineering y más.',
       lead: 'Entendé los conceptos, las decisiones y los trade-offs que hay detrás de construir mejor software.',
-      cta: 'Explorar temas',
       topicsHeading: 'Explorar por tema',
     },
     hub: {
@@ -148,7 +147,6 @@ export const ui = {
       description:
         'A structured handbook for learning Software Engineering concepts, practices and trade-offs across architecture, design, testing, AI Engineering and more.',
       lead: 'Understand the concepts, decisions and trade-offs behind better software.',
-      cta: 'Explore topics',
       topicsHeading: 'Explore by topic',
     },
     hub: {
