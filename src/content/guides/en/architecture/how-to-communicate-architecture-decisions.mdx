@@ -113,7 +113,7 @@ Represents replaceable units of software and, above all, **the contracts they co
 
 <ComponentDiagram />
 
-Read that way, the diagram says something a bare arrow doesn't: `Checkout` doesn't depend on `Payments`, it depends on `PaymentApi`. Changing the implementation behind that interface doesn't touch `Checkout`. It's the [dependency inversion principle](/en/design/principles/solid/#d--dependency-inversion-principle), drawn.
+Read that way, the diagram says something a bare arrow doesn't: `Checkout` doesn't depend on `Payments`, it depends on `PaymentApi`. Changing the implementation behind that interface doesn't touch `Checkout`. It's the [dependency inversion principle](/design/principles/solid/#d--dependency-inversion-principle), drawn.
 
 **Sequence diagram**
 
@@ -200,7 +200,7 @@ More useful for detailed design than for systems architecture, but it's the natu
     Payment *-- "1" Money : amount
     Payment o-- "0..*" AuthorizationAttempt : attempts`} />
 
-It's the same kind of diagram the [design patterns topic](/en/design/patterns/) uses to show the structure of each pattern.
+It's the same kind of diagram the [design patterns topic](/design/patterns/) uses to show the structure of each pattern.
 
 ### UML isn't the only option
 
@@ -296,7 +296,7 @@ There's no such thing as a "definitive architecture diagram". Each diagram shoul
 
 ## A complete communication example
 
-Say Payments is a [modular monolith](/en/architecture/monoliths-microservices-and-soa/) on PostgreSQL that publishes events to Kafka and integrates synchronously with external providers. Documenting it well doesn't mean drawing it five times: it means picking five artifacts that answer five different questions.
+Say Payments is a [modular monolith](/architecture/monoliths-microservices-and-soa/) on PostgreSQL that publishes events to Kafka and integrates synchronously with external providers. Documenting it well doesn't mean drawing it five times: it means picking five artifacts that answer five different questions.
 
 | Question | Artifact |
 |---|---|

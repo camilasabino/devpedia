@@ -141,8 +141,8 @@ Con dos o tres estados que se comportan casi igual, un enum con un condicional s
 
 ## Relación con otros patrones
 
-- Es la forma orientada a objetos de proteger las transiciones válidas de un agregado. El [tema de arquitectura](/arquitectura/domain-driven-design/) llama *invariante* justamente a lo que acá impide que un pedido enviado se cancele.
-- Se implementa de forma muy similar a **[Strategy](/diseno/patrones/strategy/)** — ambos delegan comportamiento a un objeto intercambiable — pero con intención distinta: Strategy lo elige el código cliente; State lo cambian los propios objetos de estado entre sí, según transiciones internas.
+- Es la forma orientada a objetos de proteger las transiciones válidas de un agregado. El [tema de arquitectura](/es/arquitectura/domain-driven-design/) llama *invariante* justamente a lo que acá impide que un pedido enviado se cancele.
+- Se implementa de forma muy similar a **[Strategy](/es/diseno/patrones/strategy/)** — ambos delegan comportamiento a un objeto intercambiable — pero con intención distinta: Strategy lo elige el código cliente; State lo cambian los propios objetos de estado entre sí, según transiciones internas.
 
 <Callout variant="note" title="La alternativa que conviene considerar primero">
 Si hay pocos estados y las transiciones son simples, un `enum` con una tabla de transiciones permitidas suele ser más directo — y se puede leer entero de una vez:

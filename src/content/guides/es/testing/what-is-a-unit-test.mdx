@@ -55,7 +55,7 @@ ReservationService  ← la unidad bajo test
 └── PaymentService            ← reemplazado
 ```
 
-Con qué se reemplaza cada una no es una propiedad de la dependencia, sino de lo que ese test en particular quiere verificar: la misma `PaymentService` puede reemplazarse de tres formas distintas en tres tests distintos. Eso es lo que cubre el [artículo sobre dobles de test](/testing/dobles-de-test/).
+Con qué se reemplaza cada una no es una propiedad de la dependencia, sino de lo que ese test en particular quiere verificar: la misma `PaymentService` puede reemplazarse de tres formas distintas en tres tests distintos. Eso es lo que cubre el [artículo sobre dobles de test](/es/testing/dobles-de-test/).
 
 ## Qué deberían cubrir
 
@@ -81,4 +81,4 @@ Esto genera tests que fallan cuando cambia la implementación, aunque el comport
 
 > Testear comportamiento, no implementación accidental.
 
-[F.I.R.S.T.](/testing/first-principios-para-tests-unitarios/) suma los criterios para chequear si ese unit test está bien pensado: rápido, independiente, repetible, con resultado claro y creado a tiempo.
+[F.I.R.S.T.](/es/testing/first-principios-para-tests-unitarios/) suma los criterios para chequear si ese unit test está bien pensado: rápido, independiente, repetible, con resultado claro y creado a tiempo.

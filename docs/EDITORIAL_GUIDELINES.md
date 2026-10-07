@@ -126,7 +126,7 @@ cover: # imagen social propia, 1200×630 (opcional; si falta, se usa la del tema
 
 Temas y subtemas son YAML en `src/content/{topics,subtopics}/{es,en}/<id>.yaml`, con `id`, `slug`, `order`, `title`, `description`, `icon` y `sections` opcionales (`{ id, title }`, en orden de lectura); un subtema agrega `topic`. El build falla si se rompe cualquiera de estas reglas.
 
-Los enlaces internos apuntan a la URL de la misma edición, sin dominio (`/testing/dobles-de-test/`, `/en/testing/test-doubles/`). Nunca a `/blog/…`.
+Los enlaces internos apuntan a la URL de la misma edición, sin dominio (`/es/testing/dobles-de-test/`, `/testing/test-doubles/`). Nunca a `/blog/…`.
 
 ## Títulos y descriptions
 
@@ -156,7 +156,7 @@ Son el primer contacto con la guía, en el índice y al compartir el enlace (Ope
 
 El slug público de una guía nueva tiene que coincidir con su título, no con un título anterior, un apodo ni un recorte. Si leés la URL, tenés que reconocer el título.
 
-El slug no sale del nombre del archivo: es el campo `slug` del frontmatter (ver **Modelo de contenido y frontmatter**). La URL se arma con los slugs de la jerarquía: `/arquitectura/resiliencia-en-sistemas-distribuidos/`, `/diseno/patrones/factory-method/`. El archivo se llama como el `id` (`resilience-in-distributed-systems.mdx`) y no aparece en la URL.
+El slug no sale del nombre del archivo: es el campo `slug` del frontmatter (ver **Modelo de contenido y frontmatter**). La URL en español se arma con el prefijo `/es/` y los slugs de la jerarquía: `/es/arquitectura/resiliencia-en-sistemas-distribuidos/`, `/es/diseno/patrones/factory-method/`. El archivo se llama como el `id` (`resilience-in-distributed-systems.mdx`) y no aparece en la URL.
 
 Cómo se forma el slug a partir del título:
 
@@ -173,7 +173,7 @@ Qué no vale:
 - un recorte (`Cómo revisar un diseño de software` no es `heuristicas-practicas`; `Principios de diseño` no es `guias-de-diseno-de-software`);
 - palabras que el título no tiene (`Testing` no es `software-testing`).
 
-Las secciones (Patrones creacionales, Patrones estructurales, Patrones de comportamiento, Comparaciones y referencia) no tienen URL propia: agrupan guías dentro de la página del tema o subtema y se enlazan con un ancla (`/diseno/patrones/#creational`). Si una sección tiene una guía overview con el mismo nombre, esa guía sigue la misma regla título ↔ slug.
+Las secciones (Patrones creacionales, Patrones estructurales, Patrones de comportamiento, Comparaciones y referencia) no tienen URL propia: agrupan guías dentro de la página del tema o subtema y se enlazan con un ancla (`/es/diseno/patrones/#creational`). Si una sección tiene una guía overview con el mismo nombre, esa guía sigue la misma regla título ↔ slug.
 
 **Estabilidad después del lanzamiento.** Una vez publicada, una URL es estable. DevPedia no tiene redirecciones: cambiar un slug deja la URL anterior en 404. Por eso un ajuste de título no renombra el slug automáticamente. Un cambio solo de mayúsculas y minúsculas, o un ajuste menor, deja el slug como está. Si título y slug dejan de coincidir de verdad, renombrar es una decisión explícita: se cambia el `slug` (nunca el `id`) y se actualizan los enlaces internos de la misma edición. No dejes enlaces rotos (`npm run check:links`).
 

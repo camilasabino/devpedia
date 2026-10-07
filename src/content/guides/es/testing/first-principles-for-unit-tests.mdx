@@ -48,4 +48,4 @@ Así el test puede definir explícitamente el instante utilizado, en lugar de de
 
 Fijate que esta versión resuelve *dos* cosas: calcula las horas restantes y decide la penalidad. La alternativa —dejar `calculateCancellationFee(deposit, hoursBeforeReservation)` como una función pura y calcular las horas afuera— es determinista sin necesidad de inyectar nada. **La forma más barata de tener un test repetible suele ser no dejar entrar el no-determinismo en la unidad**, antes que controlarlo con una abstracción. El resto de los ejemplos de este tema usa esa versión pura.
 
-Con la unidad bajo test aislada y determinista, [AAA: cómo estructurar un test](/testing/aaa-como-estructurar-un-test/) cubre cómo armar el test en sí.
+Con la unidad bajo test aislada y determinista, [AAA: cómo estructurar un test](/es/testing/aaa-como-estructurar-un-test/) cubre cómo armar el test en sí.

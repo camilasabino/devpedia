@@ -48,4 +48,4 @@ That way the test can state the instant being used explicitly, instead of depend
 
 Notice that this version solves *two* things: it works out the remaining hours and it decides the penalty. The alternative — leaving `calculateCancellationFee(deposit, hoursBeforeReservation)` as a pure function and calculating the hours outside it — is deterministic without injecting anything. **The cheapest way to get a repeatable test is usually to keep non-determinism out of the unit** rather than to control it with an abstraction. The rest of the examples in this topic use that pure version.
 
-With the unit under test isolated and deterministic, [AAA: how to structure a test](/en/testing/aaa-how-to-structure-a-test/) covers how to put the test itself together.
+With the unit under test isolated and deterministic, [AAA: how to structure a test](/testing/aaa-how-to-structure-a-test/) covers how to put the test itself together.

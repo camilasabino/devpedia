@@ -36,10 +36,10 @@ describe('calculateCancellationFee', () => {
 });
 ```
 
-The value of AAA isn't in writing a comment on each block. Its real benefit is that it makes the test's intent obvious — given this state, when this behavior happens, then this should be true — which is why it lines up naturally with the _Given/When/Then_ format from [What is testing](/en/testing/what-is-testing/).
+The value of AAA isn't in writing a comment on each block. Its real benefit is that it makes the test's intent obvious — given this state, when this behavior happens, then this should be true — which is why it lines up naturally with the _Given/When/Then_ format from [What is testing](/testing/what-is-testing/).
 
 **One action per test.** If the Act block has three calls, the test is usually verifying three behaviors and its name can't describe all of them. When it fails, the message doesn't say which one broke.
 
 **A single concept, not a single line.** It doesn't mean a single `expect` line: it means a single concept verified. Checking the four fields of a newly created `Reservation` is one concept; also checking that the email was sent is another, and it goes in another test.
 
-When `ReservationService` depends on other components, you have to decide what to replace and with what: that's what [test doubles](/en/testing/test-doubles/) are about.
+When `ReservationService` depends on other components, you have to decide what to replace and with what: that's what [test doubles](/testing/test-doubles/) are about.

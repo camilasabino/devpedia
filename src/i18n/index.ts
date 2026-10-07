@@ -1,11 +1,14 @@
 export const languages = ['es', 'en'] as const;
 export type Lang = (typeof languages)[number];
 
+/** The edition served at `/`. Spanish lives under `/es/`. */
+export const defaultLang: Lang = 'en';
+
 export const ui = {
   es: {
     htmlLang: 'es',
     ogLocale: 'es_AR',
-    homePath: '/',
+    homePath: '/es/',
     skipToContent: 'Saltar al contenido',
     languageSwitcher: 'Idioma',
     breadcrumb: 'Ruta de navegación',
@@ -108,7 +111,7 @@ export const ui = {
   en: {
     htmlLang: 'en',
     ogLocale: 'en_US',
-    homePath: '/en/',
+    homePath: '/',
     skipToContent: 'Skip to content',
     languageSwitcher: 'Language',
     breadcrumb: 'Breadcrumb',
@@ -231,5 +234,5 @@ export function plural(forms: { one: string; other: string }, count: number): st
  * from the URL they are being rendered into.
  */
 export function langFromPath(pathname: string): Lang {
-  return /^\/en(\/|$)/.test(pathname) ? 'en' : 'es';
+  return /^\/es(\/|$)/.test(pathname) ? 'es' : 'en';
 }

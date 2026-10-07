@@ -19,7 +19,7 @@ Todo lo anterior asume un developer que trabaja solo. Cuando Claude Code se expo
 
 **La arquitectura:** Claude Code corre en un servidor dedicado con el monorepo clonado, acceso a bases de datos de desarrollo y credenciales gestionadas por un vault (HashiCorp Vault, AWS Secrets Manager). Cada developer se conecta desde su cliente MCP habitual (Claude Desktop, un plugin de IDE, un bot de Slack).
 
-**El beneficio concreto:** un developer nuevo puede conectarse al entorno ya armado en minutos, en vez de pasar días instalando versiones, credenciales y herramientas a mano — si el servidor compartido está bien mantenido. Las credenciales no salen del servidor, y los builds pesados usan sus recursos en vez del notebook de cada uno. Un buen candidato para empaquetar como [Plugin](/ai-engineering/claude-code/plugins/): así cada developer nuevo se conecta ya con las mismas skills, subagentes y hooks configurados, sin copiarlos a mano.
+**El beneficio concreto:** un developer nuevo puede conectarse al entorno ya armado en minutos, en vez de pasar días instalando versiones, credenciales y herramientas a mano — si el servidor compartido está bien mantenido. Las credenciales no salen del servidor, y los builds pesados usan sus recursos en vez del notebook de cada uno. Un buen candidato para empaquetar como [Plugin](/es/ai-engineering/claude-code/plugins/): así cada developer nuevo se conecta ya con las mismas skills, subagentes y hooks configurados, sin copiarlos a mano.
 
 ## 2. Orquestación multi-agente sobre varios repos
 
@@ -51,7 +51,7 @@ Todo lo anterior asume un developer que trabaja solo. Cuando Claude Code se expo
 
 **La arquitectura:** Claude Code corre dentro del perímetro (on-premise, VPC aislada, o entorno air-gapped conectado a un despliegue privado del modelo). Los developers acceden vía VPN o bastion host; del lado del cliente solo circula la conversación, mientras que archivos, diffs y comandos quedan del lado del servidor, con auditoría completa.
 
-**El beneficio concreto:** compatible con políticas de seguridad estrictas, revocación de acceso instantánea (das de baja el acceso al servidor, no recuperás código de un notebook), y mucho más fácil de defender ante auditorías (ISO 27001, SOC 2) que "cada developer tiene el código y una IA en su laptop". Es también el escenario donde más rinde todo lo de [Seguridad al trabajar con Claude Code](/ai-engineering/claude-code/seguridad/): sandbox, reglas `deny` y `/security-review` corriendo del lado del servidor, no del lado de cada developer.
+**El beneficio concreto:** compatible con políticas de seguridad estrictas, revocación de acceso instantánea (das de baja el acceso al servidor, no recuperás código de un notebook), y mucho más fácil de defender ante auditorías (ISO 27001, SOC 2) que "cada developer tiene el código y una IA en su laptop". Es también el escenario donde más rinde todo lo de [Seguridad al trabajar con Claude Code](/es/ai-engineering/claude-code/seguridad/): sandbox, reglas `deny` y `/security-review` corriendo del lado del servidor, no del lado de cada developer.
 
 > Los cinco escenarios comparten una premisa: Claude Code funcionando como recurso de equipo, gobernable y auditable, en vez de una instalación individual. En un equipo chico, probablemente el escenario 1 (servidor de desarrollo compartido) sea el único que valga la pena evaluar por ahora — los otros cuatro se justifican a medida que crece el equipo o el nivel de regulación.
 

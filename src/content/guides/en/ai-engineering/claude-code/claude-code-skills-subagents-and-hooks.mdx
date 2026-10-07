@@ -15,7 +15,7 @@ import Callout from '../../../../../components/mdx/Callout.astro';
 
 import Icon from '../../../../../components/Icon.astro';
 
-Claude Code isn't limited to answering one-off prompts: it exposes pieces that combine into repeatable workflows. It's best to read them in this order: in this article, the ones that run **inside** a session (Skills, subagents, and hooks); in [MCP](/en/ai-engineering/claude-code/mcp/), the connection to **external** tools; and in [Plugins](/en/ai-engineering/claude-code/plugins/), packaging all of the above for distribution. Skills, subagents, and hooks let you extend Claude Code in different ways.
+Claude Code isn't limited to answering one-off prompts: it exposes pieces that combine into repeatable workflows. It's best to read them in this order: in this article, the ones that run **inside** a session (Skills, subagents, and hooks); in [MCP](/ai-engineering/claude-code/mcp/), the connection to **external** tools; and in [Plugins](/ai-engineering/claude-code/plugins/), packaging all of the above for distribution. Skills, subagents, and hooks let you extend Claude Code in different ways.
 
 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
   <div className="card-surface flex flex-col items-start gap-2 p-4">
@@ -215,4 +215,4 @@ A hook is a script (or HTTP endpoint, model prompt, or subagent) that fires auto
 
 This is the subsystem that changes most often in Claude Code: as of September 2026 the official list is over 30 events (including `PreCompact`, `ConfigChange`, `FileChanged`, and `TaskCreated`, among more specific ones), and not all of them block through `exit 2`. Before leaning on a new hook for something critical, it's worth confirming the event's exact behavior in the [official documentation](https://code.claude.com/docs/en/hooks).
 
-Skills, subagents, and hooks specialize what happens **inside** a session. To connect Claude Code to tools that live outside your machine, the mechanism is [MCP](/en/ai-engineering/claude-code/mcp/).
+Skills, subagents, and hooks specialize what happens **inside** a session. To connect Claude Code to tools that live outside your machine, the mechanism is [MCP](/ai-engineering/claude-code/mcp/).

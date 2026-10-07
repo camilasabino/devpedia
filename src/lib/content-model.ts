@@ -59,8 +59,8 @@ export interface Edition {
 
 export type ContentModel = Record<Lang, Edition>;
 
-/** Path prefix of each edition. Spanish is the default language and lives at the root. */
-export const LANG_PREFIX: Record<Lang, string> = { es: '', en: '/en' };
+/** Path prefix of each edition. English is the default language and lives at the root. */
+export const LANG_PREFIX: Record<Lang, string> = { es: '/es', en: '' };
 
 export function topicPath(lang: Lang, topic: Pick<TopicData, 'slug'>): string {
   return `${LANG_PREFIX[lang]}/${topic.slug}/`;

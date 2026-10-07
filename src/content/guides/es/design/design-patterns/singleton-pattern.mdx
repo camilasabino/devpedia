@@ -112,7 +112,7 @@ enum InventoryLedger {
 
 Singleton es, en la práctica, el patrón más discutido del catálogo — porque introduce estado global, algo que dificulta escribir tests (las instancias quedan compartidas entre tests salvo que se resetee explícitamente) y esconde una dependencia real detrás de una llamada estática en vez de recibirla explícitamente. Antes de usarlo, vale la pena evaluar si alcanza con crear una única instancia en el punto de entrada de la aplicación e inyectarla donde haga falta, sin forzar la restricción a nivel de la clase misma.
 
-Dicho en los términos del [principio de inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle): `InventoryLedger.getInstance()` es una dependencia que no aparece en la firma de nadie. Un `Checkout` que la invoca depende de una clase concreta sin declararlo, y no hay forma de sustituirla en un test sin tocar estado global. Recibir un `InventoryLedger` por constructor conserva "hay una sola instancia" —la crea el punto de entrada— y elimina las dos consecuencias caras.
+Dicho en los términos del [principio de inversión de dependencias](/es/diseno/principios/solid/#d--dependency-inversion-principle): `InventoryLedger.getInstance()` es una dependencia que no aparece en la firma de nadie. Un `Checkout` que la invoca depende de una clase concreta sin declararlo, y no hay forma de sustituirla en un test sin tocar estado global. Recibir un `InventoryLedger` por constructor conserva "hay una sola instancia" —la crea el punto de entrada— y elimina las dos consecuencias caras.
 
 ## Ventajas y desventajas
 
@@ -124,5 +124,5 @@ Dicho en los términos del [principio de inversión de dependencias](/diseno/pri
 
 ## Relación con otros patrones
 
-- **[Abstract Factory](/diseno/patrones/abstract-factory/)**, **[Builder](/diseno/patrones/builder/)** y **[Prototype](/diseno/patrones/prototype/)** pueden implementarse como Singleton cuando alcanza con un único factory o builder compartido.
-- **[Facade](/diseno/patrones/facade/)** suele implementarse como Singleton, aunque no es un requisito del patrón.
+- **[Abstract Factory](/es/diseno/patrones/abstract-factory/)**, **[Builder](/es/diseno/patrones/builder/)** y **[Prototype](/es/diseno/patrones/prototype/)** pueden implementarse como Singleton cuando alcanza con un único factory o builder compartido.
+- **[Facade](/es/diseno/patrones/facade/)** suele implementarse como Singleton, aunque no es un requisito del patrón.

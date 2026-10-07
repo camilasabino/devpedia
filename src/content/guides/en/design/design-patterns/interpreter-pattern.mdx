@@ -158,7 +158,7 @@ Interpreter defines how an already-built expression is **evaluated**, not how th
 Interpreter is the pattern in the catalog most often reached for when it isn't needed. Three signs:
 
 - **The grammar is large or going to grow.** Each grammar rule means at least one class; a real grammar with twenty productions becomes unmanageable. That's what parser generators (ANTLR and company) exist for, and GoF says so explicitly.
-- **Two or three fixed conditions are enough.** If there are three possible promotions and the same team that writes the code defines them, one [Strategy](/en/design/patterns/strategy/) per promotion is simpler and more direct.
+- **Two or three fixed conditions are enough.** If there are three possible promotions and the same team that writes the code defines them, one [Strategy](/design/patterns/strategy/) per promotion is simpler and more direct.
 - **Performance matters.** Interpreting an object tree on every evaluation is noticeably slower than compiling the rule once.
 
 <Callout variant="warning" title="What is never an alternative">
@@ -175,8 +175,8 @@ Evaluating user-supplied rules with `eval`, with an embedded scripting engine an
 
 ## Relationship with other patterns
 
-- **[Composite](/en/design/patterns/composite/)** is the structure it rests on: the syntax tree is a composite where the non-terminal expressions are the nodes and the terminal ones the leaves.
-- **[Visitor](/en/design/patterns/visitor/)** lets you add new operations over the tree — printing it, optimizing it, validating it — without touching each expression class.
-- **[Flyweight](/en/design/patterns/flyweight/)** helps share the terminal expressions that repeat many times within the same tree.
-- **[Iterator](/en/design/patterns/iterator/)** lets you traverse the tree without exposing its shape.
-- It gets confused with **[Strategy](/en/design/patterns/strategy/)**, and the difference is one of scale: Strategy swaps a complete algorithm; Interpreter **composes** a behavior out of grammatical pieces. If the possible rules are a closed set, it's Strategy; if they combine with each other in ways you can't enumerate in advance, it's Interpreter.
+- **[Composite](/design/patterns/composite/)** is the structure it rests on: the syntax tree is a composite where the non-terminal expressions are the nodes and the terminal ones the leaves.
+- **[Visitor](/design/patterns/visitor/)** lets you add new operations over the tree — printing it, optimizing it, validating it — without touching each expression class.
+- **[Flyweight](/design/patterns/flyweight/)** helps share the terminal expressions that repeat many times within the same tree.
+- **[Iterator](/design/patterns/iterator/)** lets you traverse the tree without exposing its shape.
+- It gets confused with **[Strategy](/design/patterns/strategy/)**, and the difference is one of scale: Strategy swaps a complete algorithm; Interpreter **composes** a behavior out of grammatical pieces. If the possible rules are a closed set, it's Strategy; if they combine with each other in ways you can't enumerate in advance, it's Interpreter.

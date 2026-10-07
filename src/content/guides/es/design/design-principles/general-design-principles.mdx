@@ -161,7 +161,7 @@ Esa separación recorta las razones por las que un cambio toca un componente. Un
 
 ### SoC y Single Responsibility Principle
 
-Están estrechamente relacionados, pero no son lo mismo. SoC es el principio general: separar concerns. SRP da un criterio más concreto para determinar cuándo una clase o módulo agrupa responsabilidades que deberían evolucionar de forma independiente — el detalle está en [SOLID](/diseno/principios/solid/).
+Están estrechamente relacionados, pero no son lo mismo. SoC es el principio general: separar concerns. SRP da un criterio más concreto para determinar cuándo una clase o módulo agrupa responsabilidades que deberían evolucionar de forma independiente — el detalle está en [SOLID](/es/diseno/principios/solid/).
 
 ### Separación no significa crear más capas
 
@@ -212,7 +212,7 @@ La herencia acopla al subtipo con la implementación de la clase base: hereda su
 
 Una razón histórica para usar herencia es reutilizar código. Pero compartir implementación no implica necesariamente que exista una relación conceptual de subtipo. La composición permite reutilizar comportamiento sin establecer una relación de herencia, lo que suele producir componentes más chicos, reemplazables y fáciles de testear.
 
-Dos patrones del catálogo GoF son este principio llevado a su forma canónica: [Decorator](/diseno/patrones/decorator/) agrega comportamiento por envoltura en lugar de por herencia, y [Strategy](/diseno/patrones/strategy/) intercambia un algoritmo por composición en vez de por subclase.
+Dos patrones del catálogo GoF son este principio llevado a su forma canónica: [Decorator](/es/diseno/patrones/decorator/) agrega comportamiento por envoltura en lugar de por herencia, y [Strategy](/es/diseno/patrones/strategy/) intercambia un algoritmo por composición en vez de por subclase.
 
 ### Cuándo la herencia puede ser apropiada
 
@@ -266,4 +266,4 @@ La pregunta relevante no es cuántas llamadas hay en una línea, sino:
 
 Un objeto debería exponer comportamiento relevante (`order.calculateShippingCost()`) en lugar de obligar a otros objetos a reconstruir ese comportamiento navegando su estado interno (`order.getCustomer().getAddress().getPostalCode().getRegion().getShippingRate()`). El segundo enfoque expone demasiado del modelo y hace que quienes llaman dependan de detalles estructurales.
 
-Estos seis principios se aplican sea cual sea el paradigma. [SOLID](/diseno/principios/solid/) reúne los cinco principios específicos del diseño orientado a objetos — que se apoyan en varias de estas mismas ideas, sobre todo en la separación de responsabilidades.
+Estos seis principios se aplican sea cual sea el paradigma. [SOLID](/es/diseno/principios/solid/) reúne los cinco principios específicos del diseño orientado a objetos — que se apoyan en varias de estas mismas ideas, sobre todo en la separación de responsabilidades.

@@ -69,7 +69,7 @@ Todo lo que ponés en `CLAUDE.md` consume tokens de la ventana de contexto en **
 - Guías de estilo extensas que ya aplica un linter.
 - Documentación completa de APIs externas (mejor referenciarlas con `@`).
 
-> **Nunca le pidas a un LLM que haga el trabajo de un linter.** Los LLMs son costosos y lentos comparados con ESLint o Prettier. Si el código ya sigue una guía de estilo, Claude tiende a respetar los patrones existentes por aprendizaje en contexto, sin que haga falta indicárselo. Para lo que un linter no cubre — o para forzar el formato siempre, sin depender de que el modelo lo infiera — conviene un Hook que corra el formatter automáticamente ([Skills, subagentes y hooks](/ai-engineering/claude-code/skills-subagentes-y-hooks/)).
+> **Nunca le pidas a un LLM que haga el trabajo de un linter.** Los LLMs son costosos y lentos comparados con ESLint o Prettier. Si el código ya sigue una guía de estilo, Claude tiende a respetar los patrones existentes por aprendizaje en contexto, sin que haga falta indicárselo. Para lo que un linter no cubre — o para forzar el formato siempre, sin depender de que el modelo lo infiera — conviene un Hook que corra el formatter automáticamente ([Skills, subagentes y hooks](/es/ai-engineering/claude-code/skills-subagentes-y-hooks/)).
 
 **Cómo escribir las reglas:**
 
@@ -138,7 +138,7 @@ Cada grupo `{a,b}` multiplica la cantidad de patrones expandidos: `{a,b}/{c,d}/*
 3. **Pensar que son regex.** `app.js` en un glob es exactamente `app.js`, punto literal incluido.
 4. **Olvidar los archivos ocultos.** `.env`, `.gitignore` suelen quedar fuera de patrones genéricos como `*.json`; si los querés incluir, sé explícito con `.*` o `**/.*`.
 
-Estos mismos globs se usan en tres lugares de Claude Code: el campo `paths` de las reglas de `.claude/rules/`, las reglas de permisos ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)) y el campo `paths` de una skill ([Skills, subagentes y hooks](/ai-engineering/claude-code/skills-subagentes-y-hooks/)) — aprenderlos una vez alcanza para los tres.
+Estos mismos globs se usan en tres lugares de Claude Code: el campo `paths` de las reglas de `.claude/rules/`, las reglas de permisos ([Permisos en Claude Code](/es/ai-engineering/claude-code/permisos/)) y el campo `paths` de una skill ([Skills, subagentes y hooks](/es/ai-engineering/claude-code/skills-subagentes-y-hooks/)) — aprenderlos una vez alcanza para los tres.
 
 ## Ver y editar la memoria
 

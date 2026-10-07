@@ -15,7 +15,7 @@ import Callout from '../../../../../components/mdx/Callout.astro';
 
 import Icon from '../../../../../components/Icon.astro';
 
-Claude Code no se limita a responder prompts sueltos: expone piezas que se combinan para armar flujos de trabajo repetibles. Conviene leerlas en este orden: en este artículo, las que corren **dentro** de una sesión (Skills, subagentes y hooks); en [MCP](/ai-engineering/claude-code/mcp/), la conexión con herramientas **externas**; y en [Plugins](/ai-engineering/claude-code/plugins/), el empaquetado de todo lo anterior para distribuirlo. Skills, subagentes y hooks permiten extender Claude Code de distintas maneras.
+Claude Code no se limita a responder prompts sueltos: expone piezas que se combinan para armar flujos de trabajo repetibles. Conviene leerlas en este orden: en este artículo, las que corren **dentro** de una sesión (Skills, subagentes y hooks); en [MCP](/es/ai-engineering/claude-code/mcp/), la conexión con herramientas **externas**; y en [Plugins](/es/ai-engineering/claude-code/plugins/), el empaquetado de todo lo anterior para distribuirlo. Skills, subagentes y hooks permiten extender Claude Code de distintas maneras.
 
 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
   <div className="card-surface flex flex-col items-start gap-2 p-4">
@@ -215,4 +215,4 @@ Un hook es un script (o endpoint HTTP, prompt de un modelo, o subagente) que se 
 
 Este es el subsistema que cambia con más frecuencia en Claude Code: en septiembre de 2026 la lista oficial supera los 30 eventos (incluye `PreCompact`, `ConfigChange`, `FileChanged`, `TaskCreated`, entre otros más específicos), y no todos bloquean vía `exit 2`. Antes de apoyarte en un hook nuevo para algo crítico, conviene confirmar el comportamiento exacto del evento en la [documentación oficial](https://code.claude.com/docs/en/hooks).
 
-Skills, subagentes y hooks especializan lo que ocurre **dentro** de una sesión. Para conectar Claude Code con herramientas que viven fuera de la máquina, el mecanismo es [MCP](/ai-engineering/claude-code/mcp/).
+Skills, subagentes y hooks especializan lo que ocurre **dentro** de una sesión. Para conectar Claude Code con herramientas que viven fuera de la máquina, el mecanismo es [MCP](/es/ai-engineering/claude-code/mcp/).

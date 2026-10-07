@@ -31,12 +31,15 @@ const ACCENTED = /[áéíóúüñ¿¡]/i;
 const FUNCTION_WORDS =
   /\b(el|la|los|las|un|una|unos|unas|del|al|que|para|por|con|sin|como|pero|porque|cuando|donde|este|esta|esto|esos|esas|todo|toda|más|muy|ser|está|están|hay|tiene|tienen|puede|pueden|debe|deben|hacer|desde|entre|sobre|también|sólo|solo|cada|otro|otra|mismo|misma)\b/i;
 
-function walk(dir, filter) {
+function walk(dir, filter, skipTopLevel = new Set()) {
   const out = [];
   if (!existsSync(dir)) {
     return out;
   }
   for (const name of readdirSync(dir)) {
+    if (skipTopLevel.has(name)) {
+      continue;
+    }
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
       out.push(...walk(path, filter));
@@ -73,7 +76,9 @@ for (const path of walk(join(ROOT, 'src/content/guides/en'), (n) => n.endsWith('
 }
 
 // The rendered English pages catch interface strings the sources can't.
-const renderedPages = walk(join(ROOT, 'dist/en'), (n) => n.endsWith('.html'));
+// English is the root edition; Spanish output lives under dist/es/.
+const SKIP_RENDERED = new Set(['es', 'pagefind', '_astro']);
+const renderedPages = walk(join(ROOT, 'dist'), (name) => name.endsWith('.html'), SKIP_RENDERED);
 for (const path of renderedPages) {
   const html = readFileSync(path, 'utf8');
   const visible = html

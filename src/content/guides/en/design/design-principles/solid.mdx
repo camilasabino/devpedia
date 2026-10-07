@@ -17,7 +17,7 @@ SOLID groups five principles for increasing cohesion, reducing coupling, and mak
 
 It's often presented as a set of rules for writing "good code". That reading is too simplistic: they're criteria for deciding about responsibilities, abstractions, dependencies, and behavior. Their usefulness shows up once the system starts changing: certain decisions make adding a new feature end up demanding a lot of work, or make a small change force you to modify a large part of the codebase.
 
-They shouldn't be applied mechanically either: more interfaces, more classes, and more abstractions isn't automatically a better architecture. SOLID is used together with the [general design principles](/en/design/principles/general-design-principles/) — KISS, DRY, YAGNI, separation of concerns, and composition over inheritance — not in their place.
+They shouldn't be applied mechanically either: more interfaces, more classes, and more abstractions isn't automatically a better architecture. SOLID is used together with the [general design principles](/design/principles/general-design-principles/) — KISS, DRY, YAGNI, separation of concerns, and composition over inheritance — not in their place.
 
 ## S — Single Responsibility Principle
 
@@ -334,6 +334,6 @@ The high-level policy doesn't depend on the mechanism that implements it.
     Frameworks like Spring make injection easier, but DI doesn't automatically mean you're applying DIP. What matters is the direction of the dependencies.
 </Callout>
 
-Many of the patterns in the GoF catalog give these principles a concrete structure: [Strategy](/en/design/patterns/strategy/) is Open/Closed by composition, [Adapter](/en/design/patterns/adapter/) wraps an incompatible type behind the contract the caller already expects, and almost all of them support Dependency Inversion. The [patterns topic](/en/design/patterns/) walks through that catalog one by one.
+Many of the patterns in the GoF catalog give these principles a concrete structure: [Strategy](/design/patterns/strategy/) is Open/Closed by composition, [Adapter](/design/patterns/adapter/) wraps an incompatible type behind the contract the caller already expects, and almost all of them support Dependency Inversion. The [patterns topic](/design/patterns/) walks through that catalog one by one.
 
-[How to review a software design](/en/design/principles/how-to-review-a-software-design/) turns these principles into concrete questions about a real component.
+[How to review a software design](/design/principles/how-to-review-a-software-design/) turns these principles into concrete questions about a real component.

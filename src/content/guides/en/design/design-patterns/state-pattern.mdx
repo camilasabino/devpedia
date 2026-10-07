@@ -141,8 +141,8 @@ With two or three states that behave almost identically, an enum with a simple c
 
 ## Relationship with other patterns
 
-- It's the object-oriented way to protect an aggregate's valid transitions. The [architecture topic](/en/architecture/domain-driven-design/) uses the word *invariant* for exactly what keeps a shipped order from being cancelled here.
-- It's implemented very similarly to **[Strategy](/en/design/patterns/strategy/)** — both delegate behavior to an interchangeable object — but with a different intent: Strategy is chosen by the client code; State is changed by the state objects themselves, through internal transitions.
+- It's the object-oriented way to protect an aggregate's valid transitions. The [architecture topic](/architecture/domain-driven-design/) uses the word *invariant* for exactly what keeps a shipped order from being cancelled here.
+- It's implemented very similarly to **[Strategy](/design/patterns/strategy/)** — both delegate behavior to an interchangeable object — but with a different intent: Strategy is chosen by the client code; State is changed by the state objects themselves, through internal transitions.
 
 <Callout variant="note" title="The alternative worth considering first">
 If there are few states and the transitions are simple, an `enum` with a table of allowed transitions is usually more direct — and it can be read in one go:

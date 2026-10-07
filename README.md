@@ -14,7 +14,7 @@ Live in production and actively maintained.
 
 ## About
 
-Spanish is served at `/` and English under `/en/`. Both editions cover the same topics, subtopics and guides.
+English is served at `/` and Spanish under `/es/`. Both editions cover the same topics, subtopics and guides.
 
 ```text
 Topic → optional Subtopic → Guide

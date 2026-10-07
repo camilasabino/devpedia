@@ -36,10 +36,10 @@ describe('calculateCancellationFee', () => {
 });
 ```
 
-El valor de AAA no está en escribir los comentarios de cada bloque. Su beneficio real es que hace evidente la intención del test —dado este estado, cuando ocurre este comportamiento, entonces esto debería ser cierto—, por lo que se relaciona naturalmente con el formato _Given/When/Then_ de [Qué es el testing](/testing/que-es-el-testing/).
+El valor de AAA no está en escribir los comentarios de cada bloque. Su beneficio real es que hace evidente la intención del test —dado este estado, cuando ocurre este comportamiento, entonces esto debería ser cierto—, por lo que se relaciona naturalmente con el formato _Given/When/Then_ de [Qué es el testing](/es/testing/que-es-el-testing/).
 
 **Una sola acción por test.** Si el bloque Act tiene tres llamadas, el test suele estar verificando tres comportamientos y su nombre no puede describirlos a todos. Cuando falla, el mensaje no dice cuál se rompió.
 
 **Un único concepto, no una única línea.** No significa una única línea de `expect`: significa un único concepto verificado. Comprobar los cuatro campos de una `Reservation` recién creada es un concepto; comprobar además que se envió el mail es otro, y va en otro test.
 
-Cuando `ReservationService` depende de otros componentes, hay que decidir qué reemplazar y con qué: de eso tratan los [dobles de test](/testing/dobles-de-test/).
+Cuando `ReservationService` depende de otros componentes, hay que decidir qué reemplazar y con qué: de eso tratan los [dobles de test](/es/testing/dobles-de-test/).

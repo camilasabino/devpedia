@@ -1,6 +1,6 @@
 # English edition — editorial guide
 
-DevPedia's English edition, under `/en/`, is an idiomatic adaptation of the
+DevPedia's English edition, at `/`, is an idiomatic adaptation of the
 Spanish original, not a literal translation. This guide is the companion to
 `EDITORIAL_GUIDELINES.md`, which stays the authority for the Spanish edition and
 for anything about structure, guide shape, the content model and frontmatter, or
@@ -183,7 +183,7 @@ heading. The heading anchors stay identical in both editions
 
 ## Links
 
-Internal links must point at the English URL of the same page (`/en/…`),
+Internal links must point at the English URL of the same page (`/testing/test-doubles/`),
 including the heading fragment, which changes because the heading text changes.
 External links and references are untouched; links to other sites use their
 English version when one exists. The English `slug` is written in English for the

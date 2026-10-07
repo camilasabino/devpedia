@@ -24,7 +24,7 @@ Can a malicious input in the search-by-area field alter the query?
 
 Among others: SQL injection, XSS, CSRF, broken authentication, broken authorization, insecure direct object references (IDOR), sensitive data exposure, and vulnerabilities in dependencies.
 
-Security testing isn't exclusively the security team's responsibility. It's worth building into design, implementation, testing, deployment, and operations, rather than leaving it as a check at the end. Many of the decisions that make it possible are taken earlier: who can issue a refund, where secrets live, and how sensitive operations are audited are [architectural drivers](/en/architecture/architectural-drivers/), not implementation details.
+Security testing isn't exclusively the security team's responsibility. It's worth building into design, implementation, testing, deployment, and operations, rather than leaving it as a check at the end. Many of the decisions that make it possible are taken earlier: who can issue a refund, where secrets live, and how sensitive operations are audited are [architectural drivers](/architecture/architectural-drivers/), not implementation details.
 
 ## Static vs. dynamic security testing
 
@@ -38,4 +38,4 @@ DAST (Dynamic Application Security Testing)
 
 **SAST** analyzes the code without running the application. **DAST** attacks or analyzes the application while it's running. On top of those come dependency scanning tools that complement both approaches. Neither replaces the other: SAST catches things early, in the code; DAST catches what only shows up at runtime.
 
-The system holding up against an attack says nothing about whether a person can complete a reservation without getting lost. That's covered by [usability testing and its relationship with UX](/en/testing/usability-testing/).
+The system holding up against an attack says nothing about whether a person can complete a reservation without getting lost. That's covered by [usability testing and its relationship with UX](/testing/usability-testing/).

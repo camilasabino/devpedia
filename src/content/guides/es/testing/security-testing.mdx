@@ -24,7 +24,7 @@ El testing de seguridad busca identificar vulnerabilidades y comprobar autentica
 
 Entre otras: SQL Injection, XSS, CSRF, autenticación rota (*broken authentication*), autorización rota (*broken authorization*), referencias directas a objetos inseguras (IDOR), exposición de datos sensibles y vulnerabilidades en dependencias.
 
-El testing de seguridad no es exclusivamente responsabilidad del equipo de seguridad. Conviene incorporarlo en diseño, implementación, testing, despliegue y operaciones, no dejarlo como un control al final. Muchas de las decisiones que lo hacen posible se toman antes: quién puede ejecutar un reintegro, dónde viven los secrets y cómo se auditan las operaciones sensibles son [drivers de arquitectura](/arquitectura/drivers-de-arquitectura/), no detalles de implementación.
+El testing de seguridad no es exclusivamente responsabilidad del equipo de seguridad. Conviene incorporarlo en diseño, implementación, testing, despliegue y operaciones, no dejarlo como un control al final. Muchas de las decisiones que lo hacen posible se toman antes: quién puede ejecutar un reintegro, dónde viven los secrets y cómo se auditan las operaciones sensibles son [drivers de arquitectura](/es/arquitectura/drivers-de-arquitectura/), no detalles de implementación.
 
 ## Testing de seguridad estático vs. dinámico
 
@@ -38,4 +38,4 @@ DAST (Dynamic Application Security Testing)
 
 **SAST** analiza el código sin ejecutar la aplicación. **DAST** ataca o analiza la aplicación mientras está corriendo. A esto se suman herramientas de análisis de dependencias (*dependency scanning*) que complementan ambos enfoques. Ninguno reemplaza al otro: SAST detecta temprano, en el código; DAST detecta lo que solo se manifiesta en runtime.
 
-Que el sistema resista un ataque no dice nada sobre si una persona puede completar una reserva sin perderse. Eso lo cubre el [testing de usabilidad y su relación con UX](/testing/testing-de-usabilidad/).
+Que el sistema resista un ataque no dice nada sobre si una persona puede completar una reserva sin perderse. Eso lo cubre el [testing de usabilidad y su relación con UX](/es/testing/testing-de-usabilidad/).

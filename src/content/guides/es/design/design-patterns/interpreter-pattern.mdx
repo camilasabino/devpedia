@@ -158,7 +158,7 @@ Interpreter define cómo se **evalúa** una expresión ya construida, no cómo s
 Interpreter es el patrón del catálogo que más seguido está de más. Tres señales:
 
 - **La gramática es grande o va a crecer.** Cada regla de la gramática implica al menos una clase; una gramática real de veinte producciones se vuelve inmanejable. Para eso existen los generadores de parsers (ANTLR y compañía), y GoF lo dice explícitamente.
-- **Con dos o tres condiciones fijas alcanza.** Si las promociones posibles son tres y las define el mismo equipo que escribe el código, un [Strategy](/diseno/patrones/strategy/) por promoción es más simple y más directo.
+- **Con dos o tres condiciones fijas alcanza.** Si las promociones posibles son tres y las define el mismo equipo que escribe el código, un [Strategy](/es/diseno/patrones/strategy/) por promoción es más simple y más directo.
 - **La performance importa.** Interpretar un árbol de objetos en cada evaluación es notablemente más lento que compilar la regla una vez.
 
 <Callout variant="warning" title="Lo que nunca es una alternativa">
@@ -175,8 +175,8 @@ Evaluar reglas provistas por usuarios con `eval`, con un motor de scripting embe
 
 ## Relación con otros patrones
 
-- **[Composite](/diseno/patrones/composite/)** es la estructura sobre la que se apoya: el árbol sintáctico es un composite donde las expresiones no terminales son los nodos y las terminales, las hojas.
-- **[Visitor](/diseno/patrones/visitor/)** permite agregar operaciones nuevas sobre el árbol —imprimirlo, optimizarlo, validarlo— sin tocar cada clase de expresión.
-- **[Flyweight](/diseno/patrones/flyweight/)** sirve para compartir las expresiones terminales que se repiten muchas veces en un mismo árbol.
-- **[Iterator](/diseno/patrones/iterator/)** permite recorrer el árbol sin exponer su forma.
-- Se confunde con **[Strategy](/diseno/patrones/strategy/)**, y la diferencia es de escala: Strategy intercambia un algoritmo completo; Interpreter **compone** un comportamiento a partir de piezas gramaticales. Si las reglas posibles son un conjunto cerrado, es Strategy; si se combinan entre sí de formas que no podés enumerar de antemano, es Interpreter.
+- **[Composite](/es/diseno/patrones/composite/)** es la estructura sobre la que se apoya: el árbol sintáctico es un composite donde las expresiones no terminales son los nodos y las terminales, las hojas.
+- **[Visitor](/es/diseno/patrones/visitor/)** permite agregar operaciones nuevas sobre el árbol —imprimirlo, optimizarlo, validarlo— sin tocar cada clase de expresión.
+- **[Flyweight](/es/diseno/patrones/flyweight/)** sirve para compartir las expresiones terminales que se repiten muchas veces en un mismo árbol.
+- **[Iterator](/es/diseno/patrones/iterator/)** permite recorrer el árbol sin exponer su forma.
+- Se confunde con **[Strategy](/es/diseno/patrones/strategy/)**, y la diferencia es de escala: Strategy intercambia un algoritmo completo; Interpreter **compone** un comportamiento a partir de piezas gramaticales. Si las reglas posibles son un conjunto cerrado, es Strategy; si se combinan entre sí de formas que no podés enumerar de antemano, es Interpreter.

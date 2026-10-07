@@ -10,12 +10,12 @@ import { languages as LANGS, type Lang } from '@/i18n';
 import type { ContentModel, Edition, GuideData, SubtopicData, TopicData } from './content-model';
 
 /**
- * Root-level segments a Spanish topic slug must not take: `en` is the English
+ * Root-level segments an English topic slug must not take: `es` is the Spanish
  * edition, the rest are build output directories.
  */
 const RESERVED_ROOT_SLUGS: Record<Lang, readonly string[]> = {
-  es: ['en', '_astro', 'pagefind'],
-  en: [],
+  es: [],
+  en: ['es', '_astro', 'pagefind'],
 };
 
 /**

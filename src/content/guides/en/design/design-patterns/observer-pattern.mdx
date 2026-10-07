@@ -123,7 +123,7 @@ If the order observers are notified in matters and is rigid, or if you need a gu
 
 ## Relationship with other patterns
 
-- **[Mediator](/en/design/patterns/mediator/)** also reduces coupling between objects, but it centralizes _all_ of the coordination; Observer only notifies events one-to-many, without the emitter deciding how they react.
+- **[Mediator](/design/patterns/mediator/)** also reduces coupling between objects, but it centralizes _all_ of the coordination; Observer only notifies events one-to-many, without the emitter deciding how they react.
 - It's the conceptual basis behind event mechanisms and more general reactive programming.
 
 <Callout variant="warning" title="unsubscribe is not optional">
@@ -139,5 +139,5 @@ If the observer's lifetime is shorter than the subject's — a UI component, a r
 </Callout>
 
 <Callout variant="note" title="Observer ≠ pub/sub">
-    Observer happens inside a single process, synchronously, with direct references; [pub/sub](/en/architecture/communication-patterns/#asynchronous) works across processes, asynchronously, with a broker in between.
+    Observer happens inside a single process, synchronously, with direct references; [pub/sub](/architecture/communication-patterns/#asynchronous) works across processes, asynchronously, with a broker in between.
 </Callout>

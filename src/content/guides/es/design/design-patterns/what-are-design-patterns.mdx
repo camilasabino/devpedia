@@ -83,19 +83,19 @@ El catálogo se organiza en tres grupos, según qué tipo de problema resuelven:
   </div>
 </div>
 
-- **[Patrones creacionales](/diseno/patrones/patrones-creacionales/)** — tienen que ver con _cómo_ se crean los objetos, para no atar el código a clases concretas.
-- **[Patrones estructurales](/diseno/patrones/patrones-estructurales/)** — tienen que ver con cómo se combinan clases y objetos en estructuras más grandes, manteniéndolas flexibles y eficientes.
-- **[Patrones de comportamiento](/diseno/patrones/patrones-de-comportamiento/)** — tienen que ver con cómo se reparten responsabilidades entre objetos y cómo se comunican entre sí.
-- **[Patrones de diseño que suelen confundirse](/diseno/patrones/patrones-que-suelen-confundirse/)** — algunos patrones tienen estructuras parecidas, pero resuelven problemas distintos: qué los diferencia y cómo reconocer cuándo usar cada uno.
+- **[Patrones creacionales](/es/diseno/patrones/patrones-creacionales/)** — tienen que ver con _cómo_ se crean los objetos, para no atar el código a clases concretas.
+- **[Patrones estructurales](/es/diseno/patrones/patrones-estructurales/)** — tienen que ver con cómo se combinan clases y objetos en estructuras más grandes, manteniéndolas flexibles y eficientes.
+- **[Patrones de comportamiento](/es/diseno/patrones/patrones-de-comportamiento/)** — tienen que ver con cómo se reparten responsabilidades entre objetos y cómo se comunican entre sí.
+- **[Patrones de diseño que suelen confundirse](/es/diseno/patrones/patrones-que-suelen-confundirse/)** — algunos patrones tienen estructuras parecidas, pero resuelven problemas distintos: qué los diferencia y cómo reconocer cuándo usar cada uno.
 
 ## El dominio de los ejemplos
 
 Los ejemplos de código de este tema están en Java, y casi todos comparten un mismo caso ficticio: **AndesShop**, un e-commerce de indumentaria y equipo de trekking que va creciendo y se encuentra con problemas de diseño distintos a medida que suma features.
 
-AndesShop es el mismo negocio cuyo módulo de pagos usa como ejemplo el [tema de arquitectura de software](/arquitectura/): allá se lo mira desde afuera, decidiendo los límites entre servicios (boundaries), qué datos comparte cada uno y cómo se comunican; acá se lo mira desde adentro de una clase. Es deliberado: los patrones de diseño y las decisiones de arquitectura operan sobre el mismo sistema, en escalas distintas.
+AndesShop es el mismo negocio cuyo módulo de pagos usa como ejemplo el [tema de arquitectura de software](/es/arquitectura/): allá se lo mira desde afuera, decidiendo los límites entre servicios (boundaries), qué datos comparte cada uno y cómo se comunican; acá se lo mira desde adentro de una clase. Es deliberado: los patrones de diseño y las decisiones de arquitectura operan sobre el mismo sistema, en escalas distintas.
 
 ## Relación con los principios de diseño
 
-Un patrón no es una alternativa a los [principios de diseño](/diseno/principios/), es una aplicación concreta de varios de ellos a la vez. Strategy es [Open/Closed](/diseno/principios/solid/#o--openclosed-principle) hecho estructura; Decorator es [composición sobre herencia](/diseno/principios/principios-generales-de-diseno/#composición-sobre-herencia) llevada al límite; casi todos empujan la dependencia hacia una abstracción, que es [inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle).
+Un patrón no es una alternativa a los [principios de diseño](/es/diseno/principios/), es una aplicación concreta de varios de ellos a la vez. Strategy es [Open/Closed](/es/diseno/principios/solid/#o--openclosed-principle) hecho estructura; Decorator es [composición sobre herencia](/es/diseno/principios/principios-generales-de-diseno/#composición-sobre-herencia) llevada al límite; casi todos empujan la dependencia hacia una abstracción, que es [inversión de dependencias](/es/diseno/principios/solid/#d--dependency-inversion-principle).
 
 Por eso conviene leer los principios antes que el catálogo: los patrones se entienden mucho mejor cuando ya se sabe qué tensión de diseño están resolviendo.

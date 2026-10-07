@@ -192,7 +192,7 @@ payment.refund()
 No queremos que cualquier código pueda modificar arbitrariamente `payment.status = CAPTURED`, porque podría saltarse reglas del dominio.
 
 
-Proteger esas invariantes dentro del aggregate es un problema de diseño con solución conocida: cuando lo que varía según el estado son las operaciones permitidas —un pedido enviado ya no se puede cancelar—, el [patrón State](/diseno/patrones/state/) evita que esa regla quede repartida en condicionales por todo el código.
+Proteger esas invariantes dentro del aggregate es un problema de diseño con solución conocida: cuando lo que varía según el estado son las operaciones permitidas —un pedido enviado ya no se puede cancelar—, el [patrón State](/es/diseno/patrones/state/) evita que esa regla quede repartida en condicionales por todo el código.
 
 ### Diseño de aggregates
 

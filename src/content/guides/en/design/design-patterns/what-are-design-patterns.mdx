@@ -83,19 +83,19 @@ The catalog is organized into three groups, by the kind of problem they solve:
   </div>
 </div>
 
-- **[Creational patterns](/en/design/patterns/creational-patterns/)** — about _how_ objects get created, so the code isn't tied to concrete classes.
-- **[Structural patterns](/en/design/patterns/structural-patterns/)** — about how classes and objects combine into larger structures while staying flexible and efficient.
-- **[Behavioral patterns](/en/design/patterns/behavioral-patterns/)** — about how responsibilities are divided among objects and how they communicate with each other.
-- **[Design patterns that are often confused](/en/design/patterns/commonly-confused-patterns/)** — some patterns have similar structures but solve different problems: what sets them apart and how to recognize when to use each.
+- **[Creational patterns](/design/patterns/creational-patterns/)** — about _how_ objects get created, so the code isn't tied to concrete classes.
+- **[Structural patterns](/design/patterns/structural-patterns/)** — about how classes and objects combine into larger structures while staying flexible and efficient.
+- **[Behavioral patterns](/design/patterns/behavioral-patterns/)** — about how responsibilities are divided among objects and how they communicate with each other.
+- **[Design patterns that are often confused](/design/patterns/commonly-confused-patterns/)** — some patterns have similar structures but solve different problems: what sets them apart and how to recognize when to use each.
 
 ## The domain of the examples
 
 The code examples in this topic are in Java, and almost all of them share one fictional case: **AndesShop**, an e-commerce store selling clothing and trekking gear that keeps growing and runs into different design problems as it adds features.
 
-AndesShop is the same business whose payments module the [software architecture topic](/en/architecture/) uses as its example: there it's viewed from the outside, deciding the boundaries between services, what data each one shares, and how they communicate; here it's viewed from inside a class. That's deliberate: design patterns and architecture decisions operate on the same system, at different scales.
+AndesShop is the same business whose payments module the [software architecture topic](/architecture/) uses as its example: there it's viewed from the outside, deciding the boundaries between services, what data each one shares, and how they communicate; here it's viewed from inside a class. That's deliberate: design patterns and architecture decisions operate on the same system, at different scales.
 
 ## Relationship with design principles
 
-A pattern isn't an alternative to the [design principles](/en/design/principles/), it's a concrete application of several of them at once. Strategy is [Open/Closed](/en/design/principles/solid/#o--openclosed-principle) made structural; Decorator is [composition over inheritance](/en/design/principles/general-design-principles/#composition-over-inheritance) taken to its limit; almost all of them push the dependency toward an abstraction, which is [dependency inversion](/en/design/principles/solid/#d--dependency-inversion-principle).
+A pattern isn't an alternative to the [design principles](/design/principles/), it's a concrete application of several of them at once. Strategy is [Open/Closed](/design/principles/solid/#o--openclosed-principle) made structural; Decorator is [composition over inheritance](/design/principles/general-design-principles/#composition-over-inheritance) taken to its limit; almost all of them push the dependency toward an abstraction, which is [dependency inversion](/design/principles/solid/#d--dependency-inversion-principle).
 
 That's why it's worth reading the principles before the catalog: patterns make a lot more sense once you know which design tension they're resolving.

@@ -25,7 +25,7 @@ En ReservaResto, un caso natural es `ReservationService` contra PostgreSQL:
 Crear reserva → Persistir (ReservationService) → PostgreSQL (test container) → Leer reserva → Verificar resultado esperado
 ```
 
-Acá la base de datos es real —aislada en un entorno de test o en un container—, a diferencia del [test unitario](/testing/que-es-un-test-unitario/), donde esa dependencia estaba reemplazada por un [doble de test](/testing/dobles-de-test/).
+Acá la base de datos es real —aislada en un entorno de test o en un container—, a diferencia del [test unitario](/es/testing/que-es-un-test-unitario/), donde esa dependencia estaba reemplazada por un [doble de test](/es/testing/dobles-de-test/).
 
 ## Qué problemas detecta
 
@@ -43,6 +43,6 @@ Si queremos verificar la interacción real con PostgreSQL, necesitamos PostgreSQ
 
 ## Qué no detecta
 
-Un test de integración de `ReservationService` contra la base de datos no prueba que el flujo de negocio completo funcione: no prueba que la seña se cobre, que la mesa quede bloqueada para otros usuarios, ni que la confirmación efectivamente le llegue al comensal. Eso es responsabilidad del siguiente nivel: el [testing de sistema](/testing/testing-de-sistema/).
+Un test de integración de `ReservationService` contra la base de datos no prueba que el flujo de negocio completo funcione: no prueba que la seña se cobre, que la mesa quede bloqueada para otros usuarios, ni que la confirmación efectivamente le llegue al comensal. Eso es responsabilidad del siguiente nivel: el [testing de sistema](/es/testing/testing-de-sistema/).
 
-Y hay un límite que ni siquiera el nivel siguiente cubre bien: si `NotificationService` es un servicio aparte con su propio ciclo de despliegue, un test de integración verifica que *tu* lado del contrato funciona, no que el otro lado siga entendiéndolo. Ese es el problema que trata la [compatibilidad hacia atrás en APIs](/testing/testing-de-compatibilidad/#compatibilidad-hacia-atrás), y la razón por la que los sistemas de [comunicación asíncrona](/arquitectura/patrones-de-comunicacion/) necesitan versionar sus eventos.
+Y hay un límite que ni siquiera el nivel siguiente cubre bien: si `NotificationService` es un servicio aparte con su propio ciclo de despliegue, un test de integración verifica que *tu* lado del contrato funciona, no que el otro lado siga entendiéndolo. Ese es el problema que trata la [compatibilidad hacia atrás en APIs](/es/testing/testing-de-compatibilidad/#compatibilidad-hacia-atrás), y la razón por la que los sistemas de [comunicación asíncrona](/es/arquitectura/patrones-de-comunicacion/) necesitan versionar sus eventos.

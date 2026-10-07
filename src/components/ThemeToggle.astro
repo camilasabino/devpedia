@@ -6,7 +6,7 @@ interface Props {
   lang?: Lang;
 }
 
-const { lang = 'es' } = Astro.props;
+const { lang = 'en' } = Astro.props;
 const labelToLight = lang === 'es' ? 'Cambiar a modo claro' : 'Switch to light mode';
 const labelToDark = lang === 'es' ? 'Cambiar a modo oscuro' : 'Switch to dark mode';
 ---

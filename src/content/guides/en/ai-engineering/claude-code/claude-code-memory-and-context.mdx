@@ -69,7 +69,7 @@ Everything you put in `CLAUDE.md` consumes context-window tokens on **every** in
 - Long style guides a linter already enforces.
 - Complete documentation for external APIs (better to reference it with `@`).
 
-> **Never ask an LLM to do a linter's job.** LLMs are expensive and slow compared to ESLint or Prettier. If the code already follows a style guide, Claude tends to respect the existing patterns through in-context learning, without being told. For what a linter doesn't cover — or to force the formatting every time, without relying on the model inferring it — use a Hook that runs the formatter automatically ([Skills, subagents, and hooks](/en/ai-engineering/claude-code/skills-subagents-and-hooks/)).
+> **Never ask an LLM to do a linter's job.** LLMs are expensive and slow compared to ESLint or Prettier. If the code already follows a style guide, Claude tends to respect the existing patterns through in-context learning, without being told. For what a linter doesn't cover — or to force the formatting every time, without relying on the model inferring it — use a Hook that runs the formatter automatically ([Skills, subagents, and hooks](/ai-engineering/claude-code/skills-subagents-and-hooks/)).
 
 **How to write the rules:**
 
@@ -137,7 +137,7 @@ Every `{a,b}` group multiplies the number of expanded patterns: `{a,b}/{c,d}/*.{
 3. **Thinking they're regexes.** `app.js` in a glob is exactly `app.js`, literal dot included.
 4. **Forgetting hidden files.** `.env` and `.gitignore` usually fall outside generic patterns like `*.json`; if you want to include them, be explicit with `.*` or `**/.*`.
 
-These same globs are used in three places in Claude Code: the `paths` field of `.claude/rules/` rules, the permission rules ([Permissions in Claude Code](/en/ai-engineering/claude-code/permissions/)), and a skill's `paths` field ([Skills, subagents, and hooks](/en/ai-engineering/claude-code/skills-subagents-and-hooks/)) — learning them once covers all three.
+These same globs are used in three places in Claude Code: the `paths` field of `.claude/rules/` rules, the permission rules ([Permissions in Claude Code](/ai-engineering/claude-code/permissions/)), and a skill's `paths` field ([Skills, subagents, and hooks](/ai-engineering/claude-code/skills-subagents-and-hooks/)) — learning them once covers all three.
 
 ## Viewing and editing memory
 

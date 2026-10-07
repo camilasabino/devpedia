@@ -83,7 +83,7 @@ Con el test en verde, mejoramos el diseño y la implementación sin cambiar el c
 
 Esa frase describe el proceso, pero no su impacto más importante: TDD también da feedback sobre el diseño. Si para testear `ReservationService` hace falta construir seis dependencias distintas, configurar el test se vuelve tan trabajoso que la dificultad deja de ser un problema de testing y pasa a ser una señal de diseño —demasiadas responsabilidades, acoplamiento excesivo, límites mal definidos—. Es mucho más fácil testear una clase que separa reglas de dominio, cálculos y transiciones de estado, que una que además mezcla acceso a base de datos, HTTP, el reloj del sistema y variables de entorno. TDD hace evidente ese problema temprano, porque el test es el primer consumidor de la API.
 
-Ese feedback es el mismo que dan los [principios de diseño](/diseno/principios/) desde el otro lado: un test difícil de armar suele estar señalando una violación de [Single Responsibility](/diseno/principios/solid/#s--single-responsibility-principle) o una dependencia concreta que debería haber sido una abstracción ([inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle)). La diferencia es que el test te lo dice hoy, y con un ejemplo concreto.
+Ese feedback es el mismo que dan los [principios de diseño](/es/diseno/principios/) desde el otro lado: un test difícil de armar suele estar señalando una violación de [Single Responsibility](/es/diseno/principios/solid/#s--single-responsibility-principle) o una dependencia concreta que debería haber sido una abstracción ([inversión de dependencias](/es/diseno/principios/solid/#d--dependency-inversion-principle)). La diferencia es que el test te lo dice hoy, y con un ejemplo concreto.
 
 ## Qué no deberían intentar demostrar los tests unitarios
 
@@ -97,4 +97,4 @@ Además de acoplarse a detalles de implementación y de abusar de los mocks, dos
 
 Antes de escribir un unit test, sirve recorrer esta secuencia: qué comportamiento quiero proteger, qué entradas y estado inicial importan, cuál es el resultado observable esperado, qué dependencias participan y cuáles necesito aislar, qué casos límite y de fallo existen, y si el test que estoy por escribir es determinista e independiente del resto de la suite. Ese razonamiento debería terminar en algo simple: Arrange, Act, Assert. Lo difícil debería ser entender el comportamiento; ejecutar el test no debería agregar complejidad.
 
-Cuando la unidad deja de estar sola y empieza a interactuar con otros componentes, el nivel que corresponde es el [testing de integración](/testing/testing-de-integracion/).
+Cuando la unidad deja de estar sola y empieza a interactuar con otros componentes, el nivel que corresponde es el [testing de integración](/es/testing/testing-de-integracion/).

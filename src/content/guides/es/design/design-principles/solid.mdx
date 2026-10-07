@@ -17,7 +17,7 @@ SOLID agrupa cinco principios para aumentar la cohesión, reducir el acoplamient
 
 Suele presentarse como un conjunto de reglas para escribir "buen código". Esa lectura es demasiado simplista: son criterios para decidir sobre responsabilidades, abstracciones, dependencias y comportamiento. Su utilidad se ve cuando el sistema empieza a cambiar: ciertas decisiones hacen que agregar una feature nueva termine exigiendo mucho trabajo, o que un cambio pequeño obligue a modificar gran parte del codebase.
 
-Tampoco deberían aplicarse de forma mecánica: más interfaces, más clases y más abstracciones no es automáticamente una arquitectura mejor. SOLID se usa junto con los [principios generales de diseño](/diseno/principios/principios-generales-de-diseno/) — KISS, DRY, YAGNI, separación de responsabilidades y composición sobre herencia — no en lugar de ellos.
+Tampoco deberían aplicarse de forma mecánica: más interfaces, más clases y más abstracciones no es automáticamente una arquitectura mejor. SOLID se usa junto con los [principios generales de diseño](/es/diseno/principios/principios-generales-de-diseno/) — KISS, DRY, YAGNI, separación de responsabilidades y composición sobre herencia — no en lugar de ellos.
 
 ## S — Single Responsibility Principle
 
@@ -344,6 +344,6 @@ La política de alto nivel no depende del mecanismo que la implementa.
     Frameworks como Spring facilitan la inyección, pero DI no implica aplicar DIP automáticamente. Lo importante es la dirección de las dependencias.
 </Callout>
 
-Muchos de los patrones del catálogo GoF dan estructura concreta a estos principios: [Strategy](/diseno/patrones/strategy/) es Open/Closed por composición, [Adapter](/diseno/patrones/adapter/) envuelve un tipo incompatible detrás del contrato que quien llama ya espera, y casi todos apoyan Dependency Inversion. El [tema de patrones](/diseno/patrones/) recorre ese catálogo uno por uno.
+Muchos de los patrones del catálogo GoF dan estructura concreta a estos principios: [Strategy](/es/diseno/patrones/strategy/) es Open/Closed por composición, [Adapter](/es/diseno/patrones/adapter/) envuelve un tipo incompatible detrás del contrato que quien llama ya espera, y casi todos apoyan Dependency Inversion. El [tema de patrones](/es/diseno/patrones/) recorre ese catálogo uno por uno.
 
-[Cómo revisar un diseño de software](/diseno/principios/como-revisar-un-diseno-de-software/) traduce estos principios a preguntas concretas sobre un componente real.
+[Cómo revisar un diseño de software](/es/diseno/principios/como-revisar-un-diseno-de-software/) traduce estos principios a preguntas concretas sobre un componente real.

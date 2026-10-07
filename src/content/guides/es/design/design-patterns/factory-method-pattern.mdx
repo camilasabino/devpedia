@@ -156,7 +156,7 @@ OrderProcessor processor = registry.forDestination(order.destination());
 DispatchResult result = processor.dispatch(order);
 ```
 
-En una aplicación con inyección de dependencias, ese registry suele ser directamente el contenedor. La diferencia con un [Abstract Factory](/diseno/patrones/abstract-factory/) es que acá el factory produce **un** producto y el foco está en la subclase que lo implementa.
+En una aplicación con inyección de dependencias, ese registry suele ser directamente el contenedor. La diferencia con un [Abstract Factory](/es/diseno/patrones/abstract-factory/) es que acá el factory produce **un** producto y el foco está en la subclase que lo implementa.
 </Callout>
 
 Agregar un tercer transportista significa sumar dos clases y una entrada en el registry — sin tocar `dispatch()` ni los lugares que lo invocan.
@@ -181,6 +181,6 @@ Si solo tenés (y vas a tener) un único tipo de producto, Factory Method agrega
 
 ## Relación con otros patrones
 
-- **[Abstract Factory](/diseno/patrones/abstract-factory/)** suele implementarse como un conjunto de Factory Methods relacionados entre sí.
-- Muchos diseños arrancan con Factory Method —más simple— y evolucionan hacia **[Abstract Factory](/diseno/patrones/abstract-factory/)**, **[Prototype](/diseno/patrones/prototype/)** o **[Builder](/diseno/patrones/builder/)** a medida que la necesidad de flexibilidad crece.
-- **[Template Method](/diseno/patrones/template-method/)** suele apoyarse en uno o más Factory Methods como parte de los pasos del algoritmo que define.
+- **[Abstract Factory](/es/diseno/patrones/abstract-factory/)** suele implementarse como un conjunto de Factory Methods relacionados entre sí.
+- Muchos diseños arrancan con Factory Method —más simple— y evolucionan hacia **[Abstract Factory](/es/diseno/patrones/abstract-factory/)**, **[Prototype](/es/diseno/patrones/prototype/)** o **[Builder](/es/diseno/patrones/builder/)** a medida que la necesidad de flexibilidad crece.
+- **[Template Method](/es/diseno/patrones/template-method/)** suele apoyarse en uno o más Factory Methods como parte de los pasos del algoritmo que define.

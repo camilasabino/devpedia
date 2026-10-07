@@ -133,6 +133,6 @@ An `InMemoryReservationRepository` can be far simpler than Postgres and still be
 
 The rule that sums the article up: **pick the double based on what the test needs to verify, not on the dependency you're replacing.** The same `PaymentService` can be a dummy in a validation test, a stub in a calculation test, and a mock in one that guards against charging twice.
 
-It's no accident that replacing a dependency is easy: it depends on the unit receiving an abstraction instead of constructing a concrete implementation directly. When isolating a dependency turns out to be hard, that's usually a sign the design has unnecessary coupling. It's one of the central ideas of [dependency inversion](/en/design/principles/solid/#d--dependency-inversion-principle).
+It's no accident that replacing a dependency is easy: it depends on the unit receiving an abstraction instead of constructing a concrete implementation directly. When isolating a dependency turns out to be hard, that's usually a sign the design has unnecessary coupling. It's one of the central ideas of [dependency inversion](/design/principles/solid/#d--dependency-inversion-principle).
 
-Isolation, AAA, and test doubles together let you build unit tests that are clear and maintainable. [Test-Driven Development](/en/testing/test-driven-development/) builds on these same ideas: using tests as part of the design process, not only as after-the-fact verification.
+Isolation, AAA, and test doubles together let you build unit tests that are clear and maintainable. [Test-Driven Development](/testing/test-driven-development/) builds on these same ideas: using tests as part of the design process, not only as after-the-fact verification.

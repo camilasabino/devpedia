@@ -55,7 +55,7 @@ ReservationService  ← the unit under test
 └── PaymentService            ← replaced
 ```
 
-What each one is replaced with isn't a property of the dependency, it's a property of what that particular test wants to verify: the same `PaymentService` can be replaced in three different ways across three different tests. That's what the [article on test doubles](/en/testing/test-doubles/) covers.
+What each one is replaced with isn't a property of the dependency, it's a property of what that particular test wants to verify: the same `PaymentService` can be replaced in three different ways across three different tests. That's what the [article on test doubles](/testing/test-doubles/) covers.
 
 ## What they should cover
 
@@ -81,4 +81,4 @@ That produces tests that fail when the implementation changes, even though the o
 
 > Test behavior, not accidental implementation.
 
-[F.I.R.S.T.](/en/testing/first-principles-for-unit-tests/) adds the criteria for checking whether that unit test is well thought out: fast, independent, repeatable, with a clear result, and written at the right time.
+[F.I.R.S.T.](/testing/first-principles-for-unit-tests/) adds the criteria for checking whether that unit test is well thought out: fast, independent, repeatable, with a clear result, and written at the right time.

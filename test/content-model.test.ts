@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import { langFromPath } from '@/i18n';
 import { ContentIndex, type ContentModel, type Lang } from '@/lib/content-model';
 import { validateContentModel } from '@/lib/content-validation';
 import { bodies, cloneModel, frontmatter, loadModel, SOURCES } from './real-content';
+
+describe('language from the URL', () => {
+  it('treats the root as English and /es as Spanish', () => {
+    expect(langFromPath('/')).toBe('en');
+    expect(langFromPath('/design/patterns/')).toBe('en');
+    expect(langFromPath('/es')).toBe('es');
+    expect(langFromPath('/es/')).toBe('es');
+    expect(langFromPath('/es/diseno/')).toBe('es');
+    expect(langFromPath('/essence/')).toBe('en');
+  });
+});
 
 describe('DevPedia content model', () => {
   const model = loadModel();
@@ -35,22 +47,22 @@ describe('DevPedia content model', () => {
         ),
     ];
     expect(hubs('es')).toEqual([
-      '/arquitectura/',
-      '/diseno/',
-      '/testing/',
-      '/ai-engineering/',
-      '/diseno/principios/',
-      '/diseno/patrones/',
-      '/ai-engineering/claude-code/',
+      '/es/arquitectura/',
+      '/es/diseno/',
+      '/es/testing/',
+      '/es/ai-engineering/',
+      '/es/diseno/principios/',
+      '/es/diseno/patrones/',
+      '/es/ai-engineering/claude-code/',
     ]);
     expect(hubs('en')).toEqual([
-      '/en/architecture/',
-      '/en/design/',
-      '/en/testing/',
-      '/en/ai-engineering/',
-      '/en/design/principles/',
-      '/en/design/patterns/',
-      '/en/ai-engineering/claude-code/',
+      '/architecture/',
+      '/design/',
+      '/testing/',
+      '/ai-engineering/',
+      '/design/principles/',
+      '/design/patterns/',
+      '/ai-engineering/claude-code/',
     ]);
   });
 
@@ -106,52 +118,52 @@ describe('DevPedia content model', () => {
       index.pathOf('en', 'guide', id),
     ];
     expect(paths('architectural-drivers')).toEqual([
-      '/arquitectura/drivers-de-arquitectura/',
-      '/en/architecture/architectural-drivers/',
+      '/es/arquitectura/drivers-de-arquitectura/',
+      '/architecture/architectural-drivers/',
     ]);
     expect(paths('what-are-software-design-principles')).toEqual([
-      '/diseno/principios/que-son-los-principios-de-diseno/',
-      '/en/design/principles/what-are-software-design-principles/',
+      '/es/diseno/principios/que-son-los-principios-de-diseno/',
+      '/design/principles/what-are-software-design-principles/',
     ]);
     expect(paths('commonly-confused-patterns')).toEqual([
-      '/diseno/patrones/patrones-que-suelen-confundirse/',
-      '/en/design/patterns/commonly-confused-patterns/',
+      '/es/diseno/patrones/patrones-que-suelen-confundirse/',
+      '/design/patterns/commonly-confused-patterns/',
     ]);
     expect(paths('test-doubles')).toEqual([
-      '/testing/dobles-de-test/',
-      '/en/testing/test-doubles/',
+      '/es/testing/dobles-de-test/',
+      '/testing/test-doubles/',
     ]);
     expect(paths('usability-testing')).toEqual([
-      '/testing/testing-de-usabilidad/',
-      '/en/testing/usability-testing/',
+      '/es/testing/testing-de-usabilidad/',
+      '/testing/usability-testing/',
     ]);
     expect(paths('claude-code-prompting')).toEqual([
-      '/ai-engineering/claude-code/como-escribir-buenos-prompts/',
-      '/en/ai-engineering/claude-code/how-to-write-good-prompts/',
+      '/es/ai-engineering/claude-code/como-escribir-buenos-prompts/',
+      '/ai-engineering/claude-code/how-to-write-good-prompts/',
     ]);
     expect(paths('claude-code-permissions')).toEqual([
-      '/ai-engineering/claude-code/permisos/',
-      '/en/ai-engineering/claude-code/permissions/',
+      '/es/ai-engineering/claude-code/permisos/',
+      '/ai-engineering/claude-code/permissions/',
     ]);
     expect(paths('claude-code-mcp')).toEqual([
+      '/es/ai-engineering/claude-code/mcp/',
       '/ai-engineering/claude-code/mcp/',
-      '/en/ai-engineering/claude-code/mcp/',
     ]);
     expect(paths('claude-code-security')).toEqual([
-      '/ai-engineering/claude-code/seguridad/',
-      '/en/ai-engineering/claude-code/security/',
+      '/es/ai-engineering/claude-code/seguridad/',
+      '/ai-engineering/claude-code/security/',
     ]);
     expect(paths('claude-code-plugins')).toEqual([
+      '/es/ai-engineering/claude-code/plugins/',
       '/ai-engineering/claude-code/plugins/',
-      '/en/ai-engineering/claude-code/plugins/',
     ]);
     expect(paths('claude-code-teams-and-automation')).toEqual([
-      '/ai-engineering/claude-code/equipos-y-automatizacion/',
-      '/en/ai-engineering/claude-code/teams-and-automation/',
+      '/es/ai-engineering/claude-code/equipos-y-automatizacion/',
+      '/ai-engineering/claude-code/teams-and-automation/',
     ]);
     expect(paths('claude-code-getting-started-in-a-repository')).toEqual([
-      '/ai-engineering/claude-code/como-empezar-en-un-repositorio/',
-      '/en/ai-engineering/claude-code/getting-started-in-a-repository/',
+      '/es/ai-engineering/claude-code/como-empezar-en-un-repositorio/',
+      '/ai-engineering/claude-code/getting-started-in-a-repository/',
     ]);
   });
 
@@ -167,7 +179,7 @@ describe('DevPedia content model', () => {
       for (const { path, body } of bodies(lang)) {
         const links = [
           ...body.matchAll(
-            /\]\((\/(?:en\/)?blog\/[^)]*)\)|href=["'](\/(?:en\/)?blog\/[^"']*)["']/g,
+            /\]\((\/(?:es\/)?blog\/[^)]*)\)|href=["'](\/(?:es\/)?blog\/[^"']*)["']/g,
           ),
         ];
         expect(
@@ -180,13 +192,13 @@ describe('DevPedia content model', () => {
 
   it('links only to existing pages of the same edition', () => {
     for (const lang of ['es', 'en'] as const) {
-      const known = new Set(['/', '/en/', ...index.routes(lang).map((route) => route.path)]);
+      const known = new Set(['/', '/es/', ...index.routes(lang).map((route) => route.path)]);
       for (const { path, body } of bodies(lang)) {
         for (const match of body.matchAll(/\]\((\/[^)\s#]*)(?:#[^)\s]*)?\)/g)) {
           const target = match[1];
           expect(known.has(target), `${path} links to unknown page ${target}`).toBe(true);
-          expect(target.startsWith('/en/'), `${path} links to the other edition: ${target}`).toBe(
-            lang === 'en',
+          expect(target.startsWith('/es/'), `${path} links to the other edition: ${target}`).toBe(
+            lang === 'es',
           );
         }
       }
@@ -288,10 +300,10 @@ describe('DevPedia content validation', () => {
     );
   });
 
-  it('rejects a Spanish topic slug that shadows the English edition', () => {
+  it('rejects an English topic slug that shadows the Spanish edition', () => {
     expect(
-      errorsAfter((m) => (m.es.topics.find((t) => t.id === 'testing')!.slug = 'en')),
-    ).toContain('[es] topic "testing": slug "en" is reserved');
+      errorsAfter((m) => (m.en.topics.find((t) => t.id === 'testing')!.slug = 'es')),
+    ).toContain('[en] topic "testing": slug "es" is reserved');
   });
 
   it('keeps Claude Code under AI Engineering', () => {

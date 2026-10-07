@@ -2,6 +2,7 @@
 // site origin, so they stay independent of Astro and are covered by unit tests. Every
 // absolute URL is built from the origin they are given (SITE_URL at build time).
 import { AUTHOR, AUTHOR_URL, SITE_NAME } from '@/config';
+import { defaultLang } from '@/i18n';
 import type { Lang } from './content-model';
 
 type JsonLd = Record<string, unknown>;
@@ -104,7 +105,7 @@ const escapeXml = (value: string) =>
     .replaceAll('"', '&quot;');
 
 /**
- * Sitemap with reciprocal hreflang alternates. `x-default` points at the Spanish
+ * Sitemap with reciprocal hreflang alternates. `x-default` points at the default
  * edition, matching the pages' own `<link rel="alternate">` tags.
  */
 export function sitemapXml(entries: SitemapEntry[], siteUrl: string | URL): string {
@@ -116,7 +117,7 @@ export function sitemapXml(entries: SitemapEntry[], siteUrl: string | URL): stri
           ([lang, path]) =>
             `    <xhtml:link rel="alternate" hreflang="${lang}" href="${url(path)}"/>`,
         ),
-        `    <xhtml:link rel="alternate" hreflang="x-default" href="${url(entry.alternates.es)}"/>`,
+        `    <xhtml:link rel="alternate" hreflang="x-default" href="${url(entry.alternates[defaultLang])}"/>`,
       ];
       const lastmod = entry.lastUpdated
         ? [`    <lastmod>${isoDate(entry.lastUpdated)}</lastmod>`]

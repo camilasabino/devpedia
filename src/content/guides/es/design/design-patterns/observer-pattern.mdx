@@ -123,7 +123,7 @@ Si el orden en que se notifica a los observadores importa y es rígido, o si nec
 
 ## Relación con otros patrones
 
-- **[Mediator](/diseno/patrones/mediator/)** también reduce el acoplamiento entre objetos, pero centraliza _toda_ la coordinación; Observer solo notifica eventos de uno a muchos, sin que el emisor decida cómo reaccionan.
+- **[Mediator](/es/diseno/patrones/mediator/)** también reduce el acoplamiento entre objetos, pero centraliza _toda_ la coordinación; Observer solo notifica eventos de uno a muchos, sin que el emisor decida cómo reaccionan.
 - Es la base conceptual detrás de mecanismos de eventos y de programación reactiva más generales.
 
 <Callout variant="warning" title="unsubscribe no es opcional">
@@ -139,5 +139,5 @@ Si el ciclo de vida del observador es más corto que el del sujeto —un compone
 </Callout>
 
 <Callout variant="note" title="Observer ≠ pub/sub">
-    Observer ocurre dentro de un mismo proceso, de forma síncrona y con referencias directas; [pub/sub](/arquitectura/patrones-de-comunicacion/#asíncrona) funciona entre procesos, de forma asíncrona y con un broker intermedio.
+    Observer ocurre dentro de un mismo proceso, de forma síncrona y con referencias directas; [pub/sub](/es/arquitectura/patrones-de-comunicacion/#asíncrona) funciona entre procesos, de forma asíncrona y con un broker intermedio.
 </Callout>

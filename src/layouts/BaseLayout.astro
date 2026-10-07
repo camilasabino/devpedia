@@ -5,7 +5,7 @@ import SiteHeader from '@/components/SiteHeader.astro';
 import SiteFooter from '@/components/SiteFooter.astro';
 import Search from '@/components/Search.astro';
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/config';
-import { languages, ui, type Lang } from '@/i18n';
+import { defaultLang, languages, ui, type Lang } from '@/i18n';
 import { absoluteUrl } from '@/lib/seo';
 import { pageOf, viewAttributes, type ViewEvent } from '@/lib/analytics';
 
@@ -60,7 +60,7 @@ const analyticsHost = new URL(SITE_URL).hostname;
     {languages.map((code) => (
       <link rel="alternate" hreflang={code} href={alternateUrl(code)} />
     ))}
-    <link rel="alternate" hreflang="x-default" href={alternateUrl('es')} />
+    <link rel="alternate" hreflang="x-default" href={alternateUrl(defaultLang)} />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

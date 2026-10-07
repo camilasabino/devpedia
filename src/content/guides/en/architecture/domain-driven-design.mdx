@@ -192,7 +192,7 @@ payment.refund()
 We don't want arbitrary code to be able to set `payment.status = CAPTURED`, because that could skip domain rules.
 
 
-Protecting those invariants inside the aggregate is a design problem with a known solution: when what varies by state is the set of allowed operations — a shipped order can no longer be canceled — the [State pattern](/en/design/patterns/state/) keeps that rule from being scattered across conditionals all over the code.
+Protecting those invariants inside the aggregate is a design problem with a known solution: when what varies by state is the set of allowed operations — a shipped order can no longer be canceled — the [State pattern](/design/patterns/state/) keeps that rule from being scattered across conditionals all over the code.
 
 ### Aggregate design
 

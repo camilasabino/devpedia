@@ -17,13 +17,13 @@ describe('DevPedia structured data', () => {
     const data = websiteJsonLd({
       siteUrl: SITE,
       lang: 'en',
-      homePath: '/en/',
+      homePath: '/',
       description: 'A handbook.',
     });
     expect(data).toMatchObject({
       '@type': 'WebSite',
       name: 'DevPedia',
-      url: `${SITE}/en/`,
+      url: `${SITE}/`,
       inLanguage: 'en',
       creator: { '@type': 'Person', name: 'Camila Sabino' },
     });
@@ -33,8 +33,8 @@ describe('DevPedia structured data', () => {
     const data = techArticleJsonLd({
       siteUrl: SITE,
       lang: 'es',
-      path: '/diseno/patrones/state/',
-      homePath: '/',
+      path: '/es/diseno/patrones/state/',
+      homePath: '/es/',
       title: 'State',
       description: 'Estado.',
       section: 'Patrones',
@@ -44,11 +44,11 @@ describe('DevPedia structured data', () => {
     });
     expect(data).toMatchObject({
       '@type': 'TechArticle',
-      url: `${SITE}/diseno/patrones/state/`,
+      url: `${SITE}/es/diseno/patrones/state/`,
       image: `${SITE}/covers/design-patterns.jpg`,
       datePublished: '2026-01-02',
       dateModified: '2026-03-04',
-      isPartOf: { '@type': 'WebSite', name: 'DevPedia', url: `${SITE}/` },
+      isPartOf: { '@type': 'WebSite', name: 'DevPedia', url: `${SITE}/es/` },
     });
     expect(JSON.stringify(data)).not.toContain('BlogPosting');
   });
@@ -56,14 +56,14 @@ describe('DevPedia structured data', () => {
   it('builds breadcrumbs with absolute URLs, in order', () => {
     const data = breadcrumbJsonLd(
       [
-        { name: 'DevPedia', path: '/en/' },
-        { name: 'Design', path: '/en/design/' },
+        { name: 'DevPedia', path: '/' },
+        { name: 'Design', path: '/design/' },
       ],
       SITE,
     );
     expect(data.itemListElement).toEqual([
-      { '@type': 'ListItem', position: 1, name: 'DevPedia', item: `${SITE}/en/` },
-      { '@type': 'ListItem', position: 2, name: 'Design', item: `${SITE}/en/design/` },
+      { '@type': 'ListItem', position: 1, name: 'DevPedia', item: `${SITE}/` },
+      { '@type': 'ListItem', position: 2, name: 'Design', item: `${SITE}/design/` },
     ]);
   });
 
@@ -78,8 +78,8 @@ describe('DevPedia sitemap', () => {
   const xml = sitemapXml(
     [
       {
-        path: '/diseno/',
-        alternates: { es: '/diseno/', en: '/en/design/' },
+        path: '/design/',
+        alternates: { es: '/es/diseno/', en: '/design/' },
         lastUpdated: new Date('2026-05-06'),
       },
     ],
@@ -87,15 +87,16 @@ describe('DevPedia sitemap', () => {
   );
 
   it('lists canonical URLs on the given origin with reciprocal alternates', () => {
-    expect(xml).toContain(`<loc>${SITE}/diseno/</loc>`);
+    expect(xml).toContain(`<loc>${SITE}/design/</loc>`);
     expect(xml).toContain(`<lastmod>2026-05-06</lastmod>`);
-    expect(xml).toContain(`hreflang="en" href="${SITE}/en/design/"`);
-    expect(xml).toContain(`hreflang="x-default" href="${SITE}/diseno/"`);
+    expect(xml).toContain(`hreflang="es" href="${SITE}/es/diseno/"`);
+    expect(xml).toContain(`hreflang="en" href="${SITE}/design/"`);
+    expect(xml).toContain(`hreflang="x-default" href="${SITE}/design/"`);
   });
 
   it('builds URLs only from the origin it is given', () => {
-    expect(absoluteUrl('/en/', 'https://devpedia.camilasabino.dev')).toBe(
-      'https://devpedia.camilasabino.dev/en/',
+    expect(absoluteUrl('/es/', 'https://devpedia.camilasabino.dev')).toBe(
+      'https://devpedia.camilasabino.dev/es/',
     );
     expect(xml).not.toContain('camilasabino.dev');
   });

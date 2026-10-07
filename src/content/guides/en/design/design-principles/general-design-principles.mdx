@@ -161,7 +161,7 @@ That separation cuts down the reasons a change has to touch a component. A datab
 
 ### SoC and the Single Responsibility Principle
 
-They're closely related, but they aren't the same. SoC is the general principle: separate concerns. SRP gives a more concrete test for deciding when a class or module groups responsibilities that should evolve independently — the detail is in [SOLID](/en/design/principles/solid/).
+They're closely related, but they aren't the same. SoC is the general principle: separate concerns. SRP gives a more concrete test for deciding when a class or module groups responsibilities that should evolve independently — the detail is in [SOLID](/design/principles/solid/).
 
 ### Separation doesn't mean creating more layers
 
@@ -212,7 +212,7 @@ Inheritance couples the subtype to the base class's implementation: it inherits 
 
 A historical reason for using inheritance is reusing code. But sharing an implementation doesn't necessarily mean there's a conceptual subtype relationship. Composition lets you reuse behavior without setting up an inheritance relationship, which usually produces smaller, replaceable components that are easy to test.
 
-Two patterns from the GoF catalog are this principle taken to its canonical form: [Decorator](/en/design/patterns/decorator/) adds behavior by wrapping instead of by inheriting, and [Strategy](/en/design/patterns/strategy/) swaps an algorithm by composition instead of by subclassing.
+Two patterns from the GoF catalog are this principle taken to its canonical form: [Decorator](/design/patterns/decorator/) adds behavior by wrapping instead of by inheriting, and [Strategy](/design/patterns/strategy/) swaps an algorithm by composition instead of by subclassing.
 
 ### When inheritance can be the right call
 
@@ -266,4 +266,4 @@ The relevant question isn't how many calls are on a line, it's:
 
 An object should expose relevant behavior (`order.calculateShippingCost()`) instead of forcing other objects to reconstruct that behavior by navigating its internal state (`order.getCustomer().getAddress().getPostalCode().getRegion().getShippingRate()`). The second approach exposes too much of the model and makes callers depend on structural details.
 
-These six principles apply whatever the paradigm. [SOLID](/en/design/principles/solid/) brings together the five principles specific to object-oriented design — which lean on several of these same ideas, above all on separation of concerns.
+These six principles apply whatever the paradigm. [SOLID](/design/principles/solid/) brings together the five principles specific to object-oriented design — which lean on several of these same ideas, above all on separation of concerns.

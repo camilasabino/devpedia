@@ -124,8 +124,8 @@ If the variants don't genuinely share a sequence, forcing them into the same ske
 
 ## Relationship with other patterns
 
-- It frequently leans on **[Factory Method](/en/design/patterns/factory-method/)** as one of its abstract steps.
-- It shares with **[Strategy](/en/design/patterns/strategy/)** the goal of varying part of a behavior, but does it with inheritance instead of composition — Strategy is usually preferred when the algorithm has to change at runtime.
+- It frequently leans on **[Factory Method](/design/patterns/factory-method/)** as one of its abstract steps.
+- It shares with **[Strategy](/design/patterns/strategy/)** the goal of varying part of a behavior, but does it with inheritance instead of composition — Strategy is usually preferred when the algorithm has to change at runtime.
 
 <Callout variant="key" title="The Template Method goes final">
 This is the rule that defines the pattern, and the one most often omitted. If a subclass can override `generate()`, it can change the order of the steps or skip one — and then the base class no longer guarantees anything about the algorithm. In Java that's expressed with `final`; the equivalent in other languages is not leaving that method as an extension point.
@@ -134,7 +134,7 @@ The flip side is that the steps that **are** meant to be redefined should be `pr
 </Callout>
 
 <Callout variant="note" title="Template Method or Strategy">
-Both let you vary part of an algorithm. Template Method does it with **inheritance**, at compile time: the variant is chosen by choosing the subclass, and only what the base left abstract can vary. [Strategy](/en/design/patterns/strategy/) does it with **composition**, at runtime: the object can change strategy while it lives.
+Both let you vary part of an algorithm. Template Method does it with **inheritance**, at compile time: the variant is chosen by choosing the subclass, and only what the base left abstract can vary. [Strategy](/design/patterns/strategy/) does it with **composition**, at runtime: the object can change strategy while it lives.
 
-Because of the bias toward [composition over inheritance](/en/design/principles/general-design-principles/#composition-over-inheritance), Strategy is usually the default choice. Template Method is still better when there are many steps, they're tightly bound to each other, and the order has to stay fixed in one place.
+Because of the bias toward [composition over inheritance](/design/principles/general-design-principles/#composition-over-inheritance), Strategy is usually the default choice. Template Method is still better when there are many steps, they're tightly bound to each other, and the order has to stay fixed in one place.
 </Callout>

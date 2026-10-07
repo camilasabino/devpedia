@@ -18,7 +18,7 @@ Con un chatbot común, lo peor que puede pasar es que te sugiera un texto o un f
 | Frente | La pregunta que responde | Dónde se trata |
 |---|---|---|
 | **El código que produce** | ¿El resultado tiene vulnerabilidades típicas de cualquier código, humano o generado? | Revisión de código + `/security-review` (este artículo) |
-| **El agente en sí** | ¿Qué puede hacer sin que se lo autoricemos explícitamente, y puede alguien manipularlo para que haga algo que no le pedimos? | Permisos, sandboxing, seguridad de MCP ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/) y [MCP](/ai-engineering/claude-code/mcp/)) |
+| **El agente en sí** | ¿Qué puede hacer sin que se lo autoricemos explícitamente, y puede alguien manipularlo para que haga algo que no le pedimos? | Permisos, sandboxing, seguridad de MCP ([Permisos en Claude Code](/es/ai-engineering/claude-code/permisos/) y [MCP](/es/ai-engineering/claude-code/mcp/)) |
 
 El primero es un problema de calidad de código. El segundo es un problema de control de acceso. Los dos importan, y las herramientas para cada uno son distintas.
 
@@ -30,7 +30,7 @@ Cuando le pedís a un agente que escriba código de backend, el resultado suele 
 |---|---|---|
 | **Autenticación olvidada** | Un endpoint nuevo queda expuesto sin exigir login ni token | No asumas que "ya está resuelto en el router" — confirmá el middleware en cada ruta nueva |
 | **Inyección SQL** | La query se arma concatenando el input del usuario tal como llega | Usá siempre queries parametrizadas o un ORM, nunca interpolación de strings |
-| **Secrets hardcodeados** | La clave o password queda escrita en el código en vez de en una variable de entorno | Revisá el diff antes de commitear; sumá una regla `deny` sobre `.env` ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)) |
+| **Secrets hardcodeados** | La clave o password queda escrita en el código en vez de en una variable de entorno | Revisá el diff antes de commitear; sumá una regla `deny` sobre `.env` ([Permisos en Claude Code](/es/ai-engineering/claude-code/permisos/)) |
 | **Errores que exponen info interna** | La respuesta al cliente incluye stack trace, la query SQL o detalles de la infraestructura | Loggeá el detalle del lado del servidor; devolvé al cliente un mensaje genérico |
 | **Validación ausente** | Se asume que el body del request llega bien formado, con los tipos y rangos esperados | Validá tipo, rango y campos permitidos antes de tocar la base de datos |
 | **CORS demasiado abierto** | `origin: '*'` queda igual al pasar de desarrollo a producción | Restringí el origin a los dominios reales antes de deployar |
@@ -42,19 +42,19 @@ Las siete comparten una misma raíz: no hay incentivo interno en el modelo para 
 
 Acá el riesgo no es que el código tenga un bug, sino que el agente mismo tenga más margen de acción del que quisiste darle. Tres cosas concretas a vigilar:
 
-- **El nivel de autonomía que le diste.** Los modos de permiso y las reglas `deny`/`ask`/`allow` ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)) son la primera línea de defensa: definen qué puede tocar sin preguntar. Un `bypassPermissions` corriendo en tu máquina principal, "para ir más rápido", es la forma más común de convertir un problema chico en uno grande.
-- **Prompt injection vía contenido externo.** Si el agente lee contenido que no controlás — una página web, un archivo adjunto, la respuesta de un servidor MCP conectado a un servicio de terceros — ese contenido puede traer instrucciones escondidas dirigidas al modelo, no a vos. La defensa es la misma que para cualquier input no confiable: mínimo privilegio y auditar qué conectás (ver la checklist de seguridad en [MCP](/ai-engineering/claude-code/mcp/)).
-- **Exposición de credenciales.** Un agente con acceso legítimo a secretos (tokens de API, credenciales de base de datos) es, ni más ni menos, un nuevo lugar desde donde esos secretos podrían filtrarse — por un prompt mal armado, un log, o contenido malicioso que lo induzca a exponerlos. Las reglas `deny` sobre rutas sensibles y el sandbox ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)) existen justamente para que ese acceso tenga un techo real.
+- **El nivel de autonomía que le diste.** Los modos de permiso y las reglas `deny`/`ask`/`allow` ([Permisos en Claude Code](/es/ai-engineering/claude-code/permisos/)) son la primera línea de defensa: definen qué puede tocar sin preguntar. Un `bypassPermissions` corriendo en tu máquina principal, "para ir más rápido", es la forma más común de convertir un problema chico en uno grande.
+- **Prompt injection vía contenido externo.** Si el agente lee contenido que no controlás — una página web, un archivo adjunto, la respuesta de un servidor MCP conectado a un servicio de terceros — ese contenido puede traer instrucciones escondidas dirigidas al modelo, no a vos. La defensa es la misma que para cualquier input no confiable: mínimo privilegio y auditar qué conectás (ver la checklist de seguridad en [MCP](/es/ai-engineering/claude-code/mcp/)).
+- **Exposición de credenciales.** Un agente con acceso legítimo a secretos (tokens de API, credenciales de base de datos) es, ni más ni menos, un nuevo lugar desde donde esos secretos podrían filtrarse — por un prompt mal armado, un log, o contenido malicioso que lo induzca a exponerlos. Las reglas `deny` sobre rutas sensibles y el sandbox ([Permisos en Claude Code](/es/ai-engineering/claude-code/permisos/)) existen justamente para que ese acceso tenga un techo real.
 
 ## Medidas concretas
 
 1. **[`/security-review`](https://claude.com/blog/automate-security-reviews-with-claude-code)** — comando nativo de Claude Code (disponible en la sesión desde agosto de 2025): corre una pasada de seguridad sobre los cambios de tu rama actual y devuelve cada hallazgo con su vector de ataque y un nivel de confianza, para filtrar ruido. Le podés pedir directamente que aplique el fix.
 2. **El plugin de security guidance** — revisión automática, sin que tengas que acordarte de correr nada: Claude revisa sus propios cambios en busca de vulnerabilidades mientras trabaja, y las corrige en la misma sesión, antes de que lleguen a un PR.
 3. **[La GitHub Action equivalente](https://github.com/anthropics/claude-code-security-review)** — el mismo motor que `/security-review`, corriendo en cada Pull Request y dejando comentarios inline. Para cuando el review de seguridad tiene que pasar por todo el equipo, no solo por vos.
-4. **Un Hook `PostToolUse` propio** ([Skills, subagentes y hooks](/ai-engineering/claude-code/skills-subagentes-y-hooks/)) — si tu equipo ya usa un linter de seguridad (semgrep, `eslint-plugin-security`), correrlo automáticamente después de cada `Edit`/`Write` saca la revisión del "acordate de hacerlo" y la vuelve determinista.
-5. **Reglas de permisos `deny`** ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)) — bloquear la lectura de `.env`, `~/.ssh/*` y cualquier credencial, para que ni por error terminen en un prompt, un log o un commit.
-6. **Sandbox** ([Permisos en Claude Code](/ai-engineering/claude-code/permisos/)) — para cuando ese bloqueo necesita ser real a nivel de sistema operativo, no solo a nivel de las herramientas nativas de Claude.
-7. **La checklist de seguridad de [MCP](/ai-engineering/claude-code/mcp/)** — cada servidor que conectás es una superficie nueva; auditarlo antes de instalar y aplicar mínimo privilegio reduce el riesgo de que contenido externo termine dándole instrucciones al agente sin que lo notes.
+4. **Un Hook `PostToolUse` propio** ([Skills, subagentes y hooks](/es/ai-engineering/claude-code/skills-subagentes-y-hooks/)) — si tu equipo ya usa un linter de seguridad (semgrep, `eslint-plugin-security`), correrlo automáticamente después de cada `Edit`/`Write` saca la revisión del "acordate de hacerlo" y la vuelve determinista.
+5. **Reglas de permisos `deny`** ([Permisos en Claude Code](/es/ai-engineering/claude-code/permisos/)) — bloquear la lectura de `.env`, `~/.ssh/*` y cualquier credencial, para que ni por error terminen en un prompt, un log o un commit.
+6. **Sandbox** ([Permisos en Claude Code](/es/ai-engineering/claude-code/permisos/)) — para cuando ese bloqueo necesita ser real a nivel de sistema operativo, no solo a nivel de las herramientas nativas de Claude.
+7. **La checklist de seguridad de [MCP](/es/ai-engineering/claude-code/mcp/)** — cada servidor que conectás es una superficie nueva; auditarlo antes de instalar y aplicar mínimo privilegio reduce el riesgo de que contenido externo termine dándole instrucciones al agente sin que lo notes.
 
 Ninguna de estas medidas reemplaza a las demás: actúan en capas distintas. Los permisos acotan qué puede tocar el agente, `/security-review` y los hooks revisan lo que produce, y la checklist de MCP filtra lo que se conecta. La combinación rinde más como hábito en cada feature que como auditoría puntual al final.
 
@@ -62,4 +62,4 @@ Ninguna de estas medidas reemplaza a las demás: actúan en capas distintas. Los
   Documentación relacionada: la <a href="https://code.claude.com/docs/en/security" target="_blank" rel="noopener noreferrer">página de seguridad de la documentación oficial</a> es el índice de todo lo demás (sandbox, monitoreo de uso, Trust Center, guía para CISOs).
 </p>
 
-Nada de esto reemplaza a la práctica que lo antecede: las categorías de vulnerabilidad que hay que buscar, y la diferencia entre analizar el código y atacar la aplicación corriendo, son las mismas con o sin agente de por medio. Están en el artículo sobre [security testing](/testing/testing-de-seguridad/).
+Nada de esto reemplaza a la práctica que lo antecede: las categorías de vulnerabilidad que hay que buscar, y la diferencia entre analizar el código y atacar la aplicación corriendo, son las mismas con o sin agente de por medio. Están en el artículo sobre [security testing](/es/testing/testing-de-seguridad/).

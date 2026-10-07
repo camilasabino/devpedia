@@ -113,7 +113,7 @@ Representa unidades reemplazables de software y, sobre todo, **los contratos por
 
 <ComponentDiagram />
 
-Leído así, el diagrama dice algo que una flecha suelta no dice: `Checkout` no depende de `Payments`, depende de `PaymentApi`. Cambiar la implementación detrás de esa interfaz no toca a `Checkout`. Es la misma idea que el [principio de inversión de dependencias](/diseno/principios/solid/#d--dependency-inversion-principle), dibujada.
+Leído así, el diagrama dice algo que una flecha suelta no dice: `Checkout` no depende de `Payments`, depende de `PaymentApi`. Cambiar la implementación detrás de esa interfaz no toca a `Checkout`. Es la misma idea que el [principio de inversión de dependencias](/es/diseno/principios/solid/#d--dependency-inversion-principle), dibujada.
 
 **Diagrama de secuencia**
 
@@ -200,7 +200,7 @@ Más útil para diseño detallado que para arquitectura de sistemas, pero es el 
     Payment *-- "1" Money : amount
     Payment o-- "0..*" AuthorizationAttempt : attempts`} />
 
-Es el mismo tipo de diagrama que usa el [tema de patrones de diseño](/diseno/patrones/) para mostrar la estructura de cada patrón.
+Es el mismo tipo de diagrama que usa el [tema de patrones de diseño](/es/diseno/patrones/) para mostrar la estructura de cada patrón.
 
 ### UML no es la única alternativa
 
@@ -296,7 +296,7 @@ No existe un "diagrama de arquitectura definitivo". Cada diagrama debe responder
 
 ## Un ejemplo completo de comunicación
 
-Supongamos que Payments es un [monolito modular](/arquitectura/monolitos-microservicios-y-soa/) sobre PostgreSQL, que publica eventos en Kafka y se integra de forma síncrona con proveedores externos. Documentarlo bien no significa dibujarlo cinco veces: significa elegir cinco artefactos que respondan cinco preguntas distintas.
+Supongamos que Payments es un [monolito modular](/es/arquitectura/monolitos-microservicios-y-soa/) sobre PostgreSQL, que publica eventos en Kafka y se integra de forma síncrona con proveedores externos. Documentarlo bien no significa dibujarlo cinco veces: significa elegir cinco artefactos que respondan cinco preguntas distintas.
 
 | Pregunta | Artefacto |
 |---|---|

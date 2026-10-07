@@ -112,7 +112,7 @@ enum InventoryLedger {
 
 Singleton is, in practice, the most debated pattern in the catalog — because it introduces global state, which makes tests harder to write (instances stay shared across tests unless you reset them explicitly) and hides a real dependency behind a static call instead of receiving it explicitly. Before using it, it's worth evaluating whether creating a single instance at the application's entry point and injecting it where needed is enough, without enforcing the constraint at the class level.
 
-Put in terms of the [dependency inversion principle](/en/design/principles/solid/#d--dependency-inversion-principle): `InventoryLedger.getInstance()` is a dependency that appears in nobody's signature. A `Checkout` that calls it depends on a concrete class without declaring it, and there's no way to substitute it in a test without touching global state. Receiving an `InventoryLedger` through the constructor keeps "there's only one instance" — the entry point creates it — and removes both expensive consequences.
+Put in terms of the [dependency inversion principle](/design/principles/solid/#d--dependency-inversion-principle): `InventoryLedger.getInstance()` is a dependency that appears in nobody's signature. A `Checkout` that calls it depends on a concrete class without declaring it, and there's no way to substitute it in a test without touching global state. Receiving an `InventoryLedger` through the constructor keeps "there's only one instance" — the entry point creates it — and removes both expensive consequences.
 
 ## Benefits and drawbacks
 
@@ -124,5 +124,5 @@ Put in terms of the [dependency inversion principle](/en/design/principles/solid
 
 ## Relationship with other patterns
 
-- **[Abstract Factory](/en/design/patterns/abstract-factory/)**, **[Builder](/en/design/patterns/builder/)**, and **[Prototype](/en/design/patterns/prototype/)** can be implemented as a Singleton when a single shared factory or builder is enough.
-- **[Facade](/en/design/patterns/facade/)** is often implemented as a Singleton, though that isn't a requirement of the pattern.
+- **[Abstract Factory](/design/patterns/abstract-factory/)**, **[Builder](/design/patterns/builder/)**, and **[Prototype](/design/patterns/prototype/)** can be implemented as a Singleton when a single shared factory or builder is enough.
+- **[Facade](/design/patterns/facade/)** is often implemented as a Singleton, though that isn't a requirement of the pattern.

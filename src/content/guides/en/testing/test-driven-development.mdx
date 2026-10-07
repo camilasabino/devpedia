@@ -83,7 +83,7 @@ With the test green, we improve the design and the implementation without changi
 
 That phrase describes the process, but not its most important effect: TDD also gives feedback on the design. If testing `ReservationService` means building six different dependencies, setting the test up becomes so laborious that the difficulty stops being a testing problem and becomes a design signal — too many responsibilities, excessive coupling, badly defined boundaries. It's far easier to test a class that separates domain rules, calculations, and state transitions than one that also mixes in database access, HTTP, the system clock, and environment variables. TDD makes that problem obvious early, because the test is the API's first consumer.
 
-That feedback is the same one the [design principles](/en/design/principles/) give from the other side: a test that's hard to set up is usually pointing at a [Single Responsibility](/en/design/principles/solid/#s--single-responsibility-principle) violation or a concrete dependency that should have been an abstraction ([dependency inversion](/en/design/principles/solid/#d--dependency-inversion-principle)). The difference is that the test tells you today, with a concrete example.
+That feedback is the same one the [design principles](/design/principles/) give from the other side: a test that's hard to set up is usually pointing at a [Single Responsibility](/design/principles/solid/#s--single-responsibility-principle) violation or a concrete dependency that should have been an abstraction ([dependency inversion](/design/principles/solid/#d--dependency-inversion-principle)). The difference is that the test tells you today, with a concrete example.
 
 ## What unit tests shouldn't try to prove
 
@@ -97,4 +97,4 @@ Beyond coupling to implementation details and overusing mocks, two problems come
 
 Before writing a unit test, it helps to walk through this sequence: which behavior do I want to protect, which inputs and initial state matter, what's the expected observable result, which dependencies are involved and which do I need to isolate, what edge cases and failure cases exist, and whether the test I'm about to write is deterministic and independent of the rest of the suite. That reasoning should end in something simple: Arrange, Act, Assert. The hard part should be understanding the behavior; running the test shouldn't add complexity.
 
-When the unit stops being alone and starts interacting with other components, the level that applies is [integration testing](/en/testing/integration-testing/).
+When the unit stops being alone and starts interacting with other components, the level that applies is [integration testing](/testing/integration-testing/).

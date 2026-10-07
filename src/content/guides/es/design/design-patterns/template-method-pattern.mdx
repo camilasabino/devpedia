@@ -124,8 +124,8 @@ Si las variantes no comparten una secuencia real, forzarlas al mismo esqueleto t
 
 ## Relación con otros patrones
 
-- Se apoya frecuentemente en **[Factory Method](/diseno/patrones/factory-method/)** como uno de sus pasos abstractos.
-- Comparte con **[Strategy](/diseno/patrones/strategy/)** el objetivo de variar parte de un comportamiento, pero lo hace con herencia en vez de composición — Strategy suele preferirse cuando se necesita cambiar el algoritmo en tiempo de ejecución.
+- Se apoya frecuentemente en **[Factory Method](/es/diseno/patrones/factory-method/)** como uno de sus pasos abstractos.
+- Comparte con **[Strategy](/es/diseno/patrones/strategy/)** el objetivo de variar parte de un comportamiento, pero lo hace con herencia en vez de composición — Strategy suele preferirse cuando se necesita cambiar el algoritmo en tiempo de ejecución.
 
 <Callout variant="key" title="El Template Method va final">
 Es la regla que define al patrón, y la que más seguido se omite. Si una subclase puede sobrescribir `generate()`, puede cambiar el orden de los pasos o saltearse alguno — y entonces la clase base ya no garantiza nada sobre el algoritmo. En Java eso se expresa con `final`; el equivalente en otros lenguajes es no dejar ese método como punto de extensión.
@@ -134,7 +134,7 @@ La contracara es que los pasos que **sí** se redefinen deben ser `protected`, n
 </Callout>
 
 <Callout variant="note" title="Template Method o Strategy">
-Los dos permiten variar parte de un algoritmo. Template Method lo hace con **herencia**, en tiempo de compilación: la variante se elige al elegir la subclase, y solo se puede variar lo que la base dejó abstracto. [Strategy](/diseno/patrones/strategy/) lo hace con **composición**, en tiempo de ejecución: el objeto puede cambiar de estrategia mientras vive.
+Los dos permiten variar parte de un algoritmo. Template Method lo hace con **herencia**, en tiempo de compilación: la variante se elige al elegir la subclase, y solo se puede variar lo que la base dejó abstracto. [Strategy](/es/diseno/patrones/strategy/) lo hace con **composición**, en tiempo de ejecución: el objeto puede cambiar de estrategia mientras vive.
 
-Por el sesgo hacia [composición sobre herencia](/diseno/principios/principios-generales-de-diseno/#composición-sobre-herencia), Strategy suele ser la opción por defecto. Template Method sigue siendo mejor cuando los pasos son muchos, están fuertemente ligados entre sí, y el orden debe quedar fijo en un solo lugar.
+Por el sesgo hacia [composición sobre herencia](/es/diseno/principios/principios-generales-de-diseno/#composición-sobre-herencia), Strategy suele ser la opción por defecto. Template Method sigue siendo mejor cuando los pasos son muchos, están fuertemente ligados entre sí, y el orden debe quedar fijo en un solo lugar.
 </Callout>

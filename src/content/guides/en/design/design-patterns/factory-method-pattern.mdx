@@ -156,7 +156,7 @@ OrderProcessor processor = registry.forDestination(order.destination());
 DispatchResult result = processor.dispatch(order);
 ```
 
-In an application with dependency injection, that registry is usually the container itself. The difference from an [Abstract Factory](/en/design/patterns/abstract-factory/) is that here the factory produces **one** product and the focus is on the subclass that implements it.
+In an application with dependency injection, that registry is usually the container itself. The difference from an [Abstract Factory](/design/patterns/abstract-factory/) is that here the factory produces **one** product and the focus is on the subclass that implements it.
 </Callout>
 
 Adding a third carrier means adding two classes and one entry in the registry — without touching `dispatch()` or the places that call it.
@@ -181,6 +181,6 @@ If you only have (and will only ever have) a single kind of product, Factory Met
 
 ## Relationship with other patterns
 
-- **[Abstract Factory](/en/design/patterns/abstract-factory/)** is usually implemented as a set of related Factory Methods.
-- Many designs start with Factory Method — simpler — and evolve toward **[Abstract Factory](/en/design/patterns/abstract-factory/)**, **[Prototype](/en/design/patterns/prototype/)**, or **[Builder](/en/design/patterns/builder/)** as the need for flexibility grows.
-- **[Template Method](/en/design/patterns/template-method/)** usually leans on one or more Factory Methods as part of the algorithm steps it defines.
+- **[Abstract Factory](/design/patterns/abstract-factory/)** is usually implemented as a set of related Factory Methods.
+- Many designs start with Factory Method — simpler — and evolve toward **[Abstract Factory](/design/patterns/abstract-factory/)**, **[Prototype](/design/patterns/prototype/)**, or **[Builder](/design/patterns/builder/)** as the need for flexibility grows.
+- **[Template Method](/design/patterns/template-method/)** usually leans on one or more Factory Methods as part of the algorithm steps it defines.
