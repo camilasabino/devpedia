@@ -1,33 +1,23 @@
-# build output (Astro + Pagefind index inside dist/)
+# Dependencies
+node_modules/
+
+# Build (Astro + Pagefind)
 dist/
 .astro/
 .wrangler/
 
-# dependencies
-node_modules/
-
-# environment variables (.env.example stays tracked)
+# Environment variables
 .env
 .env.*
 !.env.example
-.dev.vars
+.dev.vars*
 
-# test coverage
+# Test coverage
 coverage/
 
-# OS
+# IDE / OS
 .DS_Store
-
-# browser automation logs and screenshots
-.playwright-mcp/
-
-# editors
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# Internal development docs stay local
-docs/specs/
-docs/superpowers/
-.superpowers/
